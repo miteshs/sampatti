@@ -3,7 +3,7 @@
 // asset class, units, value and currency. Auto-saves to the store on change (the app persists
 // on a debounce), so there's no separate "save" step; "Done" just collapses the editor.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
 import { inr } from "../domain/format";
@@ -38,12 +38,17 @@ function NumInput({ initial, onCommit, placeholder, allowEmpty }: {
 }
 
 export function AccountEditor({ accountId, onClose }: { accountId: string; onClose: () => void }) {
-  const account = useStore((s) => s.portfolio.accounts.find((a) => a.id === accountId));
-  const holdings = useStore((s) => s.portfolio.holdings.filter((h) => h.accountId === accountId));
+  // Select the stable `portfolio` reference and derive with useMemo. Returning a fresh
+  // array/object straight from a zustand selector (e.g. `.filter(...)`) makes every render
+  // look like a new snapshot to useSyncExternalStore → infinite re-render loop → blank screen.
+  const portfolio = useStore((s) => s.portfolio);
   const updateAccount = useStore((s) => s.updateAccount);
   const updateHolding = useStore((s) => s.updateHolding);
   const removeHolding = useStore((s) => s.removeHolding);
   const addHolding = useStore((s) => s.addHolding);
+
+  const account = useMemo(() => portfolio.accounts.find((a) => a.id === accountId), [portfolio.accounts, accountId]);
+  const holdings = useMemo(() => portfolio.holdings.filter((h) => h.accountId === accountId), [portfolio.holdings, accountId]);
 
   if (!account) return null;
   const set = (patch: Parameters<typeof updateAccount>[1]) => updateAccount(accountId, patch);
@@ -144,7 +149,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
       )}
       <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem" }}>
         Changes save automatically. Value is in each holding's currency; totals use ₹ at the app's USD→INR rate.
-        Current account total ≈ {inr(holdings.reduce((s, h) => s + (h.currency === "INR" ? h.marketValue : h.marketValue * useStore.getState().portfolio.settings.usdInr), 0))}.
+        Current account total ≈ {inr(holdings.reduce((s, h) => s + (h.currency === "INR" ? h.marketValue : h.marketValue * portfolio.settings.usdInr), 0))}.
       </p>
     </div>
   );

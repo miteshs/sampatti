@@ -4,6 +4,7 @@ import { Overview } from "./components/Overview";
 import { AnalysisChat } from "./components/AnalysisChat";
 import { AddData } from "./components/AddData";
 import { Privacy } from "./components/Privacy";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 type View = "overview" | "analysis" | "add" | "privacy";
 
@@ -51,14 +52,14 @@ export default function App() {
           <span className="spinner" />
         </div>
       ) : (
-        <>
+        <ErrorBoundary key={view}>
           {view === "overview" && <Overview />}
           {view === "analysis" && (hasData
             ? <AnalysisChat onConfigure={() => setView("privacy")} />
             : <Empty onAdd={() => setView("add")} />)}
           {view === "add" && <AddData />}
           {view === "privacy" && <Privacy />}
-        </>
+        </ErrorBoundary>
       )}
     </div>
   );
