@@ -8,7 +8,7 @@ import {
   type Income, type ImportDraft, type Portfolio, type Settings,
 } from "../domain/types";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
-import { clearPortfolioRaw, readPortfolioRaw, writePortfolioRaw } from "../platform";
+import { clearLocalCaches, clearPortfolioRaw, readPortfolioRaw, writePortfolioRaw } from "../platform";
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
@@ -206,6 +206,7 @@ export const useStore = create<State>((set, get) => ({
 
   wipe: async () => {
     await clearPortfolioRaw();
+    clearLocalCaches(); // also drop the net-worth price-history cache + any other local caches
     set(() => ({ portfolio: emptyPortfolio() }));
   },
 }));

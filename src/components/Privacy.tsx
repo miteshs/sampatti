@@ -176,6 +176,12 @@ export function Privacy() {
             <button className="btn btn-danger" onClick={() => setConfirmWipe(true)}>🗑 Erase all data</button>
           )}
         </div>
+        <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem", maxWidth: 560 }}>
+          Erases your entire portfolio (accounts, holdings, income, edit history) and every local cache,
+          including the net-worth price history — nothing is left on this device. Sampatti keeps no server
+          database, so there's nothing stored elsewhere to remove. Your Anthropic API key, if you set one,
+          is a separate credential — remove it with the key control above.
+        </p>
       </div>
     </div>
   );

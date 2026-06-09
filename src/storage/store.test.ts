@@ -232,6 +232,24 @@ describe("manual-edit trail", () => {
   });
 });
 
+describe("wipe clears ALL local data (no residue)", () => {
+  it("removes the portfolio AND every sampatti.* cache (e.g. net-worth history)", async () => {
+    useStore.getState().addDraft(stmt("X", "Y", [["A", 1]]));
+    // Simulate the net-worth price-history cache + a stray future cache.
+    localStorage.setItem("sampatti.nwhistory.v1", JSON.stringify({ fetchedAt: "x", data: {} }));
+    localStorage.setItem("sampatti.someFutureCache", "junk");
+    await new Promise((r) => setTimeout(r, 300)); // let the debounced portfolio save land
+
+    await useStore.getState().wipe();
+
+    expect(useStore.getState().portfolio.accounts).toHaveLength(0);
+    expect(useStore.getState().portfolio.edits).toHaveLength(0);
+    expect(localStorage.getItem("sampatti.portfolio")).toBeNull();
+    expect(localStorage.getItem("sampatti.nwhistory.v1")).toBeNull();
+    expect(localStorage.getItem("sampatti.someFutureCache")).toBeNull();
+  });
+});
+
 describe("store persistence across a restart", () => {
   it("saves committed data to disk and reloads it on next boot", async () => {
     const id = useStore.getState().addAccount({
