@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { demoPortfolio } from "../demo";
-import { classifyFile, ingestFile } from "../ingest";
+import { classifyFile, ingestFile, isImportable } from "../ingest";
 import { inr } from "../domain/format";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
@@ -26,31 +26,54 @@ export function AddData() {
   const { replaceAll, addDraft, addAccount, addHolding, addIncome, portfolio } = useStore();
   const [drafts, setDrafts] = useState<ImportDraft[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [pending, setPending] = useState<File | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
+  const [skipped, setSkipped] = useState(0);
+  const [errors, setErrors] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const folderRef = useRef<HTMLInputElement>(null);
+
+  // The folder picker is a plain file input with the (non-standard) webkitdirectory
+  // attribute — supported by the desktop webview and browsers, no extra permissions.
+  useEffect(() => {
+    folderRef.current?.setAttribute("webkitdirectory", "");
+  }, []);
 
   const loadDemo = () => replaceAll(demoPortfolio());
 
-  const onPick = (file: File | undefined) => {
-    setError(null);
-    if (!file) return;
-    const kind = classifyFile(file);
-    if (kind === "local") void doIngest(file);
-    else setPending(file); // needs Claude — confirm first
+  // Selection from either picker (one file, many files, or a whole folder tree).
+  const onPick = (list: FileList | null) => {
+    setErrors([]);
+    setSkipped(0);
+    const all = list ? Array.from(list) : [];
+    if (all.length === 0) return;
+    const importable = all.filter(isImportable);
+    setSkipped(all.length - importable.length);
+    if (importable.length === 0) {
+      setErrors(["No importable files found — supported types are CSV, Excel, PDF, and images."]);
+      return;
+    }
+    // If anything needs Claude, confirm the whole batch first; otherwise just parse.
+    if (importable.some((f) => classifyFile(f) !== "local")) setPendingBatch(importable);
+    else void runBatch(importable);
   };
 
-  const doIngest = async (file: File) => {
-    setBusy(`Reading ${file.name}…`);
-    setPending(null);
-    try {
-      const result = await ingestFile(file);
-      setDrafts((d) => [...d, ...result]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
+  // Process a batch sequentially so progress is visible, cost is predictable, and one bad
+  // file never aborts the rest — failures are collected and shown at the end.
+  const runBatch = async (files: File[]) => {
+    setPendingBatch(null);
+    const errs: string[] = [];
+    let done = 0;
+    for (const f of files) {
+      setBusy(`Processing ${++done} of ${files.length}: ${f.name}…`);
+      try {
+        const result = await ingestFile(f);
+        setDrafts((d) => [...d, ...result]);
+      } catch (e) {
+        errs.push(`${f.name}: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
+    setBusy(null);
+    setErrors(errs);
   };
 
   const downloadTemplate = () => {
@@ -69,37 +92,75 @@ export function AddData() {
         <h2 style={{ fontSize: "1.2rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
           <button className="btn btn-primary" onClick={loadDemo}>▶ Load demo portfolio (₹12 Cr)</button>
-          <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import file (CSV / Excel / PDF / image)</button>
+          <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import files (CSV / Excel / PDF / image)</button>
+          <button className="btn" onClick={() => folderRef.current?.click()}>📁 Import a whole folder</button>
           <button className="btn btn-ghost" onClick={downloadTemplate}>Download CSV template</button>
           <input
-            ref={fileRef} type="file" hidden
+            ref={fileRef} type="file" hidden multiple
             accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.webp"
-            onChange={(e) => { onPick(e.target.files?.[0]); e.target.value = ""; }}
+            onChange={(e) => { onPick(e.target.files); e.target.value = ""; }}
+          />
+          <input
+            ref={folderRef} type="file" hidden multiple
+            onChange={(e) => { onPick(e.target.files); e.target.value = ""; }}
           />
         </div>
         <p className="muted" style={{ fontSize: "0.78rem", marginTop: "0.7rem" }}>
-          CSV and Excel are parsed entirely on this device. PDFs and screenshots are read with
-          Claude (you'll be asked to confirm), because messy statements need AI to structure.
+          Pick several files or a whole folder of statements at once. CSV and Excel are parsed
+          entirely on this device; PDFs and screenshots are read with Claude (you'll confirm the
+          batch first), because messy statements need AI to structure. Unsupported files are skipped.
         </p>
         {busy && <div style={{ marginTop: "0.7rem" }}><span className="spinner" /> <span className="muted">{busy}</span></div>}
-        {error && <div className="badge badge-rose" style={{ marginTop: "0.7rem", padding: "0.4rem 0.7rem" }}>{error}</div>}
+        {!busy && skipped > 0 && !pendingBatch && (
+          <div className="muted" style={{ marginTop: "0.7rem", fontSize: "0.78rem" }}>
+            {skipped} unsupported file{skipped > 1 ? "s" : ""} skipped.
+          </div>
+        )}
+        {errors.length > 0 && (
+          <div className="badge badge-rose" style={{ marginTop: "0.7rem", padding: "0.4rem 0.7rem", display: "block" }}>
+            {errors.map((er, i) => <div key={i} style={{ padding: "0.1rem 0" }}>{er}</div>)}
+          </div>
+        )}
       </div>
 
-      {/* Confirm before sending a document to Claude */}
-      {pending && (
-        <div className="card" style={{ borderColor: "#e0e0ff", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
-          <h3 style={{ fontSize: "1rem" }}>Send this document to Claude?</h3>
-          <p className="muted" style={{ fontSize: "0.84rem", margin: "0.4rem 0 0.8rem" }}>
-            <strong>{pending.name}</strong> will be sent to Claude{" "}
-            {portfolio.settings.claudeMode === "byo" ? "directly using your own API key" : "via the relay"}{" "}
-            to extract the holdings. It is not stored anywhere. You'll review the result before it's saved.
-          </p>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button className="btn btn-primary" onClick={() => doIngest(pending)}>Send & extract</button>
-            <button className="btn btn-ghost" onClick={() => setPending(null)}>Cancel</button>
+      {/* Confirm the batch before any document is sent to Claude */}
+      {pendingBatch && (() => {
+        const aiFiles = pendingBatch.filter((f) => classifyFile(f) !== "local");
+        const localCount = pendingBatch.length - aiFiles.length;
+        const n = pendingBatch.length;
+        return (
+          <div className="card" style={{ borderColor: "#e0e0ff", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
+            <h3 style={{ fontSize: "1rem" }}>Import {n} file{n > 1 ? "s" : ""}?</h3>
+            <ul className="muted" style={{ fontSize: "0.84rem", margin: "0.4rem 0 0.8rem", paddingLeft: "1.1rem", lineHeight: 1.7 }}>
+              {localCount > 0 && (
+                <li><strong>{localCount}</strong> parsed on this device (CSV/Excel) — never sent anywhere.</li>
+              )}
+              {aiFiles.length > 0 && (
+                <li>
+                  <strong>{aiFiles.length}</strong> sent to Claude{" "}
+                  {portfolio.settings.claudeMode === "byo" ? "with your own API key" : "via the relay"}{" "}
+                  to extract holdings — not stored. You'll review each before saving.
+                </li>
+              )}
+              {skipped > 0 && <li>{skipped} unsupported file{skipped > 1 ? "s" : ""} skipped.</li>}
+            </ul>
+            {aiFiles.length > 0 && (
+              <details style={{ marginBottom: "0.7rem" }}>
+                <summary className="muted" style={{ fontSize: "0.78rem", cursor: "pointer" }}>
+                  Show the {aiFiles.length} file{aiFiles.length > 1 ? "s" : ""} going to Claude
+                </summary>
+                <div className="muted" style={{ fontSize: "0.76rem", marginTop: "0.3rem", maxHeight: 140, overflow: "auto" }}>
+                  {aiFiles.map((f, i) => <div key={i}>• {f.name}</div>)}
+                </div>
+              </details>
+            )}
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button className="btn btn-primary" onClick={() => void runBatch(pendingBatch)}>Import {n} file{n > 1 ? "s" : ""}</button>
+              <button className="btn btn-ghost" onClick={() => { setPendingBatch(null); setSkipped(0); }}>Cancel</button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Draft review */}
       {drafts.map((d, i) => (

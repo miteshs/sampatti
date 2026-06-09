@@ -28,6 +28,18 @@ export function classifyFile(file: File): IngestKind {
   return "local";
 }
 
+// Extensions we know how to import. Used to filter a multi-file / folder selection so
+// unrelated files — and hidden/system files like .DS_Store — are skipped rather than fed
+// to the CSV last-resort parser.
+export const IMPORTABLE_EXTS = ["csv", "xlsx", "xls", "pdf", "png", "jpg", "jpeg", "webp", "gif"] as const;
+const IMPORTABLE = new Set<string>(IMPORTABLE_EXTS);
+
+export function isImportable(file: File): boolean {
+  if (!file.name || file.name.startsWith(".")) return false; // skip hidden / system files
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return IMPORTABLE.has(ext);
+}
+
 const fileText = (f: File) => f.text();
 const fileBuf = (f: File) => f.arrayBuffer();
 
