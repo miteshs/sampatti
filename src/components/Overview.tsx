@@ -6,6 +6,7 @@ import { holdingBase, inr, pct } from "../domain/format";
 import { ASSET_CLASS_LABEL, ACCOUNT_TYPE_LABEL } from "../domain/classify";
 import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
+import { AccountEditor } from "./AccountEditor";
 import { freshness, FRESH_BADGE } from "./ui";
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
@@ -32,6 +33,7 @@ export function Overview() {
   const [by, setBy] = useState<Dimension>("asset_class");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const usdInr = portfolio.settings.usdInr;
 
   // Everything the dashboard shows runs on the *visible* portfolio (excluded accounts
@@ -119,22 +121,28 @@ export function Overview() {
         <div style={{ marginTop: "0.5rem" }}>
           {portfolio.accounts.map((a) => {
             const excluded = !!a.excluded;
+            const editing = editingId === a.id;
             return (
-              <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
-                <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} style={{ flexShrink: 0, cursor: "pointer" }} />
-                <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
-                  <span style={{ fontWeight: 600 }}>{a.name}</span>
-                  <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+              <div key={a.id}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
+                  <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} style={{ flexShrink: 0, cursor: "pointer" }} />
+                  <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
+                    <span style={{ fontWeight: 600 }}>{a.name}</span>
+                    <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+                  </div>
+                  <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
+                  <button className={`btn btn-ghost ${editing ? "active" : ""}`} style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Edit account & holdings"
+                    onClick={() => setEditingId(editing ? null : a.id)}>✎</button>
+                  {confirmRemove === a.id ? (
+                    <span style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
+                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
+                      <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
+                    </span>
+                  ) : (
+                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Remove account" onClick={() => setConfirmRemove(a.id)}>✕</button>
+                  )}
                 </div>
-                <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
-                {confirmRemove === a.id ? (
-                  <span style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
-                    <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
-                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
-                  </span>
-                ) : (
-                  <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Remove account" onClick={() => setConfirmRemove(a.id)}>✕</button>
-                )}
+                {editing && <AccountEditor accountId={a.id} onClose={() => setEditingId(null)} />}
               </div>
             );
           })}
