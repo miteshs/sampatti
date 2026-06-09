@@ -61,7 +61,7 @@ export function Privacy() {
           <button className={`chip ${s.claudeMode === "relay" ? "active" : ""}`} onClick={() => updateSettings({ claudeMode: "relay" })}>
             Relay (default, easiest)
           </button>
-          <button className={`chip ${s.claudeMode === "byo" ? "active" : ""}`} onClick={() => keySet && updateSettings({ claudeMode: "byo" })}>
+          <button className={`chip ${s.claudeMode === "byo" ? "active" : ""}`} onClick={() => updateSettings({ claudeMode: "byo" })}>
             My own Anthropic key (max privacy)
           </button>
         </div>
