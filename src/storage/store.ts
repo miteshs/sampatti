@@ -4,7 +4,7 @@
 
 import { create } from "zustand";
 import {
-  CURRENT_VERSION, emptyPortfolio, type Account, type Holding, type Income,
+  CURRENT_VERSION, emptyPortfolio, findMatchingAccount, type Account, type Holding, type Income,
   type ImportDraft, type Portfolio, type Settings,
 } from "../domain/types";
 import { clearPortfolioRaw, readPortfolioRaw, writePortfolioRaw } from "../platform";
@@ -15,7 +15,7 @@ interface State {
   portfolio: Portfolio;
   loaded: boolean;
   load: () => Promise<void>;
-  addDraft: (d: ImportDraft) => void;
+  addDraft: (d: ImportDraft, mode?: "auto" | "new") => void;
   addAccount: (a: Omit<Account, "id">) => string;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   removeAccount: (id: string) => void;
@@ -76,11 +76,22 @@ export const useStore = create<State>((set, get) => ({
     set(() => ({ loaded: true }));
   },
 
-  addDraft: (d) =>
+  addDraft: (d, mode = "auto") =>
     commit(set, get, (p) => {
-      const accountId = uid();
-      p.accounts.push({ ...d.account, id: accountId });
-      for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId });
+      const existing = mode === "auto" ? findMatchingAccount(p.accounts, d.account) : undefined;
+      if (existing) {
+        // Re-import of a known account (same institution + name): drop its old holdings
+        // and refresh from the statement in place, keeping the id and excluded flag so it
+        // updates rather than creating a duplicate.
+        const { excluded } = existing;
+        p.holdings = p.holdings.filter((h) => h.accountId !== existing.id);
+        Object.assign(existing, d.account, { id: existing.id, excluded });
+        for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId: existing.id });
+      } else {
+        const accountId = uid();
+        p.accounts.push({ ...d.account, id: accountId });
+        for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId });
+      }
     }),
 
   addAccount: (a) => {

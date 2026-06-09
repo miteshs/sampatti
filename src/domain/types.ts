@@ -71,6 +71,9 @@ export interface Account {
   // tag the whole account to one class and skip per-holding detail.
   defaultAssetClass?: AssetClass;
   note?: string;
+  // When true the account is kept on file but excluded from every computation
+  // (net worth, allocations, the brief, AI analysis). Toggled on the dashboard.
+  excluded?: boolean;
 }
 
 export type IncomeKind = "salary" | "rent" | "business" | "dividend" | "interest" | "other";
@@ -119,7 +122,7 @@ export function emptyPortfolio(): Portfolio {
       baseCurrency: "INR",
       claudeMode: "relay",
       relayUrl: "https://sampatti-relay.sampatti.workers.dev", // hosted relay; override or switch to your own key on Privacy
-      usdInr: 83,
+      usdInr: 95, // fallback; refresh to a live rate on the Privacy screen
       byoKeySet: false,
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku on Privacy
     },
@@ -141,4 +144,31 @@ export interface ImportDraft {
   holdings: Omit<Holding, "id" | "accountId">[];
   warnings: string[];
   source: string; // filename or "csv" / "ai"
+}
+
+// Accounts toggled off stay in the file (so they can be re-enabled) but are removed from
+// every computation. Used by the dashboard and the AI brief so "exclude" means exclude
+// everywhere. Returns the same object when nothing is excluded (cheap no-op).
+export function visiblePortfolio(p: Portfolio): Portfolio {
+  const hidden = new Set(p.accounts.filter((a) => a.excluded).map((a) => a.id));
+  if (hidden.size === 0) return p;
+  return {
+    ...p,
+    accounts: p.accounts.filter((a) => !a.excluded),
+    holdings: p.holdings.filter((h) => !hidden.has(h.accountId)),
+  };
+}
+
+// Identity used to decide whether an imported statement updates an existing account or
+// creates a new one: institution + account name, normalized (case/space-insensitive).
+export function accountKey(a: { name: string; institution: string }): string {
+  return `${a.institution.trim().toLowerCase()}|${a.name.trim().toLowerCase()}`;
+}
+
+export function findMatchingAccount(
+  accounts: Account[],
+  draft: { name: string; institution: string },
+): Account | undefined {
+  const key = accountKey(draft);
+  return accounts.find((a) => accountKey(a) === key);
 }

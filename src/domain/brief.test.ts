@@ -22,10 +22,10 @@ describe("buildBrief on the demo HNI portfolio", () => {
   });
 
   it("converts USD RSUs into the INR base at the manual rate", () => {
-    // 85,000 USD * 83 should land in liquid + us_equity allocation.
+    // 85,000 USD * 95 should land in liquid + us_equity allocation.
     const us = b.allocationByClass.find((a) => a.label === "US Equity");
     expect(us).toBeDefined();
-    expect(us!.value).toBeCloseTo(85_000 * 83, -3);
+    expect(us!.value).toBeCloseTo(85_000 * 95, -3);
   });
 
   it("surfaces single-stock concentration metrics", () => {

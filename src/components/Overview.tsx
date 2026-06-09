@@ -3,7 +3,8 @@ import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { buildSegments, DIMENSIONS, type Dimension } from "../domain/group";
 import { holdingBase, inr, pct } from "../domain/format";
-import { ASSET_CLASS_LABEL } from "../domain/classify";
+import { ASSET_CLASS_LABEL, ACCOUNT_TYPE_LABEL } from "../domain/classify";
+import { visiblePortfolio } from "../domain/types";
 import { Donut } from "./Donut";
 import { freshness, FRESH_BADGE } from "./ui";
 
@@ -26,19 +27,34 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
 
 export function Overview() {
   const portfolio = useStore((s) => s.portfolio);
+  const updateAccount = useStore((s) => s.updateAccount);
+  const removeAccount = useStore((s) => s.removeAccount);
   const [by, setBy] = useState<Dimension>("asset_class");
   const [focus, setFocus] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const usdInr = portfolio.settings.usdInr;
 
-  const brief = useMemo(() => buildBrief(portfolio), [portfolio]);
+  // Everything the dashboard shows runs on the *visible* portfolio (excluded accounts
+  // dropped), so the include/exclude toggle affects totals, allocation, and the table.
+  const view = useMemo(() => visiblePortfolio(portfolio), [portfolio]);
+
+  const brief = useMemo(() => buildBrief(view), [view]);
   const { total, segments } = useMemo(
-    () => buildSegments(portfolio.holdings, portfolio.accounts, by, usdInr),
-    [portfolio, by, usdInr],
+    () => buildSegments(view.holdings, view.accounts, by, usdInr),
+    [view, by, usdInr],
   );
 
-  const acctById = useMemo(() => new Map(portfolio.accounts.map((a) => [a.id, a])), [portfolio.accounts]);
+  // Per-account totals from the *raw* portfolio so the management list shows a value even
+  // for excluded accounts.
+  const acctTotals = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const h of portfolio.holdings) m.set(h.accountId, (m.get(h.accountId) ?? 0) + holdingBase(h, usdInr));
+    return m;
+  }, [portfolio.holdings, usdInr]);
+
+  const acctById = useMemo(() => new Map(view.accounts.map((a) => [a.id, a])), [view.accounts]);
   const rows = useMemo(() => {
-    const list = portfolio.holdings
+    const list = view.holdings
       .map((h) => ({ h, a: acctById.get(h.accountId), base: holdingBase(h, usdInr) }))
       .filter((x) => x.a?.accountType !== "liability")
       .sort((x, y) => y.base - x.base);
@@ -54,15 +70,15 @@ export function Overview() {
         case "institution": return (a?.institution ?? "—") === focus;
       }
     });
-  }, [portfolio.holdings, acctById, usdInr, focus, by]);
+  }, [view.holdings, acctById, usdInr, focus, by]);
 
-  const staleAccounts = portfolio.accounts
+  const staleAccounts = view.accounts
     .filter((a) => a.accountType !== "liability" && a.accountType !== "income")
     .map((a) => ({ a, f: freshness(a.asOf) }))
     .filter((x) => x.f.status !== "fresh")
     .sort((x, y) => (y.f.days ?? 1e9) - (x.f.days ?? 1e9));
 
-  if (portfolio.holdings.length === 0) {
+  if (portfolio.accounts.length === 0) {
     return (
       <div className="card card-pad-lg" style={{ textAlign: "center", padding: "3rem" }}>
         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>No data yet</div>
@@ -83,6 +99,51 @@ export function Overview() {
         <StatCard label="Annual income" value={inr(brief.income.annualTotal)} sub={brief.income.netWorthYears ? `net worth ≈ ${brief.income.netWorthYears}× income` : undefined} />
       </div>
 
+      {/* Accounts — include/exclude from the view & analysis, or remove entirely */}
+      <div className="card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div>
+            <div className="eyebrow">Accounts</div>
+            <h2 style={{ fontSize: "1.05rem", marginTop: "0.15rem" }}>Include or remove accounts</h2>
+          </div>
+          <span className="muted" style={{ fontSize: "0.78rem", maxWidth: 280, textAlign: "right" }}>
+            Unchecked accounts are left out of net worth, allocations &amp; AI analysis.
+          </span>
+        </div>
+        <div style={{ marginTop: "0.5rem" }}>
+          {portfolio.accounts.map((a) => {
+            const excluded = !!a.excluded;
+            return (
+              <div key={a.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.7rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer", flex: 1, minWidth: 0 }}>
+                  <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} />
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ fontWeight: 600 }}>{a.name}</span>
+                    <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+                  </span>
+                </label>
+                <span style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <span className="num muted" style={{ fontSize: "0.84rem" }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
+                  {confirmRemove === a.id ? (
+                    <>
+                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
+                      <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
+                    </>
+                  ) : (
+                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem" }} title="Remove account" onClick={() => setConfirmRemove(a.id)}>✕</button>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {view.holdings.length === 0 ? (
+        <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
+          <span className="muted">All accounts are excluded — re-include one above to see allocations and holdings.</span>
+        </div>
+      ) : (<>
       <div className="card">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.6rem", marginBottom: "1rem" }}>
           <div>
@@ -160,6 +221,7 @@ export function Overview() {
           </div>
         )}
       </div>
+      </>)}
     </div>
   );
 }

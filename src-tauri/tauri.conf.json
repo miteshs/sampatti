@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.anthropic.com https://sampatti-relay.sampatti.workers.dev"
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.anthropic.com https://sampatti-relay.sampatti.workers.dev https://open.er-api.com"
     }
   },
   "bundle": {

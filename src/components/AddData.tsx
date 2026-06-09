@@ -6,8 +6,9 @@ import { inr } from "../domain/format";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
 } from "../domain/classify";
+import { findMatchingAccount } from "../domain/types";
 import type {
-  AccountType, AssetClass, ImportDraft, IncomeKind, Region, TaxTreatment,
+  Account, AccountType, AssetClass, ImportDraft, IncomeKind, Region, TaxTreatment,
 } from "../domain/types";
 
 const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
@@ -23,14 +24,17 @@ const CSV_TEMPLATE =
   "PPF,SBI,epf_ppf,eee_exempt,India,INR,,PPF account,epf_ppf,,2800000,,,2026-03-31\n";
 
 export function AddData() {
-  const { replaceAll, addDraft, addAccount, addHolding, addIncome, portfolio } = useStore();
+  const { replaceAll, addDraft, addAccount, addHolding, addIncome, wipe, portfolio } = useStore();
   const [drafts, setDrafts] = useState<ImportDraft[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
   const [skipped, setSkipped] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
+  const [confirmClear, setConfirmClear] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
+
+  const hasData = portfolio.holdings.length > 0 || portfolio.accounts.length > 0;
 
   // The folder picker is a plain file input with the (non-standard) webkitdirectory
   // attribute — supported by the desktop webview and browsers, no extra permissions.
@@ -38,7 +42,14 @@ export function AddData() {
     folderRef.current?.setAttribute("webkitdirectory", "");
   }, []);
 
-  const loadDemo = () => replaceAll(demoPortfolio());
+  // Loading the demo replaces everything, so guard it when real data is present — this is
+  // how the demo used to get mixed into a real portfolio.
+  const loadDemo = () => {
+    if (hasData && !window.confirm("Replace your current data with the sample demo portfolio? This clears what's there now.")) return;
+    replaceAll(demoPortfolio());
+  };
+
+  const clearAll = () => { void wipe(); setDrafts([]); setConfirmClear(false); };
 
   // Selection from either picker (one file, many files, or a whole folder tree).
   const onPick = (list: FileList | null) => {
@@ -121,6 +132,19 @@ export function AddData() {
             {errors.map((er, i) => <div key={i} style={{ padding: "0.1rem 0" }}>{er}</div>)}
           </div>
         )}
+        {hasData && (
+          <div style={{ marginTop: "0.9rem", paddingTop: "0.8rem", borderTop: "1px solid var(--line-2)", display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            {confirmClear ? (
+              <>
+                <span className="muted" style={{ fontSize: "0.8rem" }}>Erase all accounts, holdings &amp; income and start fresh?</span>
+                <button className="btn btn-danger" onClick={clearAll}>Yes, clear everything</button>
+                <button className="btn btn-ghost" onClick={() => setConfirmClear(false)}>Cancel</button>
+              </>
+            ) : (
+              <button className="btn btn-ghost" onClick={() => setConfirmClear(true)}>🗑 Clear all data &amp; start fresh</button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Confirm the batch before any document is sent to Claude */}
@@ -166,7 +190,8 @@ export function AddData() {
       {drafts.map((d, i) => (
         <DraftReview
           key={i} draft={d}
-          onCommit={() => { addDraft(d); setDrafts((all) => all.filter((_, j) => j !== i)); }}
+          existing={findMatchingAccount(portfolio.accounts, d.account)}
+          onCommit={(mode) => { addDraft(d, mode); setDrafts((all) => all.filter((_, j) => j !== i)); }}
           onDiscard={() => setDrafts((all) => all.filter((_, j) => j !== i))}
         />
       ))}
@@ -182,12 +207,12 @@ export function AddData() {
 }
 
 // ---- review an AI/file draft before saving ----
-function DraftReview({ draft, onCommit, onDiscard }: {
-  draft: ImportDraft; onCommit: () => void; onDiscard: () => void;
+function DraftReview({ draft, existing, onCommit, onDiscard }: {
+  draft: ImportDraft; existing?: Account; onCommit: (mode: "auto" | "new") => void; onDiscard: () => void;
 }) {
   const total = draft.holdings.reduce((s, h) => s + h.marketValue, 0);
   return (
-    <div className="card" style={{ borderLeft: "3px solid var(--primary)" }}>
+    <div className="card" style={{ borderLeft: `3px solid ${existing ? "var(--amber, #d98324)" : "var(--primary)"}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
         <div>
           <div className="eyebrow">Review draft · {draft.source}</div>
@@ -198,11 +223,24 @@ function DraftReview({ draft, onCommit, onDiscard }: {
             {draft.account.asOf ? ` · as of ${draft.account.asOf}` : ""}
           </div>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className="btn btn-primary" onClick={onCommit}>Add {draft.holdings.length} holdings · {inr(total)}</button>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          {existing ? (
+            <>
+              <button className="btn btn-primary" onClick={() => onCommit("auto")}>↻ Update · replace with {draft.holdings.length} · {inr(total)}</button>
+              <button className="btn" onClick={() => onCommit("new")}>Add as separate</button>
+            </>
+          ) : (
+            <button className="btn btn-primary" onClick={() => onCommit("auto")}>Add {draft.holdings.length} holdings · {inr(total)}</button>
+          )}
           <button className="btn btn-ghost" onClick={onDiscard}>Discard</button>
         </div>
       </div>
+      {existing && (
+        <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
+          Matches an account you already have ({existing.institution} · {existing.name}). <strong>Update</strong> replaces
+          its current holdings with this statement; <strong>Add as separate</strong> keeps both.
+        </div>
+      )}
       {draft.warnings.length > 0 && (
         <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
           {draft.warnings.join(" · ")}
@@ -237,17 +275,26 @@ function ManualAccount({ onAdd }: {
   const [hValue, setHValue] = useState("");
   const [holdings, setHoldings] = useState<ImportDraft["holdings"]>([]);
 
-  const addH = () => {
+  // A holding typed into the item fields but not yet added with "+ Add item".
+  const pendingHolding = (): ImportDraft["holdings"][number] | null => {
     const v = Number(hValue.replace(/[₹,\s]/g, ""));
-    if (!hName || !v) return;
-    setHoldings((h) => [...h, { name: hName, assetClass: hClass, marketValue: v, currency: a.currency }]);
+    return hName.trim() && v ? { name: hName.trim(), assetClass: hClass, marketValue: v, currency: a.currency } : null;
+  };
+  const addH = () => {
+    const h = pendingHolding();
+    if (!h) return;
+    setHoldings((all) => [...all, h]);
     setHName(""); setHValue("");
   };
+  // Save folds in a typed-but-unadded holding so the form doesn't silently refuse to save.
+  const canSave = !!a.name.trim() && (holdings.length > 0 || pendingHolding() != null);
   const save = () => {
-    if (!a.name || holdings.length === 0) return;
-    onAdd(a, holdings);
+    const extra = pendingHolding();
+    const all = extra ? [...holdings, extra] : holdings;
+    if (!a.name.trim() || all.length === 0) return;
+    onAdd(a, all);
     setA({ ...a, name: "", institution: "" });
-    setHoldings([]);
+    setHoldings([]); setHName(""); setHValue("");
   };
 
   return (
@@ -304,8 +351,13 @@ function ManualAccount({ onAdd }: {
           </tbody>
         </table>
       )}
-      <div style={{ marginTop: "0.9rem" }}>
-        <button className="btn btn-primary" onClick={save} disabled={!a.name || holdings.length === 0}>Save account</button>
+      <div style={{ marginTop: "0.9rem", display: "flex", gap: "0.7rem", alignItems: "center", flexWrap: "wrap" }}>
+        <button className="btn btn-primary" onClick={save} disabled={!canSave}>Save account</button>
+        {!canSave && (
+          <span className="muted" style={{ fontSize: "0.78rem" }}>
+            {!a.name.trim() ? "Enter an account name" : "Add at least one holding (fill the name + value above)"} to save.
+          </span>
+        )}
       </div>
     </div>
   );

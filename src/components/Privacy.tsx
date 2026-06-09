@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
 import { clearByoKey, hasByoKey, setByoKey, storageLocation, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
+import { fetchUsdInr } from "../domain/fx";
 
 export function Privacy() {
   const { portfolio, updateSettings, wipe } = useStore();
@@ -10,6 +11,21 @@ export function Privacy() {
   const [keyInput, setKeyInput] = useState("");
   const [keySet, setKeySet] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [fxBusy, setFxBusy] = useState(false);
+  const [fxNote, setFxNote] = useState<string | null>(null);
+
+  const refreshRate = async () => {
+    setFxBusy(true);
+    setFxNote(null);
+    const rate = await fetchUsdInr();
+    setFxBusy(false);
+    if (rate) {
+      updateSettings({ usdInr: rate });
+      setFxNote(`Updated to ₹${rate}/$ just now.`);
+    } else {
+      setFxNote("Couldn't reach the rate service — keeping the current rate.");
+    }
+  };
 
   useEffect(() => {
     void storageLocation().then(setLocation);
@@ -132,9 +148,18 @@ export function Privacy() {
           })}
         </div>
 
-        <div style={{ maxWidth: 220 }}>
+        <div style={{ maxWidth: 320 }}>
           <label>USD → INR rate (for US holdings)</label>
-          <input type="number" value={s.usdInr} onChange={(e) => updateSettings({ usdInr: Number(e.target.value) || s.usdInr })} />
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <input type="number" style={{ maxWidth: 130 }} value={s.usdInr}
+              onChange={(e) => updateSettings({ usdInr: Number(e.target.value) || s.usdInr })} />
+            <button className="btn btn-ghost" onClick={refreshRate} disabled={fxBusy}>
+              {fxBusy ? <span className="spinner" /> : "↻ Fetch live"}
+            </button>
+          </div>
+          <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.35rem" }}>
+            {fxNote ?? "Defaults to ₹95/$. Fetch a live mid-market rate anytime — no data about you is sent."}
+          </p>
         </div>
       </div>
 

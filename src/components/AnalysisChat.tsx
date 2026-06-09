@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { inr } from "../domain/format";
-import { analysisReady } from "../domain/types";
+import { analysisReady, visiblePortfolio } from "../domain/types";
 import { streamClaude, type Msg } from "../claude/transport";
 import { chatMessages, initialMessages, systemPrompt } from "../claude/prompts";
 import { Markdown } from "./Markdown";
@@ -11,7 +11,7 @@ interface Turn { role: "assistant" | "user"; text: string }
 
 export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const portfolio = useStore((s) => s.portfolio);
-  const brief = useMemo(() => buildBrief(portfolio), [portfolio]);
+  const brief = useMemo(() => buildBrief(visiblePortfolio(portfolio)), [portfolio]);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [started, setStarted] = useState(false);
