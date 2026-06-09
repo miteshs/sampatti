@@ -97,6 +97,42 @@ export function Overview() {
         <StatCard label="Top 10 holdings" value={`${top10Pct}%`} sub={`of assets · ${top10Count} position${top10Count === 1 ? "" : "s"}`} />
       </div>
 
+      {/* Top holdings — the names behind the concentration widget, right here (no expand/collapse) */}
+      {view.holdings.length > 0 && (
+        <div className="card">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
+            <div>
+              <div className="eyebrow">Concentration</div>
+              <h2 style={{ fontSize: "1.15rem", marginTop: "0.15rem" }}>Top {top10Count} holding{top10Count === 1 ? "" : "s"}</h2>
+            </div>
+            <span className="muted" style={{ fontSize: "0.8rem" }}>{top10Pct}% of assets</span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: "1.5rem" }}>#</th>
+                  <th>Holding</th><th>Class</th><th>Account</th>
+                  <th className="num">Value</th><th className="num">% assets</th>
+                </tr>
+              </thead>
+              <tbody>
+                {brief.concentration.topHoldings.map((h, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid var(--line-2)" }}>
+                    <td className="muted num">{i + 1}</td>
+                    <td style={{ fontWeight: 600 }}>{h.name}</td>
+                    <td><span className="badge badge-gray">{h.assetClass}</span></td>
+                    <td className="muted" style={{ fontSize: "0.84rem" }}>{h.account}</td>
+                    <td className="num" style={{ fontWeight: 600 }}>{inr(h.value)}</td>
+                    <td className="num muted">{h.pctOfAssets}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Net worth over time — reconstructed from market history, honors the account selection (Manage tab) */}
       <NetWorthTrend />
 
