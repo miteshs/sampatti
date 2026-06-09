@@ -85,7 +85,8 @@ export function yahooSymbolFor(h: Holding): string | null {
   if (h.assetClass === "gold_sgb" || h.assetClass === "gold_other") return "GC=F"; // gold, USD/oz — relative only
   const sym = (h.symbol ?? "").trim().toUpperCase();
   if (!sym) return null;
-  if (h.assetClass === "indian_equity") return plausibleTicker(sym) ? `${sym}.NS` : null;
+  // REITs/InvITs trade on the NSE like equities (EMBASSY, MINDSPACE, INDIGRID…).
+  if (h.assetClass === "indian_equity" || h.assetClass === "reit_invit") return plausibleTicker(sym) ? `${sym}.NS` : null;
   if (h.assetClass === "crypto") return plausibleTicker(sym) ? `${sym}-USD` : null;
   if (h.assetClass === "us_equity" || (h.assetClass === "index_etf" && (h.currency || "").toUpperCase() === "USD"))
     return plausibleTicker(sym) ? sym : null;

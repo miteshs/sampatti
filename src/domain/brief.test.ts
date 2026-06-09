@@ -5,9 +5,9 @@ import { buildBrief } from "./brief";
 describe("buildBrief on the demo HNI portfolio", () => {
   const b = buildBrief(demoPortfolio());
 
-  it("computes a net worth in the expected HNI range (~₹11–13 Cr)", () => {
-    expect(b.netWorth).toBeGreaterThan(11_00_00_000);
-    expect(b.netWorth).toBeLessThan(13_00_00_000);
+  it("computes a net worth in the expected HNI range (~₹12.5–14.5 Cr)", () => {
+    expect(b.netWorth).toBeGreaterThan(12_50_00_000);
+    expect(b.netWorth).toBeLessThan(14_50_00_000);
   });
 
   it("net worth = assets − liabilities", () => {
@@ -35,7 +35,7 @@ describe("buildBrief on the demo HNI portfolio", () => {
   });
 
   it("splits taxable equity into STCG/LTCG buckets using buy dates", () => {
-    // Zomato + ESPP were bought recently → short-term; the rest long-term.
+    // Trent + the SBI Small Cap re-entry + ESPP were bought recently → short-term; rest long-term.
     expect(b.holdingPeriods.equityShortTerm).toBeGreaterThan(0);
     expect(b.holdingPeriods.equityLongTerm).toBeGreaterThan(b.holdingPeriods.equityShortTerm);
   });
@@ -46,7 +46,7 @@ describe("buildBrief on the demo HNI portfolio", () => {
   });
 
   it("summarizes annual income", () => {
-    expect(b.income.annualTotal).toBe(600_000 * 12 + 45_000 * 12 + 300_000);
+    expect(b.income.annualTotal).toBe(600_000 * 12 + 45_000 * 12 + 300_000 + 300_000 + 120_000);
   });
 });
 
@@ -93,8 +93,11 @@ describe("brief gains block (cost basis)", () => {
   });
 
   it("adds gainPct to top holdings that have a real basis", () => {
+    const mf = b.concentration.topHoldings.find((h) => h.name === "Mirae Asset Large Cap Fund");
+    expect(mf?.gainPct).toBeCloseTo(87.5, 1); // (45L − 24L) / 24L
+    // The PMS deliberately has NO reported cost (estimated anchor) → no gainPct for the AI.
     const pms = b.concentration.topHoldings.find((h) => h.name === "Consistent Compounders Portfolio");
-    expect(pms?.gainPct).toBeCloseTo(41.7, 1); // (85L − 60L) / 60L
+    expect(pms?.gainPct).toBeUndefined();
     const flat = b.concentration.topHoldings.find((h) => h.name === "Primary residence — Mumbai");
     expect(flat?.gainPct).toBeUndefined(); // no basis on file
   });

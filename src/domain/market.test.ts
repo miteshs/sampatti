@@ -83,3 +83,12 @@ describe("persisted resolver (cache that survives restarts)", () => {
     expect(coversHoldings(data, [hold({ symbol: "TCS", assetClass: "indian_equity" })])).toBe(false);
   });
 });
+
+describe("yahooSymbolFor — REIT/InvIT", () => {
+  const hold = (over: Partial<import("./types").Holding>): import("./types").Holding => ({
+    id: "h", accountId: "a", name: "x", assetClass: "indian_equity", marketValue: 1, currency: "INR", ...over,
+  });
+  it("treats NSE-listed REITs/InvITs like Indian equities", () => {
+    expect(yahooSymbolFor(hold({ symbol: "EMBASSY", assetClass: "reit_invit" }))).toBe("EMBASSY.NS");
+  });
+});

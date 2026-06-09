@@ -157,7 +157,7 @@ export function AddData() {
         <div className="eyebrow">Get started</div>
         <h2 style={{ fontSize: "1.2rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-          <button className="btn btn-primary" onClick={loadDemo}>▶ Load demo portfolio (₹12 Cr)</button>
+          <button className="btn btn-primary" onClick={loadDemo}>▶ Load demo portfolio (₹13.5 Cr)</button>
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import files (CSV / Excel / PDF / image)</button>
           <button className="btn" onClick={() => folderRef.current?.click()}>📁 Import a whole folder</button>
           <button className="btn btn-ghost" onClick={downloadTemplate}>Download CSV template</button>
