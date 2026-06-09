@@ -19,24 +19,74 @@ const CORS = {
   "access-control-allow-headers": "content-type, x-app-token",
 };
 
+// The token in the distributed app is extractable, so the relay also caps what a request
+// can cost: only the models the app uses, a hard output-token ceiling, and a body-size
+// limit. These bound the blast radius if the token ever leaks — the budget cap on the
+// Anthropic account is the final backstop.
+const ALLOWED_MODELS = new Set([
+  "claude-opus-4-8",
+  "claude-sonnet-4-6",
+  "claude-haiku-4-5",
+]);
+const MAX_OUTPUT_TOKENS = 8192; // the app asks for 4000; this just blocks abuse
+const MAX_BODY_BYTES = 512 * 1024; // the brief is a few KB; reject anything huge
+
+// Constant-time comparison so the token check can't be guessed byte-by-byte via timing.
+export function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+export type SanitizeResult =
+  | { ok: true; body: Record<string, unknown> }
+  | { ok: false; status: number; error: string };
+
+// Validate and clamp the forwarded request before it reaches Anthropic. Pure + exported so
+// it can be unit-tested without the Workers runtime.
+export function sanitizeRequest(body: unknown): SanitizeResult {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return { ok: false, status: 400, error: "body must be a JSON object" };
+  }
+  const b = body as Record<string, unknown>;
+  if (typeof b.model !== "string" || !ALLOWED_MODELS.has(b.model)) {
+    return { ok: false, status: 400, error: "model not allowed" };
+  }
+  if (typeof b.max_tokens !== "number" || !Number.isFinite(b.max_tokens) || b.max_tokens < 1) {
+    return { ok: false, status: 400, error: "max_tokens required" };
+  }
+  // Clamp rather than reject so a slightly-high value never breaks the app.
+  b.max_tokens = Math.min(Math.floor(b.max_tokens), MAX_OUTPUT_TOKENS);
+  return { ok: true, body: b };
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
 
-    if (env.APP_TOKEN && request.headers.get("x-app-token") !== env.APP_TOKEN) {
+    if (env.APP_TOKEN && !safeEqual(request.headers.get("x-app-token") ?? "", env.APP_TOKEN)) {
       return json({ error: "unauthorized" }, 401);
     }
 
-    let body: unknown;
+    const declaredLen = Number(request.headers.get("content-length") ?? "0");
+    if (Number.isFinite(declaredLen) && declaredLen > MAX_BODY_BYTES) {
+      return json({ error: "request too large" }, 413);
+    }
+
+    let raw: unknown;
     try {
-      body = await request.json();
+      raw = await request.json();
     } catch {
       return json({ error: "invalid JSON" }, 400);
     }
 
-    // Forward verbatim to Anthropic. We inject only the key + version; we never inspect,
-    // rewrite, persist, or log the body.
+    const check = sanitizeRequest(raw);
+    if (!check.ok) return json({ error: check.error }, check.status);
+
+    // Forward to Anthropic. We inject only the key + version; we never persist or log the
+    // body, and we only mutated max_tokens (clamped) above.
     const upstream = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -44,7 +94,7 @@ export default {
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(check.body),
     });
 
     // Stream the (possibly SSE) response straight through, unbuffered.

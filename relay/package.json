@@ -5,10 +5,12 @@
   "description": "Stateless pass-through relay to the Anthropic API for Sampatti.",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250101.0",
+    "vitest": "^2.1.9",
     "wrangler": "^4.98.0"
   }
 }
