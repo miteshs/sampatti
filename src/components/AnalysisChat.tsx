@@ -3,7 +3,7 @@ import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { inr } from "../domain/format";
 import { analysisReady } from "../domain/types";
-import { ANALYSIS_MODEL, streamClaude, type Msg } from "../claude/transport";
+import { streamClaude, type Msg } from "../claude/transport";
 import { chatMessages, initialMessages, systemPrompt } from "../claude/prompts";
 import { Markdown } from "./Markdown";
 
@@ -30,7 +30,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
     abortRef.current = ctrl;
     try {
       await streamClaude(
-        { model: ANALYSIS_MODEL, system, max_tokens: 4000, messages },
+        { model: portfolio.settings.analysisModel, system, max_tokens: 4000, messages },
         (delta) => setTurns((t) => {
           const copy = [...t];
           copy[copy.length - 1] = { role: "assistant", text: copy[copy.length - 1].text + delta };

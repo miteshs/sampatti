@@ -94,6 +94,7 @@ export interface Settings {
   // The BYO key itself is NOT stored here — it lives in the OS keychain (desktop)
   // or sessionStorage (web fallback). This flag only records whether one is set.
   byoKeySet: boolean;
+  analysisModel: string; // which Claude model writes the analysis (cost vs. quality)
 }
 
 export interface Portfolio {
@@ -120,6 +121,7 @@ export function emptyPortfolio(): Portfolio {
       relayUrl: "", // set on the Privacy screen (deploy relay/) — or switch to your own key
       usdInr: 83,
       byoKeySet: false,
+      analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku on Privacy
     },
     updatedAt: new Date().toISOString(),
   };

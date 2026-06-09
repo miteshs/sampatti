@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
 import { clearByoKey, hasByoKey, setByoKey, storageLocation, isTauri } from "../platform";
+import { ANALYSIS_MODELS } from "../claude/transport";
 
 export function Privacy() {
   const { portfolio, updateSettings, wipe } = useStore();
@@ -101,6 +102,36 @@ export function Privacy() {
 
       <div className="card">
         <h3 style={{ fontSize: "1.05rem", marginBottom: "0.8rem" }}>Settings</h3>
+
+        <label>Analysis model</label>
+        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.6rem" }}>
+          Which Claude writes your analysis. Output length drives cost, so a lighter model is the
+          simplest way to cut spend. Costs are rough, per analysis, on your own key.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "1.25rem" }}>
+          {ANALYSIS_MODELS.map((m) => {
+            const active = s.analysisModel === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => updateSettings({ analysisModel: m.id })}
+                style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem",
+                  textAlign: "left", padding: "0.6rem 0.8rem", borderRadius: 10, cursor: "pointer",
+                  border: active ? "1.5px solid var(--primary)" : "1px solid var(--line-2)",
+                  background: active ? "var(--primary-soft)" : "var(--surface, #fff)",
+                }}
+              >
+                <span>
+                  <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>{m.label}</span>
+                  <span className="muted" style={{ display: "block", fontSize: "0.74rem", marginTop: "0.1rem" }}>{m.hint}</span>
+                </span>
+                {active && <span style={{ color: "var(--primary)", fontWeight: 700 }}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+
         <div style={{ maxWidth: 220 }}>
           <label>USD → INR rate (for US holdings)</label>
           <input type="number" value={s.usdInr} onChange={(e) => updateSettings({ usdInr: Number(e.target.value) || s.usdInr })} />

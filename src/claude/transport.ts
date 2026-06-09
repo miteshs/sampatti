@@ -6,11 +6,18 @@
 import { isTauri, webByoKey } from "../platform";
 import { useStore } from "../storage/store";
 
-export const ANALYSIS_MODEL = "claude-opus-4-8";
 export const EXTRACT_MODEL = "claude-sonnet-4-6";
 
+// User-selectable analysis model (cost vs. quality). Approx cost is for one analysis;
+// output tokens dominate, so the model choice is the real cost lever.
+export const ANALYSIS_MODELS = [
+  { id: "claude-opus-4-8", label: "Opus 4.8", hint: "Best quality (esp. India tax) · ~$0.10/analysis" },
+  { id: "claude-sonnet-4-6", label: "Sonnet 4.6", hint: "Balanced — recommended · ~$0.06" },
+  { id: "claude-haiku-4-5", label: "Haiku 4.5", hint: "Cheapest, lighter reasoning · ~$0.02" },
+] as const;
+
 export type Block =
-  | { type: "text"; text: string }
+  | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }
   | { type: "image"; source: { type: "base64"; media_type: string; data: string } };
 
 export interface Msg {

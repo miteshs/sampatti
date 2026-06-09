@@ -150,7 +150,7 @@ export function demoPortfolio(): Portfolio {
     income,
     settings: {
       country: "India", baseCurrency: "INR", claudeMode: "relay",
-      relayUrl: "", usdInr: 83, byoKeySet: false,
+      relayUrl: "", usdInr: 83, byoKeySet: false, analysisModel: "claude-sonnet-4-6",
     },
     updatedAt: new Date().toISOString(),
   };

@@ -2,7 +2,7 @@
 // India is the v1 default. We send the deterministic Brief (compact JSON), never raw files.
 
 import type { Brief } from "../domain/brief";
-import type { Msg } from "./transport";
+import type { Block, Msg } from "./transport";
 
 export function systemPrompt(country: string): string {
   if (country === "India") {
@@ -41,22 +41,31 @@ export function systemPrompt(country: string): string {
   ].join("\n");
 }
 
-const briefBlock = (brief: Brief) =>
+const briefText = (brief: Brief) =>
   "PORTFOLIO BRIEF (deterministic, computed on the client's device):\n```json\n" +
   JSON.stringify(brief, null, 2) +
   "\n```";
+
+// First user turn = the brief (large, stable, repeated every turn) marked
+// cache_control:ephemeral, then the per-call instruction. Caching the brief +
+// system prefix makes follow-up questions ~90% cheaper on input.
+function briefContent(brief: Brief, trailer: string): Block[] {
+  return [
+    { type: "text", text: briefText(brief), cache_control: { type: "ephemeral" } },
+    { type: "text", text: trailer },
+  ];
+}
 
 // The opening request that produces the structured written analysis.
 export function initialMessages(brief: Brief): Msg[] {
   return [
     {
       role: "user",
-      content:
-        briefBlock(brief) +
-        "\n\nWrite the full portfolio analysis now. Use clear markdown headings for each of " +
+      content: briefContent(brief,
+        "Write the full portfolio analysis now. Use clear markdown headings for each of " +
         "the areas in your brief (Concentration, Diversification, Tax, Liquidity, Retirement " +
         "& Income), keep it tight and specific to these numbers, and finish with a numbered " +
-        "'Priority actions' list.",
+        "'Priority actions' list."),
     },
   ];
 }
@@ -64,7 +73,7 @@ export function initialMessages(brief: Brief): Msg[] {
 // A follow-up turn: keep the brief in context (first message), then prior turns + the new q.
 export function chatMessages(brief: Brief, history: Msg[], question: string): Msg[] {
   return [
-    { role: "user", content: briefBlock(brief) + "\n\nI'll ask follow-up questions about this portfolio. Acknowledge briefly." },
+    { role: "user", content: briefContent(brief, "I'll ask follow-up questions about this portfolio. Acknowledge briefly.") },
     { role: "assistant", content: "Understood — I have your portfolio brief in front of me. Ask away." },
     ...history,
     { role: "user", content: question },
