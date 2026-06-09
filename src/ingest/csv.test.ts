@@ -87,3 +87,34 @@ describe("parseCsv (Fidelity US brokerage export)", () => {
     expect(drafts[0].holdings).toHaveLength(3); // AAPL, SPAXX, VTI — no disclaimer junk
   });
 });
+
+// A single-account Indian broker export (Zerodha-style): no account column, punctuated
+// headers (Qty., Cur. val), lakh-grouped values.
+const ZERODHA_CSV = `Instrument,Qty.,Avg. cost,LTP,Cur. val,P&L
+RELIANCE,100,2100,3000,"3,00,000",90000
+INFY,50,1200,1600,"80,000",20000`;
+
+describe("parseCsv (broker export with no account column)", () => {
+  const drafts = parseCsv(ZERODHA_CSV, "Zerodha_Holdings.csv");
+
+  it("falls back to a filename-derived account and parses the holdings", () => {
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].account.name).toBe("Zerodha Holdings");
+    expect(drafts[0].holdings.map((h) => h.name)).toEqual(["RELIANCE", "INFY"]);
+  });
+
+  it("maps punctuated headers Qty./Cur. val and lakh-grouped values", () => {
+    const rel = drafts[0].holdings[0];
+    expect(rel.units).toBe(100);
+    expect(rel.marketValue).toBe(300000);
+    expect(rel.assetClass).toBe("indian_equity"); // inferred: ticker + units, non-US
+  });
+});
+
+describe("parseCsv (unrecognizable layout → nothing parses, so the UI can offer Claude)", () => {
+  it("returns no holdings when no value/name columns are found", () => {
+    const junk = `Foo,Bar,Baz\nhello,world,123\nlorem,ipsum,456`;
+    const drafts = parseCsv(junk, "weird.csv");
+    expect(drafts.reduce((n, d) => n + d.holdings.length, 0)).toBe(0);
+  });
+});

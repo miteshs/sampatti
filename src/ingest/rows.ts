@@ -23,11 +23,13 @@ export function num(s: unknown): number | undefined {
   return Number.isFinite(v) ? v : undefined;
 }
 
-// Lowercase + trim header keys so "Market Value", "market_value", "MARKET VALUE" all match.
+// Normalize header keys so "Market Value", "market_value", "MARKET VALUE", "Cur. val",
+// and "Qty." all collapse to comparable snake_case keys (punctuation → underscore).
 function lower(row: Row): Lowered {
   const out: Lowered = {};
   for (const [k, v] of Object.entries(row)) {
-    out[String(k ?? "").trim().toLowerCase().replace(/\s+/g, "_")] = String(v ?? "").trim();
+    const key = String(k ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    if (key) out[key] = String(v ?? "").trim();
   }
   return out;
 }
@@ -39,11 +41,18 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
   const warnings: string[] = [];
   let skipped = 0;
 
+  // If the file has NO account column at all (many single-account broker exports), fall back
+  // to a name derived from the filename. If it HAS an account column, a blank in a row is an
+  // orphan and gets skipped as before.
+  const firstKeys = rawRows.length ? lower(rawRows[0]) : {};
+  const hasAccountCol = ["account", "account_name", "account_number", "folio"].some((k) => k in firstKeys);
+  const fallbackAccount = (source || "Imported account").replace(/\.[a-z0-9]+$/i, "").replace(/[_\-]+/g, " ").trim() || "Imported account";
+
   for (const raw of rawRows) {
     const r = lower(raw);
-    const accountName = r.account || r.account_name || r.account_number;
-    const name = r.name || r.description || r.security || r.symbol;
-    const mv = num(r.market_value ?? r.value ?? r.amount ?? r.current_value);
+    const accountName = r.account || r.account_name || r.account_number || r.folio || (hasAccountCol ? "" : fallbackAccount);
+    const name = r.name || r.description || r.security || r.instrument || r.scheme_name || r.scheme || r.stock || r.symbol;
+    const mv = num(r.market_value ?? r.value ?? r.amount ?? r.current_value ?? r.cur_val ?? r.closing_value ?? r.market_val);
     if (!accountName || !name || mv === undefined || mv === 0) {
       skipped += 1;
       continue;
@@ -76,15 +85,16 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
     let assetClass: AssetClass;
     if (r.asset_class) assetClass = normAssetClass(r.asset_class)[0];
     else if (looksUS) assetClass = CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity";
-    else assetClass = normAssetClass(r.asset_class)[0];
+    else if ((r.instrument || r.symbol) && num(r.units ?? r.quantity ?? r.qty ?? r.shares)) assetClass = "indian_equity";
+    else assetClass = "other";
 
     draft.holdings.push({
       symbol: (r.symbol || r.isin || "").toUpperCase() || undefined,
       name,
       assetClass,
-      units: num(r.units ?? r.quantity ?? r.shares),
+      units: num(r.units ?? r.quantity ?? r.qty ?? r.shares),
       marketValue: mv,
-      costBasis: num(r.cost_basis ?? r.cost_basis_total),
+      costBasis: num(r.cost_basis ?? r.cost_basis_total ?? r.invested ?? r.amount_invested),
       buyDate: r.buy_date || undefined,
       currency: (r.currency || draft.account.currency).toUpperCase(),
     });

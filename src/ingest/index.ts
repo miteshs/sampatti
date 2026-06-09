@@ -5,12 +5,23 @@
 
 import type { ImportDraft } from "../domain/types";
 import { parseCsv } from "./csv";
-import { parseXlsx } from "./xlsx";
+import { parseXlsx, xlsxToCsv } from "./xlsx";
 import { extractFromImage, extractFromText } from "./aiExtract";
 
 // pdf.js (~the largest dependency) is loaded lazily on first PDF import so it stays out of
 // the initial bundle — most sessions never open a PDF.
 const loadPdf = () => import("./pdf").then((m) => m.pdfToText);
+
+// Thrown when a CSV/Excel file can't be parsed locally with confidence (unrecognized
+// columns or a parse error). Carries the file so the UI can offer to re-parse with Claude.
+export class NeedsClaudeError extends Error {
+  constructor(public readonly file: File, message: string) {
+    super(message);
+    this.name = "NeedsClaudeError";
+  }
+}
+
+const countHoldings = (drafts: ImportDraft[]) => drafts.reduce((n, d) => n + d.holdings.length, 0);
 
 const IMG_MIME: Record<string, string> = {
   png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif",
@@ -53,8 +64,20 @@ async function fileBase64(f: File): Promise<string> {
 export async function ingestFile(file: File): Promise<ImportDraft[]> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 
-  if (ext === "csv") return parseCsv(await fileText(file), file.name);
-  if (ext === "xlsx" || ext === "xls") return [...parseXlsx(await fileBuf(file), file.name)];
+  if (ext === "csv") {
+    const text = await fileText(file);
+    let drafts: ImportDraft[] = [];
+    try { drafts = parseCsv(text, file.name); } catch { /* unreadable — offer Claude below */ }
+    if (countHoldings(drafts) === 0) throw new NeedsClaudeError(file, "Couldn't recognize this CSV's columns automatically.");
+    return drafts;
+  }
+  if (ext === "xlsx" || ext === "xls") {
+    const buf = await fileBuf(file);
+    let drafts: ImportDraft[] = [];
+    try { drafts = [...parseXlsx(buf, file.name)]; } catch { /* unreadable — offer Claude below */ }
+    if (countHoldings(drafts) === 0) throw new NeedsClaudeError(file, "Couldn't recognize this spreadsheet's columns automatically.");
+    return drafts;
+  }
 
   if (ext === "pdf") {
     const pdfToText = await loadPdf();
@@ -74,4 +97,24 @@ export async function ingestFile(file: File): Promise<ImportDraft[]> {
 
   // Unknown extension: try CSV as a last resort.
   return parseCsv(await fileText(file), file.name);
+}
+
+// The opt-in fallback: send a file to Claude to extract holdings. Used when local CSV/Excel
+// parsing came up empty, or for PDFs/images. The user always triggers this explicitly.
+export async function ingestWithClaude(file: File): Promise<ImportDraft[]> {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext in IMG_MIME) {
+    return [await extractFromImage(IMG_MIME[ext], await fileBase64(file), file.name)];
+  }
+  let text: string;
+  if (ext === "pdf") {
+    const pdfToText = await loadPdf();
+    text = await pdfToText(await fileBuf(file));
+  } else if (ext === "xlsx" || ext === "xls") {
+    text = xlsxToCsv(await fileBuf(file));
+  } else {
+    text = await fileText(file);
+  }
+  if (!text.trim()) throw new Error("This file appears to be empty.");
+  return [await extractFromText(text, file.name)];
 }

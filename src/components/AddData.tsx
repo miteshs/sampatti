@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { demoPortfolio } from "../demo";
-import { classifyFile, ingestFile, isImportable } from "../ingest";
+import { classifyFile, ingestFile, ingestWithClaude, isImportable, NeedsClaudeError } from "../ingest";
 import { inr } from "../domain/format";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
@@ -30,6 +30,8 @@ export function AddData() {
   const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
   const [skipped, setSkipped] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
+  const [needsClaude, setNeedsClaude] = useState<{ file: File; reason: string }[]>([]);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
@@ -64,6 +66,7 @@ export function AddData() {
   // Selection from either picker (one file, many files, or a whole folder tree).
   const onPick = (list: FileList | null) => {
     setErrors([]);
+    setNeedsClaude([]);
     setSkipped(0);
     const all = list ? Array.from(list) : [];
     if (all.length === 0) return;
@@ -90,11 +93,30 @@ export function AddData() {
         const result = await ingestFile(f);
         setDrafts((d) => [...d, ...result]);
       } catch (e) {
-        errs.push(`${f.name}: ${e instanceof Error ? e.message : String(e)}`);
+        // Unrecognized CSV/Excel → offer Claude rather than just failing.
+        if (e instanceof NeedsClaudeError) {
+          setNeedsClaude((n) => [...n, { file: e.file, reason: e.message }]);
+        } else {
+          errs.push(`${f.name}: ${e instanceof Error ? e.message : String(e)}`);
+        }
       }
     }
     setBusy(null);
     setErrors(errs);
+  };
+
+  // Opt-in fallback for a file local parsing couldn't read — sends it to Claude.
+  const parseWithClaude = async (file: File) => {
+    setAiBusy(file.name);
+    try {
+      const result = await ingestWithClaude(file);
+      setDrafts((d) => [...d, ...result]);
+      setNeedsClaude((n) => n.filter((x) => x.file !== file));
+    } catch (e) {
+      setErrors((er) => [...er, `${file.name} (Claude): ${e instanceof Error ? e.message : String(e)}`]);
+    } finally {
+      setAiBusy(null);
+    }
   };
 
   const downloadTemplate = () => {
@@ -129,7 +151,8 @@ export function AddData() {
         <p className="muted" style={{ fontSize: "0.78rem", marginTop: "0.7rem" }}>
           Pick several files or a whole folder of statements at once. CSV and Excel are parsed
           entirely on this device; PDFs and screenshots are read with Claude (you'll confirm the
-          batch first), because messy statements need AI to structure. Unsupported files are skipped.
+          batch first). If a CSV/Excel layout can't be read automatically, you'll be offered the
+          option to parse it with Claude. Unsupported files are skipped.
         </p>
         {busy && <div style={{ marginTop: "0.7rem" }}><span className="spinner" /> <span className="muted">{busy}</span></div>}
         {!busy && skipped > 0 && !pendingBatch && (
@@ -156,6 +179,23 @@ export function AddData() {
           </div>
         )}
       </div>
+
+      {/* Files local parsing couldn't read — offer Claude, per file */}
+      {needsClaude.map(({ file, reason }, i) => (
+        <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "linear-gradient(135deg,#fff8ec,#fff)" }}>
+          <h3 style={{ fontSize: "0.98rem" }}>Couldn't auto-read {file.name}</h3>
+          <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
+            {reason} Send it to Claude {portfolio.settings.claudeMode === "byo" ? "with your own key" : "via the relay"} to
+            extract the holdings — you'll review the result before saving — or skip it.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <button className="btn btn-primary" disabled={aiBusy === file.name} onClick={() => void parseWithClaude(file)}>
+              {aiBusy === file.name ? <span className="spinner" /> : "✨ Parse with Claude"}
+            </button>
+            <button className="btn btn-ghost" onClick={() => setNeedsClaude((n) => n.filter((x) => x.file !== file))}>Skip</button>
+          </div>
+        </div>
+      ))}
 
       {/* Confirm the batch before any document is sent to Claude */}
       {pendingBatch && (() => {
