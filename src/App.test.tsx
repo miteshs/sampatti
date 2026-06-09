@@ -34,15 +34,16 @@ describe("App integration (demo flow)", () => {
     expect(screen.getAllByText(/Tax-free \(EEE\)/i).length).toBeGreaterThan(0);
   });
 
-  it("opens the per-account editor without looping/blanking, and edits write through", async () => {
+  it("opens the per-account editor (Manage tab) without looping/blanking, and edits write through", async () => {
     render(<App />);
     fireEvent.click(await screen.findByText(/Load demo portfolio/i));
-    fireEvent.click(screen.getByRole("button", { name: "Overview" }));
-    await screen.findByText("Net worth");
+    fireEvent.click(screen.getByRole("button", { name: "Manage" }));
+    // Account editing lives on the Manage tab now.
+    const editBtn = await screen.findAllByTitle("Edit account & holdings");
 
     // Clicking ✎ used to mount AccountEditor with a selector that returned a fresh array each
     // render → useSyncExternalStore infinite loop → blank screen. This must just open.
-    fireEvent.click(screen.getAllByTitle("Edit account & holdings")[0]);
+    fireEvent.click(editBtn[0]);
     expect(await screen.findByText("Edit account")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Done" })).toBeTruthy();
 

@@ -3,13 +3,11 @@ import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { buildSegments, keyFor, DIMENSIONS, type Dimension } from "../domain/group";
 import { holdingBase, inr, pct } from "../domain/format";
-import { ASSET_CLASS_LABEL, ACCOUNT_TYPE_LABEL } from "../domain/classify";
+import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
-import { AccountEditor } from "./AccountEditor";
 import { NetWorthTrend } from "./NetWorthTrend";
 import { RefreshPrices } from "./RefreshPrices";
-import { ManualEdits } from "./ManualEdits";
 import { freshness, FRESH_BADGE } from "./ui";
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
@@ -31,16 +29,12 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
 
 export function Overview() {
   const portfolio = useStore((s) => s.portfolio);
-  const updateAccount = useStore((s) => s.updateAccount);
-  const removeAccount = useStore((s) => s.removeAccount);
   const [by, setBy] = useState<Dimension>("asset_class");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const usdInr = portfolio.settings.usdInr;
 
   // Everything the dashboard shows runs on the *visible* portfolio (excluded accounts
-  // dropped), so the include/exclude toggle affects totals, allocation, and the table.
+  // dropped), so the include/exclude toggle on Manage affects totals, allocation, the table.
   const view = useMemo(() => visiblePortfolio(portfolio), [portfolio]);
 
   const brief = useMemo(() => buildBrief(view), [view]);
@@ -49,27 +43,7 @@ export function Overview() {
     [view, by, usdInr],
   );
 
-  // Per-account totals from the *raw* portfolio so the management list shows a value even
-  // for excluded accounts.
-  const acctTotals = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const h of portfolio.holdings) m.set(h.accountId, (m.get(h.accountId) ?? 0) + holdingBase(h, usdInr));
-    return m;
-  }, [portfolio.holdings, usdInr]);
-
   const acctById = useMemo(() => new Map(view.accounts.map((a) => [a.id, a])), [view.accounts]);
-
-  // Accounts that carry any manual edit (account-level, or a still-present holding's edit),
-  // so the management list can flag them.
-  const editedAccountIds = useMemo(() => {
-    const ids = new Set<string>();
-    const holdAcct = new Map(portfolio.holdings.map((h) => [h.id, h.accountId]));
-    for (const e of portfolio.edits) {
-      if (e.entity === "account") ids.add(e.entityId);
-      else { const aid = holdAcct.get(e.entityId); if (aid) ids.add(aid); }
-    }
-    return ids;
-  }, [portfolio.edits, portfolio.holdings]);
 
   // Holdings grouped by the active dimension (same keys the donut uses), so each segment
   // row can expand to reveal the holdings inside it.
@@ -122,57 +96,12 @@ export function Overview() {
         <StatCard label="Annual income" value={inr(brief.income.annualTotal)} sub={brief.income.netWorthYears ? `net worth ≈ ${brief.income.netWorthYears}× income` : undefined} />
       </div>
 
-      {/* Net worth over time — reconstructed from market history, honors the account selection below */}
+      {/* Net worth over time — reconstructed from market history, honors the account selection (Manage tab) */}
       <NetWorthTrend />
-
-      {/* Accounts — include/exclude from the view & analysis, or remove entirely */}
-      <div className="card">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-          <div>
-            <div className="eyebrow">Accounts</div>
-            <h2 style={{ fontSize: "1.05rem", marginTop: "0.15rem" }}>Include or remove accounts</h2>
-          </div>
-          <span className="muted" style={{ fontSize: "0.78rem", maxWidth: 280, textAlign: "right" }}>
-            Unchecked accounts are left out of net worth, allocations &amp; AI analysis.
-          </span>
-        </div>
-        <div style={{ marginTop: "0.5rem" }}>
-          {portfolio.accounts.map((a) => {
-            const excluded = !!a.excluded;
-            const editing = editingId === a.id;
-            return (
-              <div key={a.id}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
-                  <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} style={{ flexShrink: 0, cursor: "pointer" }} />
-                  <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
-                    <span style={{ fontWeight: 600 }}>{a.name}</span>
-                    {editedAccountIds.has(a.id) && <span className="badge badge-amber" style={{ marginLeft: "0.4rem", fontSize: "0.66rem" }} title="Has manual edits">✎ edited</span>}
-                    <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
-                  </div>
-                  <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
-                  <button className={`btn btn-ghost ${editing ? "active" : ""}`} style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Edit account & holdings"
-                    onClick={() => setEditingId(editing ? null : a.id)}>✎</button>
-                  {confirmRemove === a.id ? (
-                    <span style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
-                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
-                      <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
-                    </span>
-                  ) : (
-                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Remove account" onClick={() => setConfirmRemove(a.id)}>✕</button>
-                  )}
-                </div>
-                {editing && <AccountEditor accountId={a.id} onClose={() => setEditingId(null)} />}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <ManualEdits />
 
       {view.holdings.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
-          <span className="muted">All accounts are excluded — re-include one above to see allocations and holdings.</span>
+          <span className="muted">All accounts are excluded — re-include one on the <strong>Manage</strong> tab to see allocations and holdings.</span>
         </div>
       ) : (<>
       <div className="card">
