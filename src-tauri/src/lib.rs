@@ -106,6 +106,36 @@ async fn claude_stream(
     Ok(())
 }
 
+// Public market-data fetch (live & historical prices) from an allow-listed set of hosts.
+// Made from Rust so it isn't blocked by the webview's CORS/CSP. Only a ticker/ISIN/scheme
+// code is ever sent — never the user's holdings. Returns the raw body for the JS to parse.
+#[tauri::command]
+async fn market_fetch(url: String) -> Result<String, String> {
+    const ALLOWED: [&str; 4] = [
+        "query1.finance.yahoo.com",
+        "query2.finance.yahoo.com",
+        "www.amfiindia.com",
+        "api.mfapi.in",
+    ];
+    let host = reqwest::Url::parse(&url)
+        .map_err(|e| e.to_string())?
+        .host_str()
+        .unwrap_or("")
+        .to_string();
+    if !ALLOWED.contains(&host.as_str()) {
+        return Err(format!("host not allowed: {host}"));
+    }
+    let client = reqwest::Client::builder()
+        .user_agent("Mozilla/5.0 (Macintosh) Sampatti")
+        .build()
+        .map_err(|e| e.to_string())?;
+    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    if !resp.status().is_success() {
+        return Err(format!("{host} returned {}", resp.status()));
+    }
+    resp.text().await.map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -115,7 +145,8 @@ pub fn run() {
             set_api_key,
             has_api_key,
             clear_api_key,
-            claude_stream
+            claude_stream,
+            market_fetch
         ])
         .run(tauri::generate_context!())
         .expect("error while running Sampatti");

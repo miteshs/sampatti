@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.anthropic.com https://sampatti-relay.sampatti.workers.dev https://open.er-api.com https://api.gold-api.com"
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.anthropic.com https://sampatti-relay.sampatti.workers.dev https://open.er-api.com https://api.gold-api.com https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://www.amfiindia.com https://api.mfapi.in"
     }
   },
   "bundle": {

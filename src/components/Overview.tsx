@@ -7,6 +7,7 @@ import { ASSET_CLASS_LABEL, ACCOUNT_TYPE_LABEL } from "../domain/classify";
 import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
 import { AccountEditor } from "./AccountEditor";
+import { NetWorthTrend } from "./NetWorthTrend";
 import { freshness, FRESH_BADGE } from "./ui";
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
@@ -106,6 +107,9 @@ export function Overview() {
         <StatCard label="Largest single stock" value={`${brief.concentration.largestPctOfLiquid}%`} sub="of liquid assets" />
         <StatCard label="Annual income" value={inr(brief.income.annualTotal)} sub={brief.income.netWorthYears ? `net worth ≈ ${brief.income.netWorthYears}× income` : undefined} />
       </div>
+
+      {/* Net worth over time — reconstructed from market history, honors the account selection below */}
+      <NetWorthTrend />
 
       {/* Accounts — include/exclude from the view & analysis, or remove entirely */}
       <div className="card">
