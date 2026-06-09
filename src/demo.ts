@@ -150,7 +150,7 @@ export function demoPortfolio(): Portfolio {
     income,
     settings: {
       country: "India", baseCurrency: "INR", claudeMode: "relay",
-      relayUrl: "https://sampatti-relay.example.workers.dev", usdInr: 83, byoKeySet: false,
+      relayUrl: "", usdInr: 83, byoKeySet: false,
     },
     updatedAt: new Date().toISOString(),
   };

@@ -3,12 +3,11 @@ dist/
 dist-ssr/
 *.local
 .DS_Store
+*.tsbuildinfo
 
 # Rust / Tauri build artifacts
 src-tauri/target/
 src-tauri/gen/
 
-# Generated app icons (run `npm run tauri icon <png>` to recreate)
-src-tauri/icons/*.png
-src-tauri/icons/*.icns
-src-tauri/icons/*.ico
+# App icons ARE committed (so the desktop app builds out of the box).
+# Regenerate them from a source PNG with: npm run tauri icon <png>

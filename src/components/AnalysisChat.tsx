@@ -2,13 +2,14 @@ import { useMemo, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { inr } from "../domain/format";
+import { analysisReady } from "../domain/types";
 import { ANALYSIS_MODEL, streamClaude, type Msg } from "../claude/transport";
 import { chatMessages, initialMessages, systemPrompt } from "../claude/prompts";
 import { Markdown } from "./Markdown";
 
 interface Turn { role: "assistant" | "user"; text: string }
 
-export function AnalysisChat() {
+export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const portfolio = useStore((s) => s.portfolio);
   const brief = useMemo(() => buildBrief(portfolio), [portfolio]);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -16,8 +17,10 @@ export function AnalysisChat() {
   const [started, setStarted] = useState(false);
   const [question, setQuestion] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showBrief, setShowBrief] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const system = systemPrompt(portfolio.settings.country);
+  const ready = analysisReady(portfolio.settings);
 
   const run = async (messages: Msg[], seedTurns: Turn[]) => {
     setError(null);
@@ -76,9 +79,20 @@ export function AnalysisChat() {
               Concentration, diversification, India-specific tax planning, liquidity, and a
               retirement & income read — grounded in your actual numbers. Then ask anything.
             </p>
-            <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.5rem" }} onClick={start}>
-              ✨ Analyze my portfolio
-            </button>
+            {ready ? (
+              <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.5rem" }} onClick={start}>
+                ✨ Analyze my portfolio
+              </button>
+            ) : (
+              <div style={{ maxWidth: 460, margin: "0 auto", background: "var(--primary-soft)", border: "1px solid #e0e0ff", borderRadius: 12, padding: "1rem 1.1rem" }}>
+                <div style={{ fontWeight: 700, fontSize: "0.92rem", marginBottom: "0.3rem" }}>One quick step to enable AI analysis</div>
+                <p className="muted" style={{ fontSize: "0.82rem", margin: "0 0 0.8rem" }}>
+                  Connect Claude on the Privacy screen — add <strong>your own Anthropic key</strong> (most
+                  private; it stays on this device) or a <strong>relay URL</strong>. Nothing runs until you do.
+                </p>
+                <button className="btn btn-primary" onClick={() => onConfigure?.()}>Open Privacy &amp; connect →</button>
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -136,6 +150,22 @@ export function AnalysisChat() {
             </div>
           ))}
         </div>
+        <p className="muted" style={{ fontSize: "0.68rem", marginTop: "0.7rem", lineHeight: 1.5 }}>
+          The brief includes your top holdings’ <strong>names + account labels</strong> (so it can flag
+          concentration). Your raw files, unit counts and buy dates are not sent.
+        </p>
+        <button className="btn btn-ghost" style={{ width: "100%", marginTop: "0.4rem", fontSize: "0.76rem" }} onClick={() => setShowBrief((v) => !v)}>
+          {showBrief ? "Hide" : "🔍 Preview the exact JSON sent"}
+        </button>
+        {showBrief && (
+          <pre style={{
+            marginTop: "0.5rem", maxHeight: 300, overflow: "auto", background: "#0f172a", color: "#cbd5e1",
+            fontSize: "0.66rem", lineHeight: 1.45, padding: "0.65rem", borderRadius: 8,
+            whiteSpace: "pre-wrap", wordBreak: "break-word",
+          }}>
+            {JSON.stringify(brief, null, 2)}
+          </pre>
+        )}
       </div>
     </div>
   );

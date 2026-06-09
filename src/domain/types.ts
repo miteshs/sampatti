@@ -117,12 +117,19 @@ export function emptyPortfolio(): Portfolio {
       country: "India",
       baseCurrency: "INR",
       claudeMode: "relay",
-      relayUrl: "https://sampatti-relay.example.workers.dev",
+      relayUrl: "", // set on the Privacy screen (deploy relay/) — or switch to your own key
       usdInr: 83,
       byoKeySet: false,
     },
     updatedAt: new Date().toISOString(),
   };
+}
+
+// Whether AI analysis can actually reach Claude: BYO mode needs a key in place; relay
+// mode needs a real relay URL configured (a blank/placeholder URL doesn't count).
+export function analysisReady(s: Settings): boolean {
+  if (s.claudeMode === "byo") return s.byoKeySet;
+  return /^https?:\/\/\S+/.test(s.relayUrl) && !s.relayUrl.includes("example.");
 }
 
 // A draft account+holdings produced by AI extraction or a file import, shown to the

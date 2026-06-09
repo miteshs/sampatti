@@ -37,10 +37,12 @@ export function Privacy() {
           body={<>Your accounts, holdings and income are saved to <code>{location}</code>. There is no
             account and no cloud database — nothing is uploaded for storage.</>} />
         <Flow icon="📤" title="What leaves the device — and only this"
-          body={<>For analysis, a compact <strong>portfolio brief</strong> (totals and percentages,
-            not your raw files) and your chat questions are sent to Claude. For PDFs and screenshots,
-            the <strong>document you choose</strong> is sent to Claude to extract holdings — always
-            after you confirm. CSV and Excel files are parsed here and never sent.</>} />
+          body={<>For analysis, a compact <strong>portfolio brief</strong> — totals, percentages, and your
+            top holdings’ names + account labels, <strong>not your raw files</strong> — plus your chat
+            questions are sent to Claude. (On the AI Analysis screen you can preview the exact JSON before
+            anything is sent.) For PDFs and screenshots, the <strong>document you choose</strong> is sent to
+            Claude to extract holdings — always after you confirm. CSV and Excel files are parsed here and
+            never sent.</>} />
         <Flow icon="🛡️" title="What we never see"
           body={<>In relay mode the brief passes through the relay to Anthropic and is <strong>not
             stored or logged</strong>. In your-own-key mode it goes straight from your device to
@@ -67,9 +69,11 @@ export function Privacy() {
         {s.claudeMode === "relay" ? (
           <div>
             <label>Relay URL</label>
-            <input value={s.relayUrl} onChange={(e) => updateSettings({ relayUrl: e.target.value })} />
+            <input placeholder="https://your-relay.workers.dev" value={s.relayUrl} onChange={(e) => updateSettings({ relayUrl: e.target.value })} />
             <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
               The relay holds the Anthropic key server-side and forwards your brief without storing it.
+              {!s.relayUrl && <> <strong>No relay is set yet</strong> — deploy <code>relay/</code> (see its
+                README) and paste the URL here, or switch to <em>your own key</em> for the most private setup.</>}
             </p>
           </div>
         ) : (
