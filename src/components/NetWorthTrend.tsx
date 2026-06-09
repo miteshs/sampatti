@@ -1,23 +1,35 @@
 // Net-worth-over-time card. Reconstructs PAST net worth (1M/3M/YTD/1Y) from public historical
 // prices — listed equities/ETFs & gold via Yahoo, Indian MFs via AMFI/mfapi — anchored to each
 // holding's current value, carrying untrackable assets flat. Only tickers/ISINs ever leave the
-// device. The chart honors the account include/exclude selection: the price series are fetched
-// once for the whole portfolio, then the curve is recomputed over the *visible* holdings, so
-// toggling an account reconfigures it instantly with no re-fetch.
+// device. The chart honors the account include/exclude selection: series are fetched once for
+// the whole portfolio, then the curve is recomputed over the *visible* holdings.
+//
+// The fetched series are cached to localStorage, so after the first reconstruction the chart
+// shows instantly on every later launch WITHOUT re-fetching — you only refresh when you want
+// fresher prices (↻) or when you add a new priceable holding (then it offers a refresh).
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../storage/store";
-import { visiblePortfolio, type Holding } from "../domain/types";
-import { buildResolver, type Resolver } from "../domain/market";
+import { visiblePortfolio } from "../domain/types";
+import { buildResolver, resolverFromData, coversHoldings, type Resolver, type ResolverData } from "../domain/market";
 import {
   PERIODS, periodChange, periodStart, reconstruct, sampleDates, type NetWorthPoint, type Period,
 } from "../domain/history";
 import { inr } from "../domain/format";
 
-// Cache the fetched series for the session (keyed by the portfolio's holdings) so switching
-// views or toggling accounts doesn't re-hit the network.
-let CACHE: { sig: string; resolver: Resolver } | null = null;
-const sigOf = (hs: Holding[]) => hs.map((h) => `${h.id}:${h.symbol ?? ""}:${h.assetClass}`).sort().join("|");
+const CACHE_KEY = "sampatti.nwhistory.v1";
+interface Cached { fetchedAt: string; data: ResolverData; }
+
+function readCache(): Cached | null {
+  try { const raw = localStorage.getItem(CACHE_KEY); return raw ? (JSON.parse(raw) as Cached) : null; }
+  catch { return null; }
+}
+function writeCache(data: ResolverData) {
+  // Bound storage: keep only the last ~400 points per series (covers a year of dailies).
+  const seriesByKey = Object.fromEntries(Object.entries(data.seriesByKey).map(([k, s]) => [k, s.slice(-400)]));
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: new Date().toISOString(), data: { ...data, seriesByKey } })); }
+  catch { /* quota exceeded — fine, just won't persist */ }
+}
 
 function Chart({ points }: { points: NetWorthPoint[] }) {
   const W = 720, H = 180, PAD = 6;
@@ -49,42 +61,53 @@ function Chart({ points }: { points: NetWorthPoint[] }) {
 
 export function NetWorthTrend() {
   const portfolio = useStore((s) => s.portfolio);
-  const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">(() => {
-    return CACHE && CACHE.sig === sigOf(portfolio.holdings) ? "ready" : "idle";
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<Period>("1Y");
-  const [resolver, setResolver] = useState<Resolver | null>(() =>
-    CACHE && CACHE.sig === sigOf(portfolio.holdings) ? CACHE.resolver : null,
-  );
-
   const usdInr = portfolio.settings.usdInr;
   const visible = useMemo(() => visiblePortfolio(portfolio), [portfolio]);
 
-  // Reconstruct over the VISIBLE holdings for the selected period (cheap, no network).
+  const [period, setPeriod] = useState<Period>("1Y");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [resolver, setResolver] = useState<Resolver | null>(null);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
+
+  // Load persisted series once on mount so the chart appears without re-fetching.
+  useEffect(() => {
+    const c = readCache();
+    if (c) { setResolver(resolverFromData(c.data, portfolio.holdings)); setFetchedAt(c.fetchedAt); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cache no longer covers the portfolio (a new priceable holding was added) → offer a refresh.
+  const stale = useMemo(
+    () => (resolver ? !coversHoldings(resolver.data, portfolio.holdings) : false),
+    [resolver, portfolio.holdings],
+  );
+
   const { points, change, trackedVisible } = useMemo(() => {
     if (!resolver) return { points: [] as NetWorthPoint[], change: { abs: 0, pct: null as number | null }, trackedVisible: 0 };
     const dates = sampleDates(periodStart(period));
     const pts = reconstruct(visible.holdings, visible.accounts, usdInr, resolver.resolve, dates);
-    const tv = visible.holdings.filter((h) => resolver.resolve(h)).length;
-    return { points: pts, change: periodChange(pts), trackedVisible: tv };
+    return { points: pts, change: periodChange(pts), trackedVisible: visible.holdings.filter((h) => resolver.resolve(h)).length };
   }, [resolver, visible, period, usdInr]);
 
   const load = async () => {
-    setStatus("loading");
+    setLoading(true);
     setError(null);
     try {
       const r = await buildResolver(portfolio.holdings, "1y");
-      CACHE = { sig: sigOf(portfolio.holdings), resolver: r };
+      writeCache(r.data);
       setResolver(r);
-      setStatus("ready");
+      setFetchedAt(new Date().toISOString());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setStatus("error");
+    } finally {
+      setLoading(false);
     }
   };
 
   if (portfolio.holdings.length === 0) return null;
+
+  const asOf = fetchedAt ? new Date(fetchedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
 
   return (
     <div className="card">
@@ -93,34 +116,38 @@ export function NetWorthTrend() {
           <div className="eyebrow">Net worth over time</div>
           <h2 style={{ fontSize: "1.15rem", marginTop: "0.15rem" }}>How your net worth got here</h2>
         </div>
-        {status === "ready" && (
-          <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+        {resolver && (
+          <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", alignItems: "center" }}>
             {PERIODS.map((p) => (
               <button key={p} className={`chip ${period === p ? "active" : ""}`} onClick={() => setPeriod(p)}>{p}</button>
             ))}
-            <button className="btn btn-ghost" style={{ fontSize: "0.78rem" }} onClick={load} title="Re-fetch latest prices">↻</button>
+            <button className="btn btn-ghost" style={{ fontSize: "0.78rem" }} onClick={load} disabled={loading} title="Re-fetch latest prices">
+              {loading ? <span className="spinner" /> : "↻"}
+            </button>
           </div>
         )}
       </div>
 
-      {status === "idle" && (
+      {/* First-time: no cached series yet → explain + reconstruct */}
+      {!resolver && !loading && (
         <div style={{ marginTop: "0.8rem" }}>
           <p className="muted" style={{ fontSize: "0.84rem", maxWidth: 560 }}>
             Reconstruct your net worth for the past year from public market prices. Equities, ETFs,
             mutual funds and gold are revalued historically; everything else (property, FDs, cash,
-            PMS) is held flat. Only tickers/ISINs are sent to fetch prices — never your holdings.
+            PMS) is held flat. The result is cached on this device — you won't have to do this again
+            unless you want fresher prices. Only tickers/ISINs are sent — never your holdings.
           </p>
           <button className="btn btn-primary" style={{ marginTop: "0.7rem" }} onClick={load}>📈 Reconstruct net-worth history</button>
         </div>
       )}
 
-      {status === "loading" && (
+      {!resolver && loading && (
         <div style={{ marginTop: "1rem", display: "flex", alignItems: "center", gap: "0.6rem" }}>
           <span className="spinner" /> <span className="muted">Fetching historical prices…</span>
         </div>
       )}
 
-      {status === "error" && (
+      {!resolver && error && !loading && (
         <div style={{ marginTop: "0.9rem" }}>
           <div className="badge badge-rose" style={{ padding: "0.4rem 0.7rem", display: "block" }}>
             Couldn't load price history{error ? `: ${error}` : ""}. {window.navigator.onLine ? "" : "You appear to be offline. "}
@@ -129,7 +156,7 @@ export function NetWorthTrend() {
         </div>
       )}
 
-      {status === "ready" && points.length > 0 && (
+      {resolver && points.length > 0 && (
         <div style={{ marginTop: "0.8rem" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: "0.8rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
             <div style={{ fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.02em" }}>{inr(points[points.length - 1].netWorth)}</div>
@@ -139,10 +166,19 @@ export function NetWorthTrend() {
             </div>
           </div>
           <Chart points={points} />
+          {stale && (
+            <div className="badge badge-amber" style={{ marginTop: "0.5rem", padding: "0.35rem 0.6rem", display: "inline-block" }}>
+              Holdings changed since the last refresh — ↻ to price the new ones.
+            </div>
+          )}
+          {error && (
+            <div className="badge badge-rose" style={{ marginTop: "0.5rem", padding: "0.35rem 0.6rem", display: "inline-block" }}>
+              Couldn't refresh prices{error ? `: ${error}` : ""} — showing the last cached run.
+            </div>
+          )}
           <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem" }}>
             {trackedVisible} of {visible.holdings.length} visible holding{visible.holdings.length === 1 ? "" : "s"} priced from market history;
-            the rest are held flat at today's value. A reconstruction (today's mix back-priced), not a recorded daily history.
-            {resolver && resolver.tracked === 0 && " No holdings could be priced — check that symbols/ISINs are set."}
+            the rest are held flat at today's value.{asOf ? ` Prices as of ${asOf}.` : ""} A reconstruction (today's mix back-priced), not a recorded daily history.
           </p>
         </div>
       )}

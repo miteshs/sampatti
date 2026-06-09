@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseYahoo, parseMfapi, parseAmfiIsinMap, yahooSymbolFor } from "./market";
+import {
+  parseYahoo, parseMfapi, parseAmfiIsinMap, yahooSymbolFor,
+  holdingSig, resolverFromData, coversHoldings, type ResolverData,
+} from "./market";
 import type { Holding } from "./types";
 
 const hold = (p: Partial<Holding>): Holding => ({
@@ -51,4 +54,32 @@ describe("yahooSymbolFor", () => {
   });
   it("returns null for an ISIN-only equity (no ticker)", () => expect(yahooSymbolFor(hold({ symbol: "INE002A01018", assetClass: "indian_equity" }))).toBeNull());
   it("returns null when there's no symbol", () => expect(yahooSymbolFor(hold({ symbol: "", assetClass: "us_equity" }))).toBeNull());
+});
+
+describe("persisted resolver (cache that survives restarts)", () => {
+  // Series keyed the way buildResolver stores them: holdingSig → series key → points.
+  const data: ResolverData = {
+    keyBySig: { [holdingSig(hold({ symbol: "RELIANCE", assetClass: "indian_equity" }))]: "yh:RELIANCE.NS" },
+    seriesByKey: { "yh:RELIANCE.NS": [{ t: 1, price: 100 }, { t: 2, price: 110 }] },
+  };
+
+  it("resolverFromData resolves a holding by symbol+class+currency, not by id", () => {
+    const r = resolverFromData(data, [hold({ id: "anything-else", symbol: "RELIANCE", assetClass: "indian_equity" })]);
+    expect(r.resolve(hold({ id: "x", symbol: "RELIANCE", assetClass: "indian_equity" }))?.length).toBe(2);
+    expect(r.tracked).toBe(1);
+  });
+
+  it("a re-imported holding (new id, same symbol) still hits the cache", () => {
+    const r = resolverFromData(data, []);
+    // Different id (as a re-import would produce) — still resolves via the stable signature.
+    expect(r.resolve(hold({ id: "freshly-minted", symbol: "RELIANCE", assetClass: "indian_equity" }))).not.toBeNull();
+  });
+
+  it("coversHoldings is true when every priceable holding has a series, false when a new one appears", () => {
+    expect(coversHoldings(data, [hold({ symbol: "RELIANCE", assetClass: "indian_equity" })])).toBe(true);
+    // An untrackable holding (no symbol → no series possible) doesn't invalidate the cache.
+    expect(coversHoldings(data, [hold({ symbol: "RELIANCE", assetClass: "indian_equity" }), hold({ symbol: "", assetClass: "real_estate" })])).toBe(true);
+    // A new priceable holding with no cached series does invalidate it.
+    expect(coversHoldings(data, [hold({ symbol: "TCS", assetClass: "indian_equity" })])).toBe(false);
+  });
 });

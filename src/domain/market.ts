@@ -118,10 +118,46 @@ async function runPool<T>(items: T[], n: number, fn: (x: T) => Promise<void>): P
   }));
 }
 
+// A holding's identity for price purposes — symbol + class + currency. Stable across
+// re-imports (which mint new holding ids) and used both to dedupe fetches and to look a
+// holding's series back up from a persisted cache.
+export const holdingSig = (h: Holding) => `${(h.symbol ?? "").trim().toUpperCase()}|${h.assetClass}|${(h.currency || "INR").toUpperCase()}`;
+
+// The serializable payload behind a resolver — safe to JSON.stringify into localStorage so the
+// chart survives an app restart without re-fetching.
+export interface ResolverData {
+  seriesByKey: Record<string, Series>;
+  keyBySig: Record<string, string>; // holdingSig → series key
+}
+
 export interface Resolver {
   resolve: (h: Holding) => Series | null;
   tracked: number;
   total: number;
+  data: ResolverData;
+}
+
+// Build a (pure) resolver from already-fetched series data. No network.
+export function resolverFromData(data: ResolverData, holdings: Holding[]): Resolver {
+  const resolve = (h: Holding): Series | null => {
+    const k = data.keyBySig[holdingSig(h)];
+    const s = k ? data.seriesByKey[k] : undefined;
+    return s && s.length ? s : null;
+  };
+  return { resolve, tracked: holdings.filter((h) => resolve(h)).length, total: holdings.length, data };
+}
+
+// Whether a persisted cache still covers a portfolio: every holding that COULD be priced has a
+// series in the cache (so adding a new tracked holding invalidates it, but editing values/
+// excluding accounts does not).
+export function coversHoldings(data: ResolverData, holdings: Holding[]): boolean {
+  for (const h of holdings) {
+    const sig = holdingSig(h);
+    if (data.keyBySig[sig]) continue; // already have a series for it
+    // No series cached for this holding — does it even have one to fetch?
+    if (isMfLike(h) || yahooSymbolFor(h)) return false; // a priceable holding is missing
+  }
+  return true;
 }
 
 // Fetch every price series the portfolio needs (deduped) and return a resolver. Best-effort:
@@ -129,7 +165,7 @@ export interface Resolver {
 // chart can recompute on account include/exclude without re-fetching.
 export async function buildResolver(holdings: Holding[], range = "1y"): Promise<Resolver> {
   const seriesByKey = new Map<string, Series>();
-  const keyOf = new Map<string, string>();
+  const keyBySig = new Map<string, string>();
   const tasks: { key: string; run: () => Promise<Series> }[] = [];
 
   let amfi: Map<string, string> | null = null;
@@ -149,7 +185,7 @@ export async function buildResolver(holdings: Holding[], range = "1y"): Promise<
       if (ysym) { key = `yh:${ysym}`; run = () => yahooHistory(ysym, range); }
     }
     if (key && run) {
-      keyOf.set(h.id, key);
+      keyBySig.set(holdingSig(h), key);
       if (!seriesByKey.has(key)) { seriesByKey.set(key, []); tasks.push({ key, run }); }
     }
   }
@@ -158,13 +194,8 @@ export async function buildResolver(holdings: Holding[], range = "1y"): Promise<
     try { seriesByKey.set(t.key, await t.run()); } catch { /* leave empty → flat */ }
   });
 
-  const resolve = (h: Holding): Series | null => {
-    const k = keyOf.get(h.id);
-    const s = k ? seriesByKey.get(k) : undefined;
-    return s && s.length ? s : null;
-  };
-  const tracked = holdings.filter((h) => resolve(h)).length;
-  return { resolve, tracked, total: holdings.length };
+  const data: ResolverData = { seriesByKey: Object.fromEntries(seriesByKey), keyBySig: Object.fromEntries(keyBySig) };
+  return resolverFromData(data, holdings);
 }
 
 const isGold = (h: Holding) => h.assetClass === "gold_sgb" || h.assetClass === "gold_other";
