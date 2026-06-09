@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.DS_Store
+
+# Rust / Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/
+
+# Generated app icons (run `npm run tauri icon <png>` to recreate)
+src-tauri/icons/*.png
+src-tauri/icons/*.icns
+src-tauri/icons/*.ico

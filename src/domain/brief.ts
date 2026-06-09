@@ -1,0 +1,186 @@
+// The Portfolio Brief — a compact, deterministic summary computed on-device from the
+// holdings. It is what we send to Claude (NOT the raw holdings), so the AI is grounded in
+// real numbers while the data sent stays minimal. Mirrors the computation philosophy of
+// tally/backend/app/analysis.py, reframed for India (no US tax math here — Claude reasons
+// about Indian tax from these facts).
+
+import { ASSET_CLASS_LABEL, isLiquid } from "./classify";
+import { holdingBase, pct } from "./format";
+import { buildSegments } from "./group";
+import type { Account, AssetClass, Holding, Portfolio } from "./types";
+
+export interface BriefHolding {
+  name: string;
+  assetClass: string;
+  value: number;
+  pctOfAssets: number;
+  account: string;
+}
+
+export interface Brief {
+  asOf: string;
+  baseCurrency: string;
+  netWorth: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  liquidAssets: number;
+  illiquidAssets: number;
+  liquidPct: number;
+  allocationByClass: { label: string; value: number; percent: number }[];
+  allocationByRegion: { label: string; value: number; percent: number }[];
+  allocationByTax: { label: string; value: number; percent: number }[];
+  allocationByAccountType: { label: string; value: number; percent: number }[];
+  concentration: {
+    topHoldings: BriefHolding[];
+    largestPctOfAssets: number;
+    largestPctOfLiquid: number;
+    top5PctOfLiquid: number;
+    hhi: number; // Herfindahl index over individual equity names (0–10000)
+  };
+  holdingPeriods: {
+    equityShortTerm: number; // equity-type taxable held < 1y (STCG territory)
+    equityLongTerm: number; // equity-type taxable held >= 1y
+    withBuyDate: number; // how much equity value actually had a buy date
+  };
+  taxWrappers: { taxable: number; exemptEEE: number; nps: number };
+  income: { annualTotal: number; byKind: Record<string, number>; netWorthYears: number | null };
+  staleness: { freshAccounts: number; agingAccounts: number; staleAccounts: number };
+  notes: string[];
+}
+
+const EQUITY_CLASSES = new Set<AssetClass>([
+  "indian_equity", "equity_mf", "index_etf", "elss", "us_equity",
+]);
+
+const daysBetween = (a: string, b: string) =>
+  Math.floor((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000);
+
+function alloc(holdings: Holding[], accounts: Account[], by: Parameters<typeof buildSegments>[2], usdInr: number) {
+  const { segments } = buildSegments(holdings, accounts, by, usdInr);
+  return segments.map((s) => ({ label: s.label, value: Math.round(s.value), percent: s.percent }));
+}
+
+export function buildBrief(p: Portfolio): Brief {
+  const { usdInr, baseCurrency } = p.settings;
+  const acctById = new Map(p.accounts.map((a) => [a.id, a]));
+  const today = new Date().toISOString().slice(0, 10);
+
+  let totalAssets = 0;
+  let totalLiabilities = 0;
+  let liquid = 0;
+  const byName = new Map<string, number>(); // individual equity names → value (for HHI/top)
+  const topRows: BriefHolding[] = [];
+  let eqShort = 0, eqLong = 0, eqWithDate = 0;
+  const wrappers = { taxable: 0, exemptEEE: 0, nps: 0 };
+
+  for (const h of p.holdings) {
+    const a = acctById.get(h.accountId);
+    const v = holdingBase(h, usdInr);
+    if (a?.accountType === "liability") {
+      totalLiabilities += v;
+      continue;
+    }
+    totalAssets += v;
+    if (isLiquid(h.assetClass)) liquid += v;
+
+    topRows.push({
+      name: h.name, assetClass: ASSET_CLASS_LABEL[h.assetClass] ?? h.assetClass,
+      value: Math.round(v), pctOfAssets: 0, account: a?.name ?? "—",
+    });
+
+    if (h.assetClass === "indian_equity" || h.assetClass === "us_equity") {
+      byName.set(h.name, (byName.get(h.name) ?? 0) + v);
+    }
+    if (EQUITY_CLASSES.has(h.assetClass) && a?.taxTreatment === "taxable") {
+      if (h.buyDate) {
+        eqWithDate += v;
+        if (daysBetween(h.buyDate, today) >= 365) eqLong += v;
+        else eqShort += v;
+      }
+    }
+    const tax = a?.taxTreatment ?? "taxable";
+    if (tax === "eee_exempt") wrappers.exemptEEE += v;
+    else if (tax === "nps") wrappers.nps += v;
+    else wrappers.taxable += v;
+  }
+
+  const netWorth = totalAssets - totalLiabilities;
+  const assetsDenom = totalAssets || 1;
+  const liquidDenom = liquid || 1;
+
+  // Concentration over individual equity names.
+  const names = [...byName.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  const largest = names[0];
+  const top5 = names.slice(0, 5).reduce((s, n) => s + n.value, 0);
+  const hhi = names.reduce((s, n) => s + ((n.value / liquidDenom) * 100) ** 2, 0);
+
+  topRows.forEach((r) => (r.pctOfAssets = pct(r.value, assetsDenom)));
+  topRows.sort((a, b) => b.value - a.value);
+
+  // Income vs net worth (a crude "years of net worth = X years of income" sense check).
+  const byKind: Record<string, number> = {};
+  let annualIncome = 0;
+  for (const inc of p.income) {
+    const annual = (inc.frequency === "monthly" ? 12 : 1) * holdingBase(
+      { marketValue: inc.amount, currency: inc.currency } as Holding, usdInr,
+    );
+    byKind[inc.kind] = (byKind[inc.kind] ?? 0) + annual;
+    annualIncome += annual;
+  }
+
+  // Staleness buckets by account as-of date (same thresholds as the freshness panel).
+  let fresh = 0, aging = 0, stale = 0;
+  for (const a of p.accounts) {
+    if (a.accountType === "liability" || a.accountType === "income") continue;
+    if (!a.asOf) { aging += 1; continue; }
+    const d = daysBetween(a.asOf, today);
+    if (d <= 35) fresh += 1; else if (d <= 120) aging += 1; else stale += 1;
+  }
+
+  const notes: string[] = [];
+  if (p.holdings.some((h) => h.currency.toUpperCase() === "USD")) {
+    notes.push(`USD holdings converted at ₹${usdInr}/$ (manual rate).`);
+  }
+  if (eqWithDate === 0 && liquid > 0) {
+    notes.push("No buy dates captured, so STCG/LTCG holding-period split is unavailable.");
+  }
+
+  return {
+    asOf: today,
+    baseCurrency,
+    netWorth: Math.round(netWorth),
+    totalAssets: Math.round(totalAssets),
+    totalLiabilities: Math.round(totalLiabilities),
+    liquidAssets: Math.round(liquid),
+    illiquidAssets: Math.round(totalAssets - liquid),
+    liquidPct: pct(liquid, assetsDenom),
+    allocationByClass: alloc(p.holdings, p.accounts, "asset_class", usdInr),
+    allocationByRegion: alloc(p.holdings, p.accounts, "region", usdInr),
+    allocationByTax: alloc(p.holdings, p.accounts, "tax", usdInr),
+    allocationByAccountType: alloc(p.holdings, p.accounts, "account_type", usdInr),
+    concentration: {
+      topHoldings: topRows.slice(0, 10),
+      largestPctOfAssets: largest ? pct(largest.value, assetsDenom) : 0,
+      largestPctOfLiquid: largest ? pct(largest.value, liquidDenom) : 0,
+      top5PctOfLiquid: pct(top5, liquidDenom),
+      hhi: Math.round(hhi),
+    },
+    holdingPeriods: {
+      equityShortTerm: Math.round(eqShort),
+      equityLongTerm: Math.round(eqLong),
+      withBuyDate: Math.round(eqWithDate),
+    },
+    taxWrappers: {
+      taxable: Math.round(wrappers.taxable),
+      exemptEEE: Math.round(wrappers.exemptEEE),
+      nps: Math.round(wrappers.nps),
+    },
+    income: {
+      annualTotal: Math.round(annualIncome),
+      byKind,
+      netWorthYears: annualIncome > 0 ? Math.round((netWorth / annualIncome) * 10) / 10 : null,
+    },
+    staleness: { freshAccounts: fresh, agingAccounts: aging, staleAccounts: stale },
+    notes,
+  };
+}

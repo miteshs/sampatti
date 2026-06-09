@@ -1,0 +1,10 @@
+name = "sampatti-relay"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+
+# Secrets (set, never committed):
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put APP_TOKEN          # optional: a shared token the app sends
+#
+# This Worker has NO KV, NO D1, NO R2, NO Durable Objects bound on purpose — it has
+# nowhere to persist a request even if it wanted to.

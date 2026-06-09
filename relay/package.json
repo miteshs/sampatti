@@ -1,0 +1,14 @@
+{
+  "name": "sampatti-relay",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Stateless pass-through relay to the Anthropic API for Sampatti.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "wrangler": "^3.95.0"
+  }
+}
