@@ -16,7 +16,7 @@ Return ONE JSON object for the single account in this document, matching EXACTLY
   "account_type": one of ["demat","mutual_fund","nps","epf_ppf","bank","pms_aif","foreign_broker","real_estate","liability","other"],
   "tax_treatment": one of ["taxable","eee_exempt","nps","na"],   // eee_exempt = PPF/EPF/SSY; nps = NPS; else taxable
   "region": "India" or "US" or country,
-  "currency": "INR" (or the statement's currency),
+  "currency": "the statement's 3-letter currency code — 'USD' for US/dollar statements, 'INR' for Indian, etc.",
   "as_of": "YYYY-MM-DD" (the statement / valuation date),
   "holdings": [
     {
@@ -31,6 +31,7 @@ Return ONE JSON object for the single account in this document, matching EXACTLY
 }
 
 Rules:
+- CURRENCY MATTERS — detect it, do not assume INR. Dollar amounts ($), a US broker (Fidelity, Schwab, Charles Schwab, Morgan Stanley, Robinhood, E*Trade, Vanguard, Merrill, Interactive Brokers), or US-listed tickers ⇒ currency "USD" and region "US". Indian (₹, lakh/crore, NSE/BSE/CAMS/KFintech) ⇒ "INR". Set currency to what the VALUES are actually denominated in.
 - Statements often include PAGES of disclaimers/boilerplate — IGNORE them. Find the holdings table and the portfolio/account TOTAL. The "KEY LINES" block (if present) lists the lines with amounts and headers — use it.
 - If ANY balance, position, or portfolio value appears, you MUST capture it. NEVER return an empty holdings list when a value is present.
 - Extract EVERY position. value = current market value (not cost).
@@ -116,6 +117,9 @@ export function validateDraft(raw: unknown, source: string): ImportDraft {
     });
   }
   if (holdings.length === 0) warnings.push("No holdings parsed — check the source document.");
+  if (currency === "INR" && holdings.some((h) => h.assetClass === "us_equity")) {
+    warnings.push("US stocks detected but currency is INR — switch this account to USD if the values are in dollars.");
+  }
 
   return {
     account: {

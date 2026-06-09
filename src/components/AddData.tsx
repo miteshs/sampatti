@@ -51,6 +51,16 @@ export function AddData() {
 
   const clearAll = () => { void wipe(); setDrafts([]); setConfirmClear(false); };
 
+  // Override the currency of a parsed draft (e.g. a US statement that came back as INR) —
+  // applies to the account and every holding so conversion uses the right rate.
+  const setDraftCurrency = (index: number, currency: string) => {
+    setDrafts((all) => all.map((d, j) => (j === index ? {
+      ...d,
+      account: { ...d.account, currency },
+      holdings: d.holdings.map((h) => ({ ...h, currency })),
+    } : d)));
+  };
+
   // Selection from either picker (one file, many files, or a whole folder tree).
   const onPick = (list: FileList | null) => {
     setErrors([]);
@@ -191,6 +201,7 @@ export function AddData() {
         <DraftReview
           key={i} draft={d}
           existing={findMatchingAccount(portfolio.accounts, d.account)}
+          onCurrency={(c) => setDraftCurrency(i, c)}
           onCommit={(mode) => { addDraft(d, mode); setDrafts((all) => all.filter((_, j) => j !== i)); }}
           onDiscard={() => setDrafts((all) => all.filter((_, j) => j !== i))}
         />
@@ -207,10 +218,12 @@ export function AddData() {
 }
 
 // ---- review an AI/file draft before saving ----
-function DraftReview({ draft, existing, onCommit, onDiscard }: {
-  draft: ImportDraft; existing?: Account; onCommit: (mode: "auto" | "new") => void; onDiscard: () => void;
+function DraftReview({ draft, existing, onCurrency, onCommit, onDiscard }: {
+  draft: ImportDraft; existing?: Account; onCurrency: (currency: string) => void;
+  onCommit: (mode: "auto" | "new") => void; onDiscard: () => void;
 }) {
   const total = draft.holdings.reduce((s, h) => s + h.marketValue, 0);
+  const fmt = (v: number) => draft.account.currency === "INR" ? inr(v) : `${draft.account.currency} ${v.toLocaleString("en-US")}`;
   return (
     <div className="card" style={{ borderLeft: `3px solid ${existing ? "var(--amber, #d98324)" : "var(--primary)"}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -219,18 +232,28 @@ function DraftReview({ draft, existing, onCommit, onDiscard }: {
           <h3 style={{ fontSize: "1.05rem", marginTop: "0.15rem" }}>{draft.account.name}</h3>
           <div className="muted" style={{ fontSize: "0.8rem" }}>
             {draft.account.institution} · {ACCOUNT_TYPE_LABEL[draft.account.accountType]} ·{" "}
-            {TAX_LABEL[draft.account.taxTreatment]} · {draft.account.region} · {draft.account.currency}
+            {TAX_LABEL[draft.account.taxTreatment]} · {draft.account.region}
             {draft.account.asOf ? ` · as of ${draft.account.asOf}` : ""}
+          </div>
+          <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", marginTop: "0.45rem" }}>
+            <span className="muted" style={{ fontSize: "0.76rem" }}>Currency:</span>
+            {["INR", "USD"].map((c) => (
+              <button key={c} className={`chip ${draft.account.currency === c ? "active" : ""}`}
+                style={{ padding: "0.12rem 0.55rem", fontSize: "0.76rem" }} onClick={() => onCurrency(c)}>{c}</button>
+            ))}
+            {!["INR", "USD"].includes(draft.account.currency) && (
+              <button className="chip active" style={{ padding: "0.12rem 0.55rem", fontSize: "0.76rem" }} onClick={() => onCurrency(draft.account.currency)}>{draft.account.currency}</button>
+            )}
           </div>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {existing ? (
             <>
-              <button className="btn btn-primary" onClick={() => onCommit("auto")}>↻ Update · replace with {draft.holdings.length} · {inr(total)}</button>
+              <button className="btn btn-primary" onClick={() => onCommit("auto")}>↻ Update · replace with {draft.holdings.length} · {fmt(total)}</button>
               <button className="btn" onClick={() => onCommit("new")}>Add as separate</button>
             </>
           ) : (
-            <button className="btn btn-primary" onClick={() => onCommit("auto")}>Add {draft.holdings.length} holdings · {inr(total)}</button>
+            <button className="btn btn-primary" onClick={() => onCommit("auto")}>Add {draft.holdings.length} holdings · {fmt(total)}</button>
           )}
           <button className="btn btn-ghost" onClick={onDiscard}>Discard</button>
         </div>
@@ -253,7 +276,7 @@ function DraftReview({ draft, existing, onCommit, onDiscard }: {
             <tr key={i}>
               <td>{h.name}</td>
               <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[h.assetClass]}</span></td>
-              <td className="num" style={{ fontWeight: 600 }}>{inr(h.marketValue)}</td>
+              <td className="num" style={{ fontWeight: 600 }}>{fmt(h.marketValue)}</td>
             </tr>
           ))}
         </tbody>

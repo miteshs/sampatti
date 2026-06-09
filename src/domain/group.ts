@@ -27,7 +27,7 @@ export interface Segment {
 const pretty = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 // The grouping key for one holding along a dimension. Accounts are looked up by id.
-function keyFor(h: Holding, acct: Account | undefined, by: Dimension): { key: string; label: string } {
+export function keyFor(h: Holding, acct: Account | undefined, by: Dimension): { key: string; label: string } {
   const a = acct;
   switch (by) {
     case "asset_class":

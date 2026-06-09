@@ -34,6 +34,27 @@ describe("validateDraft", () => {
     expect(d.holdings.length).toBe(0);
     expect(d.warnings.join(" ")).toMatch(/no holdings|no value/i);
   });
+
+  it("keeps a USD statement's currency on the account and holdings", () => {
+    const raw = {
+      name: "Fidelity Brokerage", institution: "Fidelity", account_type: "foreign_broker",
+      region: "US", currency: "USD",
+      holdings: [{ name: "Apple Inc", asset_class: "us_equity", value: 50000 }],
+    };
+    const d = validateDraft(raw, "test");
+    expect(d.account.currency).toBe("USD");
+    expect(d.holdings[0].currency).toBe("USD");
+  });
+
+  it("warns when US stocks are mislabeled as INR (the dollar-as-rupee trap)", () => {
+    const raw = {
+      name: "US Broker", institution: "Schwab", account_type: "foreign_broker",
+      region: "US", currency: "INR",
+      holdings: [{ name: "Microsoft", asset_class: "us_equity", value: 50000 }],
+    };
+    const d = validateDraft(raw, "test");
+    expect(d.warnings.join(" ")).toMatch(/US stocks.*INR|switch.*USD/i);
+  });
 });
 
 describe("focus", () => {

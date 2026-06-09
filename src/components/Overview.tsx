@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
-import { buildSegments, DIMENSIONS, type Dimension } from "../domain/group";
+import { buildSegments, keyFor, DIMENSIONS, type Dimension } from "../domain/group";
 import { holdingBase, inr, pct } from "../domain/format";
 import { ASSET_CLASS_LABEL, ACCOUNT_TYPE_LABEL } from "../domain/classify";
-import { visiblePortfolio } from "../domain/types";
+import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
 import { freshness, FRESH_BADGE } from "./ui";
 
@@ -30,7 +30,7 @@ export function Overview() {
   const updateAccount = useStore((s) => s.updateAccount);
   const removeAccount = useStore((s) => s.removeAccount);
   const [by, setBy] = useState<Dimension>("asset_class");
-  const [focus, setFocus] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const usdInr = portfolio.settings.usdInr;
 
@@ -53,24 +53,30 @@ export function Overview() {
   }, [portfolio.holdings, usdInr]);
 
   const acctById = useMemo(() => new Map(view.accounts.map((a) => [a.id, a])), [view.accounts]);
-  const rows = useMemo(() => {
-    const list = view.holdings
-      .map((h) => ({ h, a: acctById.get(h.accountId), base: holdingBase(h, usdInr) }))
-      .filter((x) => x.a?.accountType !== "liability")
-      .sort((x, y) => y.base - x.base);
-    if (!focus) return list;
-    // Filter the table to the clicked segment, interpreting the key for the active dimension.
-    return list.filter(({ h, a }) => {
-      switch (by) {
-        case "asset_class": return h.assetClass === focus;
-        case "account": return a?.id === focus;
-        case "region": return (a?.region ?? "India") === focus;
-        case "tax": return (a?.taxTreatment ?? "taxable") === focus;
-        case "account_type": return (a?.accountType ?? "other") === focus;
-        case "institution": return (a?.institution ?? "—") === focus;
-      }
+
+  // Holdings grouped by the active dimension (same keys the donut uses), so each segment
+  // row can expand to reveal the holdings inside it.
+  const grouped = useMemo(() => {
+    const m = new Map<string, { h: Holding; a?: Account; base: number }[]>();
+    for (const h of view.holdings) {
+      const a = acctById.get(h.accountId);
+      const { key } = keyFor(h, a, by);
+      const list = m.get(key) ?? [];
+      list.push({ h, a, base: holdingBase(h, usdInr) });
+      m.set(key, list);
+    }
+    for (const list of m.values()) list.sort((x, y) => y.base - x.base);
+    return m;
+  }, [view.holdings, acctById, usdInr, by]);
+
+  const dimLabel = DIMENSIONS.find((d) => d.key === by)?.label ?? "";
+  const allExpanded = segments.length > 0 && segments.every((s) => expanded.has(s.key));
+  const toggleGroup = (key: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
     });
-  }, [view.holdings, acctById, usdInr, focus, by]);
 
   const staleAccounts = view.accounts
     .filter((a) => a.accountType !== "liability" && a.accountType !== "income")
@@ -114,25 +120,21 @@ export function Overview() {
           {portfolio.accounts.map((a) => {
             const excluded = !!a.excluded;
             return (
-              <div key={a.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.7rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer", flex: 1, minWidth: 0 }}>
-                  <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} />
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    <span style={{ fontWeight: 600 }}>{a.name}</span>
-                    <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+              <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
+                <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} style={{ flexShrink: 0, cursor: "pointer" }} />
+                <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
+                  <span style={{ fontWeight: 600 }}>{a.name}</span>
+                  <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+                </div>
+                <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
+                {confirmRemove === a.id ? (
+                  <span style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
+                    <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
+                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
                   </span>
-                </label>
-                <span style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                  <span className="num muted" style={{ fontSize: "0.84rem" }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
-                  {confirmRemove === a.id ? (
-                    <>
-                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
-                      <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
-                    </>
-                  ) : (
-                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem" }} title="Remove account" onClick={() => setConfirmRemove(a.id)}>✕</button>
-                  )}
-                </span>
+                ) : (
+                  <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Remove account" onClick={() => setConfirmRemove(a.id)}>✕</button>
+                )}
               </div>
             );
           })}
@@ -153,43 +155,64 @@ export function Overview() {
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
             {DIMENSIONS.map((d) => (
               <button key={d.key} className={`chip ${by === d.key ? "active" : ""}`}
-                onClick={() => { setBy(d.key); setFocus(null); }}>
+                onClick={() => { setBy(d.key); setExpanded(new Set()); }}>
                 {d.label}
               </button>
             ))}
           </div>
         </div>
-        <Donut segments={segments} total={total} onSelect={(k) => setFocus(focus === k ? null : k)} />
-        {focus && (
-          <div className="muted" style={{ fontSize: "0.8rem", marginTop: "0.75rem" }}>
-            Filtering holdings to <strong>{segments.find((s) => s.key === focus)?.label}</strong> ·{" "}
-            <span style={{ color: "var(--primary)", cursor: "pointer" }} onClick={() => setFocus(null)}>clear</span>
-          </div>
-        )}
+        <Donut segments={segments} total={total} onSelect={(k) => { if (k) toggleGroup(k); }} />
       </div>
 
       <div className="card">
-        <h2 style={{ fontSize: "1.05rem", marginBottom: "0.6rem" }}>Holdings</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.4rem" }}>
+          <h2 style={{ fontSize: "1.05rem" }}>By {dimLabel.toLowerCase()}</h2>
+          <button className="btn btn-ghost" style={{ fontSize: "0.78rem" }}
+            onClick={() => setExpanded(allExpanded ? new Set() : new Set(segments.map((s) => s.key)))}>
+            {allExpanded ? "Collapse all" : "Expand all"}
+          </button>
+        </div>
+        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.5rem" }}>
+          Click a row (or a donut slice) to expand its holdings.
+        </p>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead>
               <tr>
-                <th>Holding</th><th>Account</th><th>Class</th>
+                <th>{dimLabel} / holding</th>
                 <th className="num">Value</th><th className="num">% assets</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ h, a, base }) => (
-                <tr key={h.id}>
-                  <td style={{ fontWeight: 600 }}>{h.name}
-                    {h.currency !== "INR" && <span className="muted" style={{ fontWeight: 400 }}> · {h.currency}</span>}
-                  </td>
-                  <td className="muted">{a?.name}</td>
-                  <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[h.assetClass]}</span></td>
-                  <td className="num" style={{ fontWeight: 600 }}>{inr(base)}</td>
-                  <td className="num muted">{pct(base, brief.totalAssets)}%</td>
-                </tr>
-              ))}
+              {segments.map((s) => {
+                const items = grouped.get(s.key) ?? [];
+                const open = expanded.has(s.key);
+                return (
+                  <Fragment key={s.key}>
+                    <tr onClick={() => toggleGroup(s.key)} style={{ cursor: "pointer", borderTop: "1px solid var(--line-2)" }}>
+                      <td style={{ fontWeight: 700 }}>
+                        <span style={{ display: "inline-block", width: "1.1em", color: "var(--ink-2, #888)" }}>{open ? "▾" : "▸"}</span>
+                        {s.label}
+                        <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> · {items.length} holding{items.length === 1 ? "" : "s"}</span>
+                      </td>
+                      <td className="num" style={{ fontWeight: 700 }}>{inr(s.value)}</td>
+                      <td className="num muted">{s.percent}%</td>
+                    </tr>
+                    {open && items.map(({ h, a, base }) => (
+                      <tr key={h.id}>
+                        <td style={{ paddingLeft: "1.9rem" }}>
+                          <span style={{ fontWeight: 500 }}>{h.name}</span>
+                          {h.currency !== "INR" && <span className="muted" style={{ fontSize: "0.78rem" }}> · {h.currency}</span>}
+                          <span className="muted" style={{ fontSize: "0.78rem" }}> · {a?.name}</span>
+                          {by !== "asset_class" && <span className="badge badge-gray" style={{ marginLeft: "0.4rem" }}>{ASSET_CLASS_LABEL[h.assetClass]}</span>}
+                        </td>
+                        <td className="num">{inr(base)}</td>
+                        <td className="num muted">{pct(base, brief.totalAssets)}%</td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
