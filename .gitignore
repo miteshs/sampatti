@@ -11,3 +11,8 @@ src-tauri/gen/
 
 # App icons ARE committed (so the desktop app builds out of the box).
 # Regenerate them from a source PNG with: npm run tauri icon <png>
+
+# Real broker exports dropped in for the import-coverage harness stay private (parsed
+# locally, never committed). The README is kept so the folder + instructions exist.
+samples/*
+!samples/README.md

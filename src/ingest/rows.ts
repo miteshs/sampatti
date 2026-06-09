@@ -45,33 +45,35 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
   // to a name derived from the filename. If it HAS an account column, a blank in a row is an
   // orphan and gets skipped as before.
   const firstKeys = rawRows.length ? lower(rawRows[0]) : {};
-  const hasAccountCol = ["account", "account_name", "account_number", "folio"].some((k) => k in firstKeys);
+  const hasAccountCol = ["account", "account_name", "account_number"].some((k) => k in firstKeys);
   const fallbackAccount = (source || "Imported account").replace(/\.[a-z0-9]+$/i, "").replace(/[_\-]+/g, " ").trim() || "Imported account";
 
   for (const raw of rawRows) {
     const r = lower(raw);
-    const accountName = r.account || r.account_name || r.account_number || r.folio || (hasAccountCol ? "" : fallbackAccount);
+    const accountName = r.account || r.account_name || r.account_number || (hasAccountCol ? "" : fallbackAccount);
     const name = r.name || r.description || r.security || r.instrument || r.scheme_name || r.scheme || r.stock || r.symbol;
-    const mv = num(r.market_value ?? r.value ?? r.amount ?? r.current_value ?? r.cur_val ?? r.closing_value ?? r.market_val);
+    const rawMv = String(r.market_value ?? r.value ?? r.amount ?? r.current_value ?? r.cur_val ?? r.closing_value ?? r.market_val ?? "");
+    const mv = num(rawMv);
     if (!accountName || !name || mv === undefined || mv === 0) {
       skipped += 1;
       continue;
     }
 
-    // A US brokerage export (Fidelity/Schwab) — these columns exist and there's no
-    // currency field, so default to USD/US rather than the Indian defaults.
-    const looksUS = "current_value" in r || "last_price" in r || "today's_gain/loss_dollar" in r;
+    // Detect USD from the data itself — an explicit currency, or a $ in the value. (Indian
+    // statements also have a "Current Value" column, so column names alone aren't enough.)
+    const rowCcy = r.currency ? r.currency.toUpperCase() : "";
+    const isUsd = rowCcy === "USD" || (!rowCcy && /\$/.test(rawMv));
 
     let draft = byAccount.get(accountName);
     if (!draft) {
       draft = {
         account: {
           name: accountName,
-          institution: r.institution || (looksUS ? "US Broker" : "Manual"),
-          accountType: r.account_type ? normAccountType(r.account_type)[0] : looksUS ? "foreign_broker" : "demat",
+          institution: r.institution || (isUsd ? "US Broker" : "Manual"),
+          accountType: r.account_type ? normAccountType(r.account_type)[0] : isUsd ? "foreign_broker" : "demat",
           taxTreatment: normTaxTreatment(r.tax_treatment ?? r.tax_status)[0],
-          region: r.region ? normRegion(r.region)[0] : looksUS ? "US" : "India",
-          currency: (r.currency || (looksUS ? "USD" : "INR")).toUpperCase(),
+          region: r.region ? normRegion(r.region)[0] : isUsd ? "US" : "India",
+          currency: rowCcy || (isUsd ? "USD" : "INR"),
           asOf: r.as_of || undefined,
         },
         holdings: [],
@@ -81,10 +83,11 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
       byAccount.set(accountName, draft);
     }
 
-    // Asset class: explicit column wins; otherwise infer for US rows (cash funds vs equity).
+    // Asset class: explicit column wins; otherwise infer (US cash funds vs equity; Indian
+    // demat rows with a ticker + units → indian_equity).
     let assetClass: AssetClass;
     if (r.asset_class) assetClass = normAssetClass(r.asset_class)[0];
-    else if (looksUS) assetClass = CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity";
+    else if (isUsd) assetClass = CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity";
     else if ((r.instrument || r.symbol) && num(r.units ?? r.quantity ?? r.qty ?? r.shares)) assetClass = "indian_equity";
     else assetClass = "other";
 

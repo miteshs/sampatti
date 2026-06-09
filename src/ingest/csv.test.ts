@@ -111,6 +111,22 @@ describe("parseCsv (broker export with no account column)", () => {
   });
 });
 
+describe("currency detection is value-based, not column-name-based", () => {
+  it("keeps an Indian statement INR even when it has a 'Current Value' column", () => {
+    const csv = `Scheme Name,Units,Current Value\nParag Parikh Flexi Cap,5000,"4,27,510.00"`;
+    const drafts = parseCsv(csv, "mf.csv");
+    expect(drafts[0].account.currency).toBe("INR");
+    expect(drafts[0].holdings[0].currency).toBe("INR");
+  });
+
+  it("detects USD from a $ in the value, with no currency column", () => {
+    const csv = `Symbol,Description,Current Value\nAAPL,APPLE INC,"$22,000.00"`;
+    const drafts = parseCsv(csv, "us.csv");
+    expect(drafts[0].account.currency).toBe("USD");
+    expect(drafts[0].account.region).toBe("US");
+  });
+});
+
 describe("parseCsv (unrecognizable layout → nothing parses, so the UI can offer Claude)", () => {
   it("returns no holdings when no value/name columns are found", () => {
     const junk = `Foo,Bar,Baz\nhello,world,123\nlorem,ipsum,456`;
