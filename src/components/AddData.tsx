@@ -7,6 +7,7 @@ import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
 } from "../domain/classify";
 import { findMatchingAccount } from "../domain/types";
+import { fetchGoldPerGramInr } from "../domain/gold";
 import type {
   Account, AccountType, AssetClass, ImportDraft, IncomeKind, Region, TaxTreatment,
 } from "../domain/types";
@@ -16,6 +17,7 @@ const ASSET_CLASSES = Object.keys(ASSET_CLASS_LABEL) as AssetClass[];
 const TAX_TYPES = Object.keys(TAX_LABEL) as TaxTreatment[];
 const REGIONS: Region[] = ["India", "US", "Other"];
 const INCOME_KINDS: IncomeKind[] = ["salary", "rent", "business", "dividend", "interest", "other"];
+const isGold = (c: AssetClass) => c === "gold_sgb" || c === "gold_other";
 
 const CSV_TEMPLATE =
   "account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of\n" +
@@ -247,7 +249,7 @@ export function AddData() {
         />
       ))}
 
-      <ManualAccount onAdd={(acct, holdings) => {
+      <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings) => {
         const id = addAccount(acct);
         for (const h of holdings) addHolding({ ...h, accountId: id });
       }} />
@@ -326,8 +328,9 @@ function DraftReview({ draft, existing, onCurrency, onCommit, onDiscard }: {
 }
 
 // ---- manual account + holdings entry ----
-function ManualAccount({ onAdd }: {
+function ManualAccount({ onAdd, usdInr }: {
   onAdd: (a: ImportDraft["account"], h: ImportDraft["holdings"]) => void;
+  usdInr: number;
 }) {
   const [a, setA] = useState<ImportDraft["account"]>({
     name: "", institution: "", accountType: "demat", taxTreatment: "taxable",
@@ -336,18 +339,37 @@ function ManualAccount({ onAdd }: {
   const [hName, setHName] = useState("");
   const [hClass, setHClass] = useState<AssetClass>("indian_equity");
   const [hValue, setHValue] = useState("");
+  const [hGrams, setHGrams] = useState("");
+  const [goldPrice, setGoldPrice] = useState<number | null>(null);
+  const [goldBusy, setGoldBusy] = useState(false);
   const [holdings, setHoldings] = useState<ImportDraft["holdings"]>([]);
+
+  // For gold, value comes from weight × the live ₹/gram rate, fetched when a gold class is
+  // picked (and editable afterwards — e.g. for 22K or a dealer quote).
+  useEffect(() => {
+    if (!isGold(hClass)) return;
+    setGoldBusy(true);
+    void fetchGoldPerGramInr(usdInr).then((p) => { setGoldPrice((prev) => p ?? prev); setGoldBusy(false); });
+  }, [hClass, usdInr]);
+
+  const goldValue = isGold(hClass) && goldPrice ? Math.round((Number(hGrams.replace(/[,\s]/g, "")) || 0) * goldPrice) : 0;
 
   // A holding typed into the item fields but not yet added with "+ Add item".
   const pendingHolding = (): ImportDraft["holdings"][number] | null => {
+    if (!hName.trim()) return null;
+    if (isGold(hClass)) {
+      const g = Number(hGrams.replace(/[,\s]/g, ""));
+      if (!g || !goldPrice) return null;
+      return { name: hName.trim(), assetClass: hClass, marketValue: Math.round(g * goldPrice), units: g, currency: a.currency };
+    }
     const v = Number(hValue.replace(/[₹,\s]/g, ""));
-    return hName.trim() && v ? { name: hName.trim(), assetClass: hClass, marketValue: v, currency: a.currency } : null;
+    return v ? { name: hName.trim(), assetClass: hClass, marketValue: v, currency: a.currency } : null;
   };
   const addH = () => {
     const h = pendingHolding();
     if (!h) return;
     setHoldings((all) => [...all, h]);
-    setHName(""); setHValue("");
+    setHName(""); setHValue(""); setHGrams("");
   };
   // Save folds in a typed-but-unadded holding so the form doesn't silently refuse to save.
   const canSave = !!a.name.trim() && (holdings.length > 0 || pendingHolding() != null);
@@ -357,7 +379,7 @@ function ManualAccount({ onAdd }: {
     if (!a.name.trim() || all.length === 0) return;
     onAdd(a, all);
     setA({ ...a, name: "", institution: "" });
-    setHoldings([]); setHName(""); setHValue("");
+    setHoldings([]); setHName(""); setHValue(""); setHGrams("");
   };
 
   return (
@@ -396,9 +418,27 @@ function ManualAccount({ onAdd }: {
             {ASSET_CLASSES.map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
           </select>
         </div>
-        <div style={{ flex: "1 1 130px" }}><label>Value ({a.currency})</label><input value={hValue} onChange={(e) => setHValue(e.target.value)} placeholder="2500000" /></div>
+        {isGold(hClass) ? (
+          <>
+            <div style={{ flex: "1 1 100px" }}><label>Weight (grams)</label><input value={hGrams} onChange={(e) => setHGrams(e.target.value)} placeholder="50" inputMode="decimal" /></div>
+            <div style={{ flex: "1 1 130px" }}><label>₹/gram (24K, live)</label>
+              <input value={goldPrice ?? ""} onChange={(e) => setGoldPrice(Number(e.target.value) || null)} placeholder={goldBusy ? "fetching…" : "price"} inputMode="decimal" />
+            </div>
+          </>
+        ) : (
+          <div style={{ flex: "1 1 130px" }}><label>Value ({a.currency})</label><input value={hValue} onChange={(e) => setHValue(e.target.value)} placeholder="2500000" /></div>
+        )}
         <button className="btn" onClick={addH}>+ Add item</button>
       </div>
+      {isGold(hClass) && (
+        <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
+          {goldBusy && goldPrice == null ? "Fetching the live gold price…" : goldPrice ? (
+            <>Live 24K gold ≈ <strong>₹{goldPrice.toLocaleString("en-IN")}/g</strong>
+              {goldValue > 0 && <> · {hGrams}g = <strong>{inr(goldValue)}</strong></>}
+              {" "}· editable (lower it ~8% for 22K, or use a dealer quote).</>
+          ) : "Couldn't fetch the live gold price — enter ₹/gram manually."}
+        </p>
+      )}
 
       {holdings.length > 0 && (
         <table style={{ marginTop: "0.8rem" }}>
