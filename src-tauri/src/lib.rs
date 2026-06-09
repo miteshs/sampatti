@@ -89,6 +89,11 @@ async fn claude_stream(
                     continue;
                 }
                 if let Ok(json) = serde_json::from_str::<Value>(data) {
+                    // Surface a mid-stream error instead of ending with a truncated reply.
+                    if json["type"] == "error" {
+                        let msg = json["error"]["message"].as_str().unwrap_or("unknown");
+                        return Err(format!("Claude stream error: {msg}"));
+                    }
                     if json["type"] == "content_block_delta" && json["delta"]["type"] == "text_delta" {
                         if let Some(text) = json["delta"]["text"].as_str() {
                             on_event.send(text.to_string()).map_err(|e| e.to_string())?;

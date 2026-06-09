@@ -6,8 +6,11 @@
 import type { ImportDraft } from "../domain/types";
 import { parseCsv } from "./csv";
 import { parseXlsx } from "./xlsx";
-import { pdfToText } from "./pdf";
 import { extractFromImage, extractFromText } from "./aiExtract";
+
+// pdf.js (~the largest dependency) is loaded lazily on first PDF import so it stays out of
+// the initial bundle — most sessions never open a PDF.
+const loadPdf = () => import("./pdf").then((m) => m.pdfToText);
 
 const IMG_MIME: Record<string, string> = {
   png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif",
@@ -42,6 +45,7 @@ export async function ingestFile(file: File): Promise<ImportDraft[]> {
   if (ext === "xlsx" || ext === "xls") return [...parseXlsx(await fileBuf(file), file.name)];
 
   if (ext === "pdf") {
+    const pdfToText = await loadPdf();
     const text = await pdfToText(await fileBuf(file));
     if (text.length < 80) {
       throw new Error(

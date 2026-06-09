@@ -97,14 +97,19 @@ async function parseSse(body: ReadableStream<Uint8Array>, onText?: (d: string) =
       if (!line) continue;
       const data = line.slice(5).trim();
       if (!data || data === "[DONE]") continue;
+      let json: { type?: string; delta?: { type?: string; text?: string }; error?: { message?: string } };
       try {
-        const json = JSON.parse(data);
-        if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
-          full += json.delta.text;
-          onText?.(json.delta.text);
-        }
+        json = JSON.parse(data);
       } catch {
-        /* ignore keep-alives / non-JSON lines */
+        continue; // keep-alive / non-JSON line
+      }
+      // Surface a mid-stream error event instead of ending with a silently truncated reply.
+      if (json.type === "error") {
+        throw new Error(`Claude stream error: ${json.error?.message ?? "unknown"}`);
+      }
+      if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
+        full += json.delta.text ?? "";
+        onText?.(json.delta.text ?? "");
       }
     }
   }

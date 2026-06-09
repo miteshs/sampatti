@@ -49,3 +49,26 @@ describe("buildBrief on the demo HNI portfolio", () => {
     expect(b.income.annualTotal).toBe(600_000 * 12 + 45_000 * 12 + 300_000);
   });
 });
+
+describe("brief privacy contract — only aggregates + top names leave the device", () => {
+  const p = demoPortfolio();
+  const b = buildBrief(p);
+  const json = JSON.stringify(b);
+
+  it("never serializes raw per-holding fields (units / buyDate / costBasis / symbol)", () => {
+    for (const field of ['"units"', '"buyDate"', '"costBasis"', '"symbol"']) {
+      expect(json).not.toContain(field);
+    }
+  });
+
+  it("caps the disclosed holdings at the top 10 by value", () => {
+    expect(p.holdings.length).toBeGreaterThan(10); // demo has many holdings
+    expect(b.concentration.topHoldings.length).toBeLessThanOrEqual(10);
+  });
+
+  it("does not embed the full holdings or accounts arrays", () => {
+    const bag = b as unknown as Record<string, unknown>;
+    expect(bag.holdings).toBeUndefined();
+    expect(bag.accounts).toBeUndefined();
+  });
+});
