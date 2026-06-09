@@ -9,9 +9,10 @@
 
 import { isTauri } from "../platform";
 import type { Holding } from "./types";
-import type { Series } from "./history";
+import { latestPrice, type Series } from "./history";
+import { fetchGoldPerGramInr } from "./gold";
 
-const AMFI_URL = "https://www.amfiindia.com/spages/NAVAll.txt";
+const AMFI_URL = "https://portal.amfiindia.com/spages/NAVAll.txt"; // www. now 302-redirects here
 const YH = "https://query1.finance.yahoo.com/v8/finance/chart/";
 const MFAPI = "https://api.mfapi.in/mf/";
 
@@ -164,4 +165,45 @@ export async function buildResolver(holdings: Holding[], range = "1y"): Promise<
   };
   const tracked = holdings.filter((h) => resolve(h)).length;
   return { resolve, tracked, total: holdings.length };
+}
+
+const isGold = (h: Holding) => h.assetClass === "gold_sgb" || h.assetClass === "gold_other";
+
+export interface Revaluation {
+  holdingId: string;
+  oldValue: number;
+  newValue: number; // in the holding's own currency
+  price: number;
+  units: number;
+}
+
+// Live revaluation: for each holding that has units AND a resolvable current price, compute
+// units × latest price. Gold-by-weight uses the live ₹/g rate; everything else uses the latest
+// close/NAV from the resolver. Holdings without units, or with no price, are left untouched.
+// Best-effort: network failures simply yield fewer entries.
+export async function liveRevalue(holdings: Holding[], usdInr: number): Promise<Revaluation[]> {
+  const out: Revaluation[] = [];
+  const priced = holdings.filter((h) => typeof h.units === "number" && h.units! > 0);
+
+  // Gold shares one live ₹/g rate (units are grams). Handled apart from the relative GC=F series.
+  const gold = priced.filter(isGold);
+  if (gold.length) {
+    const perGram = await fetchGoldPerGramInr(usdInr).catch(() => null);
+    if (perGram) for (const h of gold) {
+      out.push({ holdingId: h.id, oldValue: h.marketValue, newValue: Math.round(h.units! * perGram), price: perGram, units: h.units! });
+    }
+  }
+
+  // Equities / ETFs / MFs: latest point of each price series × units (in the holding's currency).
+  const listed = priced.filter((h) => !isGold(h));
+  if (listed.length) {
+    const { resolve } = await buildResolver(listed, "5d");
+    for (const h of listed) {
+      const price = latestPrice(resolve(h) ?? []);
+      if (price && price > 0) {
+        out.push({ holdingId: h.id, oldValue: h.marketValue, newValue: Math.round(h.units! * price), price, units: h.units! });
+      }
+    }
+  }
+  return out;
 }

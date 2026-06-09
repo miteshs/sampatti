@@ -8,6 +8,7 @@ import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
 import { AccountEditor } from "./AccountEditor";
 import { NetWorthTrend } from "./NetWorthTrend";
+import { RefreshPrices } from "./RefreshPrices";
 import { freshness, FRESH_BADGE } from "./ui";
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
@@ -229,6 +230,8 @@ export function Overview() {
           </table>
         </div>
       </div>
+
+      <RefreshPrices />
 
       <div className="card">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

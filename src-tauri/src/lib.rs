@@ -111,10 +111,11 @@ async fn claude_stream(
 // code is ever sent — never the user's holdings. Returns the raw body for the JS to parse.
 #[tauri::command]
 async fn market_fetch(url: String) -> Result<String, String> {
-    const ALLOWED: [&str; 4] = [
+    const ALLOWED: [&str; 5] = [
         "query1.finance.yahoo.com",
         "query2.finance.yahoo.com",
         "www.amfiindia.com",
+        "portal.amfiindia.com",
         "api.mfapi.in",
     ];
     let host = reqwest::Url::parse(&url)
