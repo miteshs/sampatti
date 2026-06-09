@@ -17,6 +17,9 @@ export type AssetClass =
   | "gold_other" // physical gold, gold ETFs/funds
   | "reit_invit" // REITs / InvITs
   | "us_equity" // foreign stocks (RSU/ESPP/overseas brokerage)
+  | "private_equity" // PE / VC / buyout / private-markets funds (illiquid)
+  | "private_credit" // private credit / direct-lending / private-debt funds (illiquid)
+  | "pms" // Portfolio Management Service / AIF (managed, illiquid)
   | "insurance" // ULIP / endowment fund or surrender value (term life has no value)
   | "crypto"
   | "real_estate"

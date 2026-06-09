@@ -65,6 +65,14 @@ export function AddData() {
     } : d)));
   };
 
+  // Edit a single holding inside a draft (fix an AI/parse mislabel before saving).
+  const updateDraftHolding = (di: number, hi: number, patch: Partial<ImportDraft["holdings"][number]>) =>
+    setDrafts((all) => all.map((d, j) => (j === di
+      ? { ...d, holdings: d.holdings.map((h, k) => (k === hi ? { ...h, ...patch } : h)) }
+      : d)));
+  const removeDraftHolding = (di: number, hi: number) =>
+    setDrafts((all) => all.map((d, j) => (j === di ? { ...d, holdings: d.holdings.filter((_, k) => k !== hi) } : d)));
+
   // Selection from either picker (one file, many files, or a whole folder tree).
   const onPick = (list: FileList | null) => {
     setErrors([]);
@@ -244,6 +252,8 @@ export function AddData() {
           key={i} draft={d}
           accounts={portfolio.accounts}
           onCurrency={(c) => setDraftCurrency(i, c)}
+          onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
+          onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
           onApply={(target) => {
             if (target === "new") addDraft(d, "new");
             else mergeDraftInto(target, d);
@@ -268,8 +278,10 @@ export function AddData() {
 // are preselected to Update; otherwise they can still pick any existing account to overwrite,
 // or add as a new one. Updating replaces that account's holdings wholesale (items sold since
 // the last statement simply drop off; new items are added).
-function DraftReview({ draft, accounts, onCurrency, onApply, onDiscard }: {
+function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, onApply, onDiscard }: {
   draft: ImportDraft; accounts: Account[]; onCurrency: (currency: string) => void;
+  onHolding: (hi: number, patch: Partial<ImportDraft["holdings"][number]>) => void;
+  onRemoveHolding: (hi: number) => void;
   onApply: (target: "new" | string) => void; onDiscard: () => void;
 }) {
   const total = draft.holdings.reduce((s, h) => s + h.marketValue, 0);
@@ -337,19 +349,54 @@ function DraftReview({ draft, accounts, onCurrency, onApply, onDiscard }: {
           {draft.warnings.join(" · ")}
         </div>
       )}
-      <table style={{ marginTop: "0.7rem" }}>
-        <thead><tr><th>Name</th><th>Class</th><th className="num">Value</th></tr></thead>
-        <tbody>
-          {draft.holdings.map((h, i) => (
-            <tr key={i}>
-              <td>{h.name}</td>
-              <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[h.assetClass]}</span></td>
-              <td className="num" style={{ fontWeight: 600 }}>{fmt(h.marketValue)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <p className="muted" style={{ fontSize: "0.74rem", margin: "0.7rem 0 0.2rem" }}>
+        Review &amp; fix anything the parser got wrong — edit a name, correct the asset class, adjust a value, or remove a row — before saving.
+      </p>
+      <div style={{ overflowX: "auto" }}>
+        <table>
+          <thead><tr><th style={{ minWidth: 160 }}>Name</th><th>Asset class</th><th className="num">Value ({draft.account.currency})</th><th></th></tr></thead>
+          <tbody>
+            {draft.holdings.map((h, i) => (
+              <tr key={i}>
+                <td><input value={h.name} onChange={(e) => onHolding(i, { name: e.target.value })} style={{ width: "100%" }} /></td>
+                <td>
+                  <select value={h.assetClass} onChange={(e) => onHolding(i, { assetClass: e.target.value as AssetClass })}>
+                    {ASSET_CLASSES.map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
+                  </select>
+                </td>
+                <td className="num" style={{ maxWidth: 150 }}>
+                  <DraftNum value={h.marketValue} onChange={(n) => onHolding(i, { marketValue: n })} />
+                </td>
+                <td className="num">
+                  <button className="btn btn-ghost" style={{ padding: "0.15rem 0.45rem" }} title="Remove holding" onClick={() => onRemoveHolding(i)}>✕</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
+  );
+}
+
+// Buffered numeric input for a draft value — keeps a local string so partial/decimal edits
+// don't fight the parsed number, and resyncs if the underlying value changes (e.g. row shift).
+function DraftNum({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  const [s, setS] = useState(String(value));
+  useEffect(() => {
+    if (Number(s.replace(/[,\s₹$]/g, "")) !== value) setS(String(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <input
+      value={s} inputMode="decimal" style={{ width: 130, textAlign: "right" }}
+      onChange={(e) => {
+        const v = e.target.value;
+        setS(v);
+        const n = Number(v.replace(/[,\s₹$]/g, ""));
+        if (Number.isFinite(n)) onChange(n);
+      }}
+    />
   );
 }
 

@@ -43,6 +43,16 @@ function lower(row: Row): Lowered {
 
 const CASH_LIKE = /money market|fdic|treasury only|cash reserves|cash & cash|cash investment|SPAXX|FDRXX|FZFXX|SWVXX|VMFXX|SNSXX/i;
 
+// Detect the alternative asset classes from a holding's name (e.g. "Blackstone Private Credit
+// Fund", "KKR Private Equity", "Marcellus PMS"). Conservative — only fires on explicit phrases.
+function classFromName(name: string): AssetClass | undefined {
+  const n = name.toLowerCase();
+  if (/private credit|direct lending|private debt|credit fund/.test(n)) return "private_credit";
+  if (/private equity|buyout|venture capital|private assets|private markets/.test(n)) return "private_equity";
+  if (/\bpms\b|portfolio management service/.test(n)) return "pms";
+  return undefined;
+}
+
 // US broker "Asset Type"/"Security Type" column → our asset class. Used only for USD rows;
 // keeps a Schwab "All Accounts" export from dumping bonds, cash and alts into "US Equity".
 // (Keys are header-normalized, e.g. "ETFs & Closed End Funds" → "etfs_closed_end_funds".)
@@ -105,16 +115,20 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
       byAccount.set(accountName, draft);
     }
 
-    // Asset class: explicit column wins; otherwise infer. For USD rows we prefer the broker's
-    // "Asset Type" column (bonds/cash/ETFs/alts), then a cash-fund name check, else us_equity.
-    // Indian demat rows with a ticker + units → indian_equity.
+    // Asset class: explicit column wins; otherwise infer. For USD rows a confident broker
+    // "Asset Type" wins; an "Alternative Investments" (or unknown) row falls to a name check
+    // for private equity / private credit / PMS, then a cash-fund check, else us_equity.
+    // Indian rows: a PMS/PE/PC name wins; else a ticker + units → indian_equity.
+    const byName = classFromName(name);
     let assetClass: AssetClass;
     if (r.asset_class) assetClass = normAssetClass(r.asset_class)[0];
     else if (isUsd) {
       const typeKey = (r.asset_type || r.security_type || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
       const byType = US_ASSET_TYPE[typeKey];
-      assetClass = byType ?? (CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity");
-    } else if ((r.instrument || r.symbol || r.scrip || r.isin) && num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net)) assetClass = "indian_equity";
+      assetClass = (byType && byType !== "other") ? byType
+        : byName ?? byType ?? (CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity");
+    } else if (byName) assetClass = byName;
+    else if ((r.instrument || r.symbol || r.scrip || r.isin) && num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net)) assetClass = "indian_equity";
     else assetClass = "other";
 
     draft.holdings.push({

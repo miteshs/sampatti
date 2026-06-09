@@ -7,8 +7,8 @@ import type { AccountType, AssetClass, Region, TaxTreatment } from "./types";
 
 const ASSET_CLASSES: AssetClass[] = [
   "indian_equity", "equity_mf", "index_etf", "elss", "debt_mf", "nps", "epf_ppf",
-  "fd_rd", "gold_sgb", "gold_other", "reit_invit", "us_equity", "insurance", "crypto",
-  "real_estate", "cash", "other",
+  "fd_rd", "gold_sgb", "gold_other", "reit_invit", "us_equity", "private_equity",
+  "private_credit", "pms", "insurance", "crypto", "real_estate", "cash", "other",
 ];
 
 const ACCOUNT_TYPES: AccountType[] = [
@@ -36,6 +36,12 @@ const CLASS_ALIAS: Record<string, AssetClass> = {
   gold: "gold_other", gold_etf: "gold_other", gold_fund: "gold_other", silver: "gold_other",
   reit: "reit_invit", invit: "reit_invit",
   us_stock: "us_equity", rsu: "us_equity", espp: "us_equity", foreign_stock: "us_equity",
+  private_equity: "private_equity", buyout: "private_equity", venture: "private_equity",
+  venture_capital: "private_equity", vc: "private_equity", private_assets: "private_equity",
+  private_markets: "private_equity", alternative_investments: "private_equity",
+  private_credit: "private_credit", private_debt: "private_credit",
+  direct_lending: "private_credit", credit_fund: "private_credit",
+  pms: "pms", aif: "pms", portfolio_management: "pms", portfolio_management_service: "pms",
   ulip: "insurance", endowment: "insurance", lic: "insurance", policy: "insurance",
   insurance_policy: "insurance", moneyback: "insurance", traditional_plan: "insurance",
   bitcoin: "crypto", btc: "crypto", eth: "crypto",
@@ -95,16 +101,17 @@ export const normRegion = (v: unknown, def: Region = "India"): [Region, boolean]
 
 // Display order for the asset-class allocation view (most-growthy → safest, India-ish).
 export const ASSET_CLASS_ORDER: AssetClass[] = [
-  "indian_equity", "equity_mf", "index_etf", "elss", "us_equity", "reit_invit",
-  "debt_mf", "nps", "epf_ppf", "fd_rd", "gold_sgb", "gold_other", "insurance",
-  "crypto", "cash", "real_estate", "other",
+  "indian_equity", "equity_mf", "index_etf", "elss", "us_equity", "private_equity",
+  "reit_invit", "private_credit", "pms", "debt_mf", "nps", "epf_ppf", "fd_rd",
+  "gold_sgb", "gold_other", "insurance", "crypto", "cash", "real_estate", "other",
 ];
 
 export const ASSET_CLASS_LABEL: Record<AssetClass, string> = {
   indian_equity: "Indian Equity", equity_mf: "Equity MF", index_etf: "Index / ETF",
   elss: "ELSS", debt_mf: "Debt MF", nps: "NPS", epf_ppf: "EPF / PPF", fd_rd: "FD / RD",
   gold_sgb: "Gold (SGB)", gold_other: "Gold (other)", reit_invit: "REIT / InvIT",
-  us_equity: "US Equity", insurance: "Insurance", crypto: "Crypto",
+  us_equity: "US Equity", private_equity: "Private Equity", private_credit: "Private Credit",
+  pms: "PMS / AIF", insurance: "Insurance", crypto: "Crypto",
   real_estate: "Real Estate", cash: "Cash", other: "Other",
 };
 

@@ -264,6 +264,29 @@ describe("parseCsv (Fidelity multi-account, segregated by Account Name column)",
   });
 });
 
+describe("alternative asset classes (private credit / private equity / PMS)", () => {
+  it("classifies US 'Alternative Investments' rows by name", () => {
+    const csv = `Symbol,Description,Current Value,Asset Type
+PCRD,SAMPLE PRIVATE CREDIT FUND CLASS I,"$100,000.00",Alternative Investments
+PEQ,SAMPLE PRIVATE EQUITY CONGLOMERATE,"$200,000.00",Alternative Investments
+ALT,SAMPLE OPPORTUNITIES FUND,"$50,000.00",Alternative Investments`;
+    const h = parseCsv(csv, "alts.csv")[0].holdings;
+    expect(h.find((x) => x.symbol === "PCRD")!.assetClass).toBe("private_credit");
+    expect(h.find((x) => x.symbol === "PEQ")!.assetClass).toBe("private_equity");
+    expect(h.find((x) => x.symbol === "ALT")!.assetClass).toBe("other"); // no name signal → stays other
+  });
+
+  it("classifies an Indian PMS holding by name", () => {
+    const drafts = parseCsv(`Scheme Name,Current Value\nMarcellus PMS,"1,00,00,000"`, "pms.csv");
+    expect(drafts[0].holdings[0].assetClass).toBe("pms");
+  });
+
+  it("respects an explicit asset_class column for the new classes", () => {
+    const csv = `name,market_value,asset_class\nX Fund,1000,private credit\nY Fund,2000,Private Equity\nZ,3000,pms`;
+    expect(parseCsv(csv, "x.csv")[0].holdings.map((h) => h.assetClass)).toEqual(["private_credit", "private_equity", "pms"]);
+  });
+});
+
 describe("parseCsv (unrecognizable layout → nothing parses, so the UI can offer Claude)", () => {
   it("returns no holdings when no value/name columns are found", () => {
     const junk = `Foo,Bar,Baz\nhello,world,123\nlorem,ipsum,456`;
