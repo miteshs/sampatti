@@ -18,6 +18,8 @@ export class NeedsClaudeError extends Error {
   constructor(public readonly file: File, message: string) {
     super(message);
     this.name = "NeedsClaudeError";
+    // Keep `instanceof` working even if the class is down-leveled in the bundle.
+    Object.setPrototypeOf(this, NeedsClaudeError.prototype);
   }
 }
 
