@@ -6,6 +6,7 @@
 import { normAccountType, normAssetClass, normRegion, normTaxTreatment } from "../domain/classify";
 import type { ImportDraft } from "../domain/types";
 import { callClaude, EXTRACT_MODEL, type Block } from "../claude/transport";
+import { normDate } from "./rows";
 
 const PROMPT = `You extract holdings from an Indian (or foreign) brokerage / mutual-fund / PMS / bank / insurance statement, or a screenshot of one.
 Return ONE JSON object of the form { "accounts": [ ... ] }, where each entry is ONE account matching EXACTLY this shape:
@@ -25,7 +26,8 @@ Return ONE JSON object of the form { "accounts": [ ... ] }, where each entry is 
       "asset_class": one of ["indian_equity","equity_mf","index_etf","elss","debt_mf","nps","epf_ppf","fd_rd","structured_notes","gold_sgb","gold_other","reit_invit","us_equity","private_equity","private_credit","pms","insurance","crypto","real_estate","cash","other"],
       "units": number (omit if not applicable),
       "value": number (CURRENT market value in the account currency),
-      "cost_basis": number (total invested / cost, omit if not shown)
+      "cost_basis": number (total invested / purchase cost, omit if not shown; if only a per-unit average cost is shown, multiply by units),
+      "buy_date": "YYYY-MM-DD" (purchase / acquisition date if shown, omit otherwise)
     }
   ]
 }
@@ -113,7 +115,7 @@ export function validateDraft(raw: unknown, source: string): ImportDraft {
       units: num(h.units ?? h.quantity),
       marketValue: Math.round(value * 100) / 100,
       costBasis: num(h.cost_basis),
-      buyDate: h.buy_date ? String(h.buy_date) : undefined,
+      buyDate: normDate(h.buy_date, currency === "USD"),
       currency: h.currency ? String(h.currency).toUpperCase() : currency,
     });
   }

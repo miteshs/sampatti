@@ -8,9 +8,33 @@ import {
   type Income, type ImportDraft, type Portfolio, type Settings,
 } from "../domain/types";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
+import { snapshotOf, upsertSnapshot } from "../domain/snapshots";
 import { clearLocalCaches, clearPortfolioRaw, readPortfolioRaw, writePortfolioRaw } from "../platform";
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+// Every holding carries a cost basis: a real one (statement/user) or, failing that, its value
+// when it FIRST entered the app, flagged estimated — so P&L reads "since first import" and tax
+// math knows not to trust it. Idempotent; runs on every commit and on load (migrates old files).
+function ensureBasis(p: Portfolio): boolean {
+  let changed = false;
+  for (const h of p.holdings) {
+    if (h.costBasis == null) {
+      h.costBasis = h.marketValue;
+      h.costBasisEstimated = true;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+// Record (or refresh) today's snapshot from the current state. Skipped while the portfolio is
+// empty so first-run/demo-browsing doesn't write a ₹0 day. Returns true when anything changed.
+function recordSnapshot(p: Portfolio): boolean {
+  if (!Array.isArray(p.snapshots)) p.snapshots = [];
+  if (p.holdings.length === 0) return false;
+  return upsertSnapshot(p.snapshots, snapshotOf(p));
+}
 
 interface State {
   portfolio: Portfolio;
@@ -44,9 +68,52 @@ interface State {
 // refreshed from the statement.
 function replaceAccountHoldings(p: Portfolio, existing: Account, d: ImportDraft) {
   const { excluded } = existing;
+  const old = p.holdings.filter((h) => h.accountId === existing.id);
   p.holdings = p.holdings.filter((h) => h.accountId !== existing.id);
   Object.assign(existing, d.account, { id: existing.id, excluded });
-  for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId: existing.id });
+
+  // Carry cost basis / buy date forward when the new statement doesn't supply them, matching
+  // old holdings by symbol+name, then symbol, then name. Without this, every monthly re-import
+  // would reset "gain since first import" to zero for holdings whose statements lack a cost
+  // column. A statement that DOES carry a basis always wins. Each old holding is consumed once.
+  const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
+  const used = new Set<Holding>();
+  const matchOld = (h: ImportDraft["holdings"][number]): Holding[] => {
+    const bySymName = old.filter((o) => !used.has(o) && norm(o.symbol) === norm(h.symbol) && norm(o.name) === norm(h.name));
+    if (bySymName.length) return bySymName;
+    if (norm(h.symbol)) {
+      const bySym = old.filter((o) => !used.has(o) && norm(o.symbol) === norm(h.symbol));
+      if (bySym.length) return bySym;
+    }
+    return old.filter((o) => !used.has(o) && norm(o.name) === norm(h.name));
+  };
+
+  for (const h of d.holdings) {
+    const carried: Partial<Holding> = {};
+    if (h.costBasis == null || h.buyDate == null) {
+      const matches = matchOld(h).filter((o) => o.costBasis != null || o.buyDate != null);
+      if (matches.length) {
+        matches.forEach((o) => used.add(o));
+        if (h.costBasis == null && matches.some((o) => o.costBasis != null)) {
+          const est = matches.some((o) => o.costBasisEstimated);
+          let basis = matches.reduce((s, o) => s + (o.costBasis ?? 0), 0);
+          // An estimated anchor is ≈ price-at-first-import × units, so scale it when the
+          // position size changed; a REAL basis is a fact and is never scaled.
+          const oldUnits = matches.reduce((s, o) => s + (o.units ?? 0), 0);
+          if (est && oldUnits > 0 && typeof h.units === "number" && h.units > 0) {
+            basis = Math.round((basis * h.units) / oldUnits);
+          }
+          carried.costBasis = basis;
+          carried.costBasisEstimated = est || undefined;
+        }
+        if (h.buyDate == null) {
+          const dates = matches.map((o) => o.buyDate).filter((x): x is string => !!x).sort();
+          if (dates.length) carried.buyDate = dates[0]; // earliest = "held since"
+        }
+      }
+    }
+    p.holdings.push({ ...h, ...carried, id: uid(), accountId: existing.id });
+  }
 }
 
 // ---- manual-edit trail helpers ----
@@ -54,13 +121,16 @@ const FIELD_LABEL: Record<string, string> = {
   name: "name", institution: "institution", accountType: "type", taxTreatment: "tax",
   region: "region", currency: "currency", asOf: "statement date", note: "note",
   assetClass: "asset class", marketValue: "value", units: "units", buyDate: "buy date", symbol: "symbol",
+  costBasis: "cost basis",
 };
+// Bookkeeping fields that ride along with a real edit and shouldn't clutter the trail.
+const SILENT_FIELDS = new Set(["costBasisEstimated"]);
 function showVal(field: string, v: unknown): string {
   if (v == null || v === "") return "—";
   if (field === "assetClass") return ASSET_CLASS_LABEL[v as keyof typeof ASSET_CLASS_LABEL] ?? String(v);
   if (field === "accountType") return ACCOUNT_TYPE_LABEL[v as keyof typeof ACCOUNT_TYPE_LABEL] ?? String(v);
   if (field === "taxTreatment") return TAX_LABEL[v as keyof typeof TAX_LABEL] ?? String(v);
-  if (field === "marketValue" || field === "units") return Number(v).toLocaleString("en-IN");
+  if (field === "marketValue" || field === "units" || field === "costBasis") return Number(v).toLocaleString("en-IN");
   return String(v);
 }
 function pushEdit(p: Portfolio, entity: "account" | "holding", entityId: string, label: string, field: string, from?: unknown, to?: unknown) {
@@ -87,6 +157,8 @@ function commit(set: (fn: (s: State) => Partial<State>) => void, get: () => Stat
                 mutate: (p: Portfolio) => void) {
   const p = structuredClone(get().portfolio);
   mutate(p);
+  ensureBasis(p);
+  recordSnapshot(p); // every change refreshes today's recorded net worth
   p.updatedAt = new Date().toISOString();
   persist(p);
   set(() => ({ portfolio: p }));
@@ -109,7 +181,13 @@ export const useStore = create<State>((set, get) => ({
         // above and leave relay mode unconfigured on upgrade.
         if (!p.settings.relayUrl) p.settings.relayUrl = defaults.relayUrl;
         if (!Array.isArray(p.edits)) p.edits = []; // added after some files were written
+        if (!Array.isArray(p.snapshots)) p.snapshots = []; // ditto
         p.version = CURRENT_VERSION;
+        // Migrate basis-less holdings + record today's snapshot (opening the app daily is what
+        // builds the recorded history) — persist only when something actually changed.
+        const migrated = ensureBasis(p);
+        const snapped = recordSnapshot(p);
+        if (migrated || snapped) persist(p);
         set(() => ({ portfolio: p, loaded: true }));
         return;
       }
@@ -185,7 +263,9 @@ export const useStore = create<State>((set, get) => ({
       const h = p.holdings.find((x) => x.id === id);
       if (!h) return;
       const rec = h as unknown as Record<string, unknown>;
-      for (const [k, v] of Object.entries(patch)) if (rec[k] !== v) pushEdit(p, "holding", id, h.name, k, rec[k], v);
+      for (const [k, v] of Object.entries(patch)) {
+        if (!SILENT_FIELDS.has(k) && rec[k] !== v) pushEdit(p, "holding", id, h.name, k, rec[k], v);
+      }
       Object.assign(h, patch);
     }),
   logEdit: (e) => commit(set, get, (p) => {
@@ -200,6 +280,8 @@ export const useStore = create<State>((set, get) => ({
   updateSettings: (patch) => commit(set, get, (p) => Object.assign(p.settings, patch)),
 
   replaceAll: (p) => {
+    ensureBasis(p);
+    recordSnapshot(p);
     persist(p);
     set(() => ({ portfolio: p, loaded: true }));
   },

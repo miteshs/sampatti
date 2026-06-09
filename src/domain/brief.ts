@@ -5,7 +5,7 @@
 // about Indian tax from these facts).
 
 import { ASSET_CLASS_LABEL, isLiquid } from "./classify";
-import { holdingBase, pct } from "./format";
+import { holdingBase, holdingGain, pct } from "./format";
 import { buildSegments } from "./group";
 import type { Account, AssetClass, Holding, Portfolio } from "./types";
 
@@ -15,6 +15,7 @@ export interface BriefHolding {
   value: number;
   pctOfAssets: number;
   account: string;
+  gainPct?: number; // unrealized %, only when a REAL cost basis is on file
 }
 
 export interface Brief {
@@ -43,6 +44,12 @@ export interface Brief {
     withBuyDate: number; // how much equity value actually had a buy date
   };
   taxWrappers: { taxable: number; exemptEEE: number; nps: number };
+  gains: {
+    totalCostBasis: number; // INR; includes since-import anchors
+    unrealizedGain: number;
+    unrealizedPct: number; // gain / basis
+    realBasisPct: number; // % of asset VALUE with a real (statement/user) purchase cost
+  };
   income: { annualTotal: number; byKind: Record<string, number>; netWorthYears: number | null };
   staleness: { freshAccounts: number; agingAccounts: number; staleAccounts: number };
   notes: string[];
@@ -72,6 +79,7 @@ export function buildBrief(p: Portfolio): Brief {
   const topRows: BriefHolding[] = [];
   let eqShort = 0, eqLong = 0, eqWithDate = 0;
   const wrappers = { taxable: 0, exemptEEE: 0, nps: 0 };
+  let basisTotal = 0, gainTotal = 0, realBasisValue = 0;
 
   for (const h of p.holdings) {
     const a = acctById.get(h.accountId);
@@ -83,9 +91,17 @@ export function buildBrief(p: Portfolio): Brief {
     totalAssets += v;
     if (isLiquid(h.assetClass)) liquid += v;
 
+    const g = holdingGain(h, usdInr);
+    if (g) {
+      basisTotal += g.invested;
+      gainTotal += g.gain;
+      if (!g.estimated) realBasisValue += v;
+    }
+
     topRows.push({
       name: h.name, assetClass: ASSET_CLASS_LABEL[h.assetClass] ?? h.assetClass,
       value: Math.round(v), pctOfAssets: 0, account: a?.name ?? "—",
+      ...(g && !g.estimated && g.gainPct != null ? { gainPct: g.gainPct } : {}),
     });
 
     if (h.assetClass === "indian_equity" || h.assetClass === "us_equity") {
@@ -144,6 +160,12 @@ export function buildBrief(p: Portfolio): Brief {
   if (eqWithDate === 0 && liquid > 0) {
     notes.push("No buy dates captured, so STCG/LTCG holding-period split is unavailable.");
   }
+  const realBasisPct = pct(realBasisValue, assetsDenom);
+  if (totalAssets > 0 && realBasisPct < 60) {
+    notes.push(
+      `Real purchase costs are on file for only ${realBasisPct}% of assets; the rest of the unrealized-gain figure measures change since first import, NOT true cost — do not base tax math on it.`,
+    );
+  }
 
   return {
     asOf: today,
@@ -174,6 +196,12 @@ export function buildBrief(p: Portfolio): Brief {
       taxable: Math.round(wrappers.taxable),
       exemptEEE: Math.round(wrappers.exemptEEE),
       nps: Math.round(wrappers.nps),
+    },
+    gains: {
+      totalCostBasis: Math.round(basisTotal),
+      unrealizedGain: Math.round(gainTotal),
+      unrealizedPct: basisTotal > 0 ? Math.round((gainTotal / basisTotal) * 1000) / 10 : 0,
+      realBasisPct,
     },
     income: {
       annualTotal: Math.round(annualIncome),

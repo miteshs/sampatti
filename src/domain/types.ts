@@ -57,7 +57,12 @@ export interface Holding {
   assetClass: AssetClass;
   units?: number;
   marketValue: number; // in the holding's currency (default account currency)
-  costBasis?: number;
+  costBasis?: number; // total invested, in the holding's currency
+  // True when no real purchase cost was available and costBasis was set to the holding's
+  // value when it FIRST entered the app — P&L then means "gain since first import", and
+  // tax math must NOT treat it as an actual purchase price. Cleared when a statement or
+  // the user supplies a real basis.
+  costBasisEstimated?: boolean;
   buyDate?: string; // YYYY-MM-DD — enables STCG/LTCG holding-period buckets
   currency: string; // "INR" | "USD" | ...
 }
@@ -118,6 +123,15 @@ export interface EditEvent {
   to?: string;
 }
 
+// One day's recorded net worth, stored per account (INR base; liability accounts negative)
+// so the trend chart can re-sum over whichever accounts are currently included. Unlike the
+// price-history reconstruction, these are REAL records of what the app computed that day —
+// they capture buys/sells/FX as they happened and are not re-derivable later.
+export interface DailySnapshot {
+  date: string; // YYYY-MM-DD (local)
+  accounts: Record<string, number>; // accountId → value in INR (negative = liability)
+}
+
 export interface Portfolio {
   version: number;
   accounts: Account[];
@@ -125,6 +139,7 @@ export interface Portfolio {
   income: Income[];
   settings: Settings;
   edits: EditEvent[];
+  snapshots: DailySnapshot[]; // ascending by date; one entry per day the app saw data
   updatedAt: string;
 }
 
@@ -137,6 +152,7 @@ export function emptyPortfolio(): Portfolio {
     holdings: [],
     income: [],
     edits: [],
+    snapshots: [],
     settings: {
       country: "India",
       baseCurrency: "INR",

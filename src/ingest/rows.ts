@@ -43,6 +43,47 @@ function lower(row: Row): Lowered {
 
 const CASH_LIKE = /money market|fdic|treasury only|cash reserves|cash & cash|cash investment|SPAXX|FDRXX|FZFXX|SWVXX|VMFXX|SNSXX/i;
 
+const MONTHS: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+const ymd = (y: number, m: number, d: number): string | undefined => {
+  if (y < 100) y += y > new Date().getFullYear() % 100 ? 1900 : 2000; // 2-digit year pivot
+  if (y < 1950 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return undefined;
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+};
+
+// Broker buy/acquired dates arrive in every shape: ISO, 12/31/2023 (US), 31/12/2023 (India),
+// 12-Jan-2023, "Jan 12, 2023", or an Excel serial number (SheetJS hands those through as-is).
+// `usHint` settles the ambiguous 03/04/2023 case: month-first for USD rows, day-first otherwise.
+export function normDate(v: unknown, usHint = false): string | undefined {
+  if (v == null || v === "") return undefined;
+  if (typeof v === "number" && v > 20000 && v < 80000) {
+    // Excel serial (days since 1899-12-30).
+    const d = new Date(Date.UTC(1899, 11, 30) + v * 86_400_000);
+    return ymd(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+  }
+  const s = String(v).trim().replace(/\s+as of.*$/i, "");
+  if (!s) return undefined;
+  if (/^\d+(\.\d+)?$/.test(s)) { // Excel serial that arrived as a string
+    const n = Number(s);
+    return n > 20000 && n < 80000 ? normDate(n) : undefined;
+  }
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); // ISO already
+  if (m) return ymd(+m[1], +m[2], +m[3]);
+  m = s.match(/^(\d{1,2})[-/ ]([a-z]{3})[a-z]*[-/, ]+(\d{2,4})$/i); // 12-Jan-2023 / 12 January 2023
+  if (m) return MONTHS[m[2].toLowerCase()] ? ymd(+m[3], MONTHS[m[2].toLowerCase()], +m[1]) : undefined;
+  m = s.match(/^([a-z]{3})[a-z]*[-/ ]+(\d{1,2})[-/, ]+(\d{2,4})$/i); // Jan 12, 2023
+  if (m) return MONTHS[m[1].toLowerCase()] ? ymd(+m[3], MONTHS[m[1].toLowerCase()], +m[2]) : undefined;
+  m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/); // 12/31/2023 vs 31/12/2023
+  if (m) {
+    const [a, b, y] = [+m[1], +m[2], +m[3]];
+    if (a > 12) return ymd(y, b, a); // day-first, unambiguous
+    if (b > 12) return ymd(y, a, b); // month-first, unambiguous
+    return usHint ? ymd(y, a, b) : ymd(y, b, a);
+  }
+  return undefined;
+}
+
 // Detect the alternative asset classes from a holding's name (e.g. "Blackstone Private Credit
 // Fund", "KKR Private Equity", "Marcellus PMS", "… Market Linked Debenture"). Conservative —
 // only fires on explicit phrases.
@@ -148,14 +189,35 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
     else if ((r.instrument || r.symbol || r.scrip || r.isin) && num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net)) assetClass = "indian_equity";
     else assetClass = "other";
 
+    const units = num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net_shares ?? r.net);
+
+    // Cost basis: a TOTAL-invested column wins; otherwise a per-unit average cost × units
+    // (Fidelity "Average Cost Basis", Zerodha "Avg. cost", Schwab "Cost/Share" are per-unit).
+    const totalBasis = num(
+      r.cost_basis ?? r.cost_basis_total ?? r.total_cost ?? r.cost_value ?? r.buy_value ??
+      r.purchase_value ?? r.purchase_cost ?? r.purchase_amount ?? r.invested ?? r.invested_value ??
+      r.invested_amount ?? r.amount_invested ?? r.investment_value ?? r.investment_amount ??
+      r.acquisition_cost ?? r.book_value ?? r.book_cost ?? r.cost,
+    );
+    const perUnit = num(
+      r.avg_cost ?? r.average_cost ?? r.avg_cost_basis ?? r.average_cost_basis ?? r.avg_buy_price ??
+      r.average_buy_price ?? r.buy_price ?? r.buy_avg ?? r.purchase_price ?? r.cost_price ??
+      r.avg_price ?? r.average_price ?? r.avg_nav ?? r.purchase_nav ?? r.cost_share ?? r.cost_per_share,
+    );
+    let costBasis = totalBasis ?? (perUnit !== undefined && units ? perUnit * units : undefined);
+    if (costBasis !== undefined && costBasis <= 0) costBasis = undefined;
+
     draft.holdings.push({
       symbol: (r.symbol || r.scrip || r.isin || "").toUpperCase() || undefined,
       name,
       assetClass,
-      units: num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net_shares ?? r.net),
+      units,
       marketValue: mv,
-      costBasis: num(r.cost_basis ?? r.cost_basis_total ?? r.invested ?? r.amount_invested),
-      buyDate: r.buy_date || undefined,
+      costBasis: costBasis !== undefined ? Math.round(costBasis * 100) / 100 : undefined,
+      buyDate: normDate(
+        r.buy_date || r.date_acquired || r.acquisition_date || r.acquired_date || r.acquired ||
+        r.purchase_date || r.date_of_purchase || r.purchased, isUsd,
+      ),
       currency: (r.currency || draft.account.currency).toUpperCase(),
     });
   }

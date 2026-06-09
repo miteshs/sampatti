@@ -92,3 +92,22 @@ describe("focus", () => {
     expect(f).not.toMatch(/marketing sentence/);
   });
 });
+
+describe("validateDraft — cost basis & buy date passthrough", () => {
+  it("keeps cost_basis and normalizes buy_date (day-first for INR statements)", () => {
+    const [d] = validateDrafts({
+      name: "Zerodha", institution: "Zerodha", account_type: "demat", currency: "INR",
+      holdings: [{ name: "TCS", value: 18000, cost_basis: "₹12,000", buy_date: "15/02/2022" }],
+    }, "test");
+    expect(d.holdings[0].costBasis).toBe(12000);
+    expect(d.holdings[0].buyDate).toBe("2022-02-15");
+  });
+
+  it("reads month-first dates on USD statements", () => {
+    const [d] = validateDrafts({
+      name: "Schwab", institution: "Schwab", account_type: "foreign_broker", currency: "USD",
+      holdings: [{ name: "MSFT", value: 4300, buy_date: "02/15/2022" }],
+    }, "test");
+    expect(d.holdings[0].buyDate).toBe("2022-02-15");
+  });
+});

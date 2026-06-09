@@ -131,6 +131,8 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
                 <th>Asset class</th>
                 <th className="num">Units</th>
                 <th className="num">Value</th>
+                <th className="num" title="Total purchase cost (optional — left blank, gains are measured since first import)">Cost basis</th>
+                <th>Buy date</th>
                 <th>Ccy</th>
                 <th></th>
               </tr>
@@ -150,6 +152,21 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
                   <td className="num" style={{ maxWidth: 130 }}>
                     <NumInput initial={h.marketValue} onCommit={(n) => { if (n !== undefined) editHolding(h.id, { marketValue: n }); }} />
                   </td>
+                  <td className="num" style={{ maxWidth: 130 }}>
+                    {/* An estimated (since-import) anchor renders as an empty field with a ≈ placeholder,
+                        so the user can tell a real cost from the fallback at a glance. Typing a number
+                        makes it real; clearing it reverts to the since-import anchor. */}
+                    <NumInput
+                      initial={h.costBasisEstimated ? undefined : h.costBasis}
+                      allowEmpty placeholder={h.costBasisEstimated ? `≈ ${Math.round(h.costBasis ?? 0).toLocaleString("en-IN")}` : "—"}
+                      onCommit={(n) => editHolding(h.id, n === undefined
+                        ? { costBasis: undefined, costBasisEstimated: undefined } // store re-anchors to current value
+                        : { costBasis: n, costBasisEstimated: undefined })}
+                    />
+                  </td>
+                  <td style={{ maxWidth: 140 }}>
+                    <input type="date" value={h.buyDate ?? ""} onChange={(e) => editHolding(h.id, { buyDate: e.target.value || undefined })} />
+                  </td>
                   <td style={{ maxWidth: 70 }}>
                     <input value={h.currency} onChange={(e) => editHolding(h.id, { currency: e.target.value.toUpperCase() })} style={{ width: 56 }} />
                   </td>
@@ -164,6 +181,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
       )}
       <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem" }}>
         Changes save automatically. Value is in each holding's currency; totals use ₹ at the app's USD→INR rate.
+        Cost basis is optional — left blank (≈), gains on the Performance tab are measured since first import instead.
         Current account total ≈ {inr(holdings.reduce((s, h) => s + (h.currency === "INR" ? h.marketValue : h.marketValue * portfolio.settings.usdInr), 0))}.
       </p>
     </div>

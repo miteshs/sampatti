@@ -59,7 +59,7 @@ A cloud, subscription all-in-one US money app:
 3. **Goals + retirement projection** — corpus-vs-goals, SWP / safe-withdrawal, inflation,
    India return assumptions, NPS/PPF-aware — deterministic numbers + an AI narrative (the
    brief already does a retirement sense-check).
-4. **Tax-action tools** — turn the LTCG/STCG split into actions: "harvest the ₹1L LTCG
+4. **Tax-action tools** — turn the LTCG/STCG split into actions: "harvest the ₹1.25L LTCG
    exemption," "you're ₹X / N days from long-term on holding Y."
 
 ### Tier 2 — valuable, more effort

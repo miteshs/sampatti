@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { useStore } from "./storage/store";
 import { Overview } from "./components/Overview";
+import { Performance } from "./components/Performance";
 import { Manage } from "./components/Manage";
 import { AnalysisChat } from "./components/AnalysisChat";
 import { AddData } from "./components/AddData";
 import { Privacy } from "./components/Privacy";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-type View = "overview" | "manage" | "analysis" | "add" | "privacy";
+type View = "overview" | "performance" | "manage" | "analysis" | "add" | "privacy";
 
 const NAV: { key: View; label: string }[] = [
   { key: "overview", label: "Overview" },
+  { key: "performance", label: "Performance" },
   { key: "manage", label: "Manage" },
   { key: "analysis", label: "AI Analysis" },
   { key: "add", label: "Add data" },
@@ -56,6 +58,7 @@ export default function App() {
       ) : (
         <ErrorBoundary key={view}>
           {view === "overview" && <Overview />}
+          {view === "performance" && <Performance />}
           {view === "manage" && <Manage />}
           {view === "analysis" && (hasData
             ? <AnalysisChat onConfigure={() => setView("privacy")} />

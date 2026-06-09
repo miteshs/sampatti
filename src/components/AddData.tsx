@@ -380,7 +380,12 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
       </p>
       <div style={{ overflowX: "auto" }}>
         <table>
-          <thead><tr><th style={{ minWidth: 160 }}>Name</th><th>Asset class</th><th className="num">Value ({draft.account.currency})</th><th></th></tr></thead>
+          <thead><tr>
+            <th style={{ minWidth: 160 }}>Name</th><th>Asset class</th>
+            <th className="num">Value ({draft.account.currency})</th>
+            <th className="num" title="Total purchase cost — optional; blank means gains will be measured from this import">Cost basis</th>
+            <th>Buy date</th><th></th>
+          </tr></thead>
           <tbody>
             {draft.holdings.map((h, i) => (
               <tr key={i}>
@@ -393,6 +398,12 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
                 <td className="num" style={{ maxWidth: 150 }}>
                   <DraftNum value={h.marketValue} onChange={(n) => onHolding(i, { marketValue: n })} />
                 </td>
+                <td className="num" style={{ maxWidth: 140 }}>
+                  <DraftOptNum value={h.costBasis} placeholder="optional" onChange={(n) => onHolding(i, { costBasis: n })} />
+                </td>
+                <td style={{ maxWidth: 140 }}>
+                  <input type="date" value={h.buyDate ?? ""} onChange={(e) => onHolding(i, { buyDate: e.target.value || undefined })} />
+                </td>
                 <td className="num">
                   <button className="btn btn-ghost" style={{ padding: "0.15rem 0.45rem" }} title="Remove holding" onClick={() => onRemoveHolding(i)}>✕</button>
                 </td>
@@ -402,6 +413,26 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
         </table>
       </div>
     </div>
+  );
+}
+
+// DraftNum for an OPTIONAL number (cost basis): empty is a valid state and maps to undefined.
+function DraftOptNum({ value, placeholder, onChange }: {
+  value: number | undefined; placeholder?: string; onChange: (n: number | undefined) => void;
+}) {
+  const [s, setS] = useState(value == null ? "" : String(value));
+  return (
+    <input
+      value={s} inputMode="decimal" placeholder={placeholder} style={{ width: 120, textAlign: "right" }}
+      onChange={(e) => {
+        const v = e.target.value;
+        setS(v);
+        const t = v.replace(/[,\s₹$]/g, "");
+        if (t === "") { onChange(undefined); return; }
+        const n = Number(t);
+        if (Number.isFinite(n)) onChange(n);
+      }}
+    />
   );
 }
 
@@ -438,6 +469,7 @@ function ManualAccount({ onAdd, usdInr }: {
   const [hName, setHName] = useState("");
   const [hClass, setHClass] = useState<AssetClass>("indian_equity");
   const [hValue, setHValue] = useState("");
+  const [hBasis, setHBasis] = useState(""); // optional purchase cost
   const [hGrams, setHGrams] = useState("");
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [goldBusy, setGoldBusy] = useState(false);
@@ -456,19 +488,20 @@ function ManualAccount({ onAdd, usdInr }: {
   // A holding typed into the item fields but not yet added with "+ Add item".
   const pendingHolding = (): ImportDraft["holdings"][number] | null => {
     if (!hName.trim()) return null;
+    const basis = Number(hBasis.replace(/[₹,\s]/g, "")) || undefined; // optional
     if (isGold(hClass)) {
       const g = Number(hGrams.replace(/[,\s]/g, ""));
       if (!g || !goldPrice) return null;
-      return { name: hName.trim(), assetClass: hClass, marketValue: Math.round(g * goldPrice), units: g, currency: a.currency };
+      return { name: hName.trim(), assetClass: hClass, marketValue: Math.round(g * goldPrice), units: g, costBasis: basis, currency: a.currency };
     }
     const v = Number(hValue.replace(/[₹,\s]/g, ""));
-    return v ? { name: hName.trim(), assetClass: hClass, marketValue: v, currency: a.currency } : null;
+    return v ? { name: hName.trim(), assetClass: hClass, marketValue: v, costBasis: basis, currency: a.currency } : null;
   };
   const addH = () => {
     const h = pendingHolding();
     if (!h) return;
     setHoldings((all) => [...all, h]);
-    setHName(""); setHValue(""); setHGrams("");
+    setHName(""); setHValue(""); setHBasis(""); setHGrams("");
   };
   // Save folds in a typed-but-unadded holding so the form doesn't silently refuse to save.
   const canSave = !!a.name.trim() && (holdings.length > 0 || pendingHolding() != null);
@@ -478,7 +511,7 @@ function ManualAccount({ onAdd, usdInr }: {
     if (!a.name.trim() || all.length === 0) return;
     onAdd(a, all);
     setA({ ...a, name: "", institution: "" });
-    setHoldings([]); setHName(""); setHValue(""); setHGrams("");
+    setHoldings([]); setHName(""); setHValue(""); setHBasis(""); setHGrams("");
   };
 
   return (
@@ -525,7 +558,10 @@ function ManualAccount({ onAdd, usdInr }: {
             </div>
           </>
         ) : (
-          <div style={{ flex: "1 1 130px" }}><label>Value ({a.currency})</label><input value={hValue} onChange={(e) => setHValue(e.target.value)} placeholder="2500000" /></div>
+          <>
+            <div style={{ flex: "1 1 130px" }}><label>Value ({a.currency})</label><input value={hValue} onChange={(e) => setHValue(e.target.value)} placeholder="2500000" /></div>
+            <div style={{ flex: "1 1 130px" }}><label>Invested (optional)</label><input value={hBasis} onChange={(e) => setHBasis(e.target.value)} placeholder="purchase cost" inputMode="decimal" /></div>
+          </>
         )}
         <button className="btn" onClick={addH}>+ Add item</button>
       </div>

@@ -270,3 +270,119 @@ describe("store persistence across a restart", () => {
     expect(p.holdings.some((h) => h.name === "Stock" && h.marketValue === 100000)).toBe(true);
   });
 });
+
+// ---- cost basis: since-import fallback + carry-forward across re-imports ----
+
+// Draft builder with full per-holding control (basis/units/dates), for the basis tests.
+const basisDraft = (
+  name: string,
+  holdings: (Partial<ImportDraft["holdings"][number]> & { name: string; marketValue: number })[],
+): ImportDraft => ({
+  account: { name, institution: "Inst", accountType: "demat", taxTreatment: "taxable", region: "India", currency: "INR" },
+  holdings: holdings.map((h) => ({ assetClass: "indian_equity", currency: "INR", ...h })),
+  warnings: [],
+  source: "test.csv",
+});
+
+describe("cost basis — since-import fallback", () => {
+  const s = () => useStore.getState();
+
+  it("fills a missing basis with the current value, flagged estimated", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 18000 }]));
+    const h = s().portfolio.holdings[0];
+    expect(h.costBasis).toBe(18000);
+    expect(h.costBasisEstimated).toBe(true);
+  });
+
+  it("keeps a real statement basis untouched (no estimated flag)", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 18000, costBasis: 12000 }]));
+    const h = s().portfolio.holdings[0];
+    expect(h.costBasis).toBe(12000);
+    expect(h.costBasisEstimated).toBeFalsy();
+  });
+
+  it("migrates basis-less holdings of an old saved file on load()", async () => {
+    const saved = emptyPortfolio() as unknown as { holdings: unknown[]; accounts: unknown[]; snapshots?: unknown };
+    saved.accounts = [{ id: "a", name: "Old", institution: "X", accountType: "demat", taxTreatment: "taxable", region: "India", currency: "INR" }];
+    saved.holdings = [{ id: "h", accountId: "a", name: "Legacy", assetClass: "indian_equity", marketValue: 5000, currency: "INR" }];
+    delete saved.snapshots; // pre-snapshots file shape
+    localStorage.setItem("sampatti.portfolio", JSON.stringify(saved));
+
+    await useStore.getState().load();
+
+    const h = useStore.getState().portfolio.holdings[0];
+    expect(h.costBasis).toBe(5000);
+    expect(h.costBasisEstimated).toBe(true);
+    expect(Array.isArray(useStore.getState().portfolio.snapshots)).toBe(true);
+  });
+});
+
+describe("cost basis — carry-forward when a re-import lacks it", () => {
+  const s = () => useStore.getState();
+
+  it("carries a REAL basis and buy date into the re-imported holding", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 18000, costBasis: 12000, buyDate: "2022-02-15" }]));
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 19500 }])); // fresh statement, no cost column
+    const h = s().portfolio.holdings[0];
+    expect(s().portfolio.holdings).toHaveLength(1);
+    expect(h.marketValue).toBe(19500);
+    expect(h.costBasis).toBe(12000);
+    expect(h.costBasisEstimated).toBeFalsy();
+    expect(h.buyDate).toBe("2022-02-15");
+  });
+
+  it("carries the since-import anchor, scaled when the position size changed", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 10000, units: 10 }])); // anchor 10000 (est)
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 24000, units: 20 }])); // doubled position
+    const h = s().portfolio.holdings[0];
+    expect(h.costBasis).toBe(20000); // 10000 × 20/10
+    expect(h.costBasisEstimated).toBe(true);
+  });
+
+  it("a statement that DOES carry a basis wins over the old anchor", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 10000 }]));
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 11000, costBasis: 9000 }]));
+    const h = s().portfolio.holdings[0];
+    expect(h.costBasis).toBe(9000);
+    expect(h.costBasisEstimated).toBeFalsy();
+  });
+
+  it("matches by symbol when the statement renames the security", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "Tata Consultancy", symbol: "TCS", marketValue: 10000, costBasis: 7000 }]));
+    s().addDraft(basisDraft("Demat", [{ name: "TCS LTD", symbol: "TCS", marketValue: 12000 }]));
+    expect(s().portfolio.holdings[0].costBasis).toBe(7000);
+  });
+
+  it("does NOT carry anything between different securities", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 10000, costBasis: 7000 }]));
+    s().addDraft(basisDraft("Demat", [{ name: "INFY", marketValue: 5000 }]));
+    const h = s().portfolio.holdings[0];
+    expect(h.name).toBe("INFY");
+    expect(h.costBasis).toBe(5000); // fresh anchor, not TCS's 7000
+    expect(h.costBasisEstimated).toBe(true);
+  });
+});
+
+describe("daily net-worth snapshots", () => {
+  const s = () => useStore.getState();
+
+  it("records today's per-account snapshot on every commit (liabilities negative)", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 100000 }]));
+    const loanDraft: ImportDraft = {
+      account: { name: "Loan", institution: "Bank", accountType: "liability", taxTreatment: "na", region: "India", currency: "INR" },
+      holdings: [{ name: "Home loan", assetClass: "other", marketValue: 40000, currency: "INR" }],
+      warnings: [], source: "test",
+    };
+    s().addDraft(loanDraft);
+
+    const snaps = s().portfolio.snapshots;
+    expect(snaps).toHaveLength(1); // same day → one entry, refreshed in place
+    const total = Object.values(snaps[0].accounts).reduce((a, b) => a + b, 0);
+    expect(total).toBe(60000); // 100000 − 40000
+  });
+
+  it("does not record while the portfolio is empty", () => {
+    s().updateSettings({ usdInr: 90 });
+    expect(s().portfolio.snapshots).toHaveLength(0);
+  });
+});
