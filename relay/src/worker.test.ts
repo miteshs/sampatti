@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeRequest, safeEqual } from "./worker";
+import { readBodyCapped, sanitizeRequest, safeEqual } from "./worker";
 
 describe("safeEqual (constant-time token compare)", () => {
   it("matches identical tokens", () => {
@@ -53,5 +53,21 @@ describe("sanitizeRequest (cost-abuse guard)", () => {
     expect(sanitizeRequest({ model: "claude-haiku-4-5" }).ok).toBe(false);
     expect(sanitizeRequest({ ...base, max_tokens: Infinity }).ok).toBe(false);
     expect(sanitizeRequest({ ...base, max_tokens: -5 }).ok).toBe(false);
+  });
+});
+
+describe("readBodyCapped (real-stream body limit)", () => {
+  const req = (body: string) => new Request("https://relay.test/", { method: "POST", body });
+
+  it("returns the body when under the cap", async () => {
+    expect(await readBodyCapped(req('{"a":1}'), 1024)).toBe('{"a":1}');
+  });
+
+  it("returns null when the actual bytes exceed the cap (regardless of headers)", async () => {
+    expect(await readBodyCapped(req("x".repeat(2048)), 1024)).toBeNull();
+  });
+
+  it("treats a missing body as empty", async () => {
+    expect(await readBodyCapped(new Request("https://relay.test/", { method: "POST" }), 1024)).toBe("");
   });
 });

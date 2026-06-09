@@ -19,3 +19,6 @@ samples/*
 
 # Scratch dir for real exports under active debugging — never committed.
 testfiles/
+
+# Personal PII patterns for the pre-commit scanner — never commit
+scripts/.pii-denylist

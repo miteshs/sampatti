@@ -31,6 +31,30 @@ const ALLOWED_MODELS = new Set([
 const MAX_OUTPUT_TOKENS = 8192; // the app asks for 4000; this just blocks abuse
 const MAX_BODY_BYTES = 512 * 1024; // the brief is a few KB; reject anything huge
 
+// Read the body with a hard byte cap enforced on the ACTUAL stream — the content-length
+// header is client-controlled and can be omitted or spoofed, so it's only used as a
+// fast-path reject. Returns null when the cap is exceeded.
+export async function readBodyCapped(request: Request, cap: number): Promise<string | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > cap) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  const buf = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) { buf.set(c, off); off += c.byteLength; }
+  return new TextDecoder().decode(buf);
+}
+
 // Constant-time comparison so the token check can't be guessed byte-by-byte via timing.
 export function safeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -70,14 +94,18 @@ export default {
       return json({ error: "unauthorized" }, 401);
     }
 
+    // Fast-path reject on the declared size, then enforce the cap on the real stream
+    // (the header is client-controlled and proves nothing).
     const declaredLen = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(declaredLen) && declaredLen > MAX_BODY_BYTES) {
       return json({ error: "request too large" }, 413);
     }
+    const text = await readBodyCapped(request, MAX_BODY_BYTES);
+    if (text === null) return json({ error: "request too large" }, 413);
 
     let raw: unknown;
     try {
-      raw = await request.json();
+      raw = JSON.parse(text);
     } catch {
       return json({ error: "invalid JSON" }, 400);
     }

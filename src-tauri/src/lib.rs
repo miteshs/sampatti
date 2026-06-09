@@ -109,28 +109,42 @@ async fn claude_stream(
 // Public market-data fetch (live & historical prices) from an allow-listed set of hosts.
 // Made from Rust so it isn't blocked by the webview's CORS/CSP. Only a ticker/ISIN/scheme
 // code is ever sent — never the user's holdings. Returns the raw body for the JS to parse.
+const MARKET_HOSTS: [&str; 5] = [
+    "query1.finance.yahoo.com",
+    "query2.finance.yahoo.com",
+    "www.amfiindia.com",
+    "portal.amfiindia.com",
+    "api.mfapi.in",
+];
+
+// https + allow-listed host, checked on the INITIAL url and on every redirect hop — an
+// allow-listed host must never be able to bounce the request to plaintext or elsewhere.
+fn allowed_market_url(u: &reqwest::Url) -> bool {
+    u.scheme() == "https" && u.host_str().map(|h| MARKET_HOSTS.contains(&h)).unwrap_or(false)
+}
+
 #[tauri::command]
 async fn market_fetch(url: String) -> Result<String, String> {
-    const ALLOWED: [&str; 5] = [
-        "query1.finance.yahoo.com",
-        "query2.finance.yahoo.com",
-        "www.amfiindia.com",
-        "portal.amfiindia.com",
-        "api.mfapi.in",
-    ];
-    let host = reqwest::Url::parse(&url)
-        .map_err(|e| e.to_string())?
-        .host_str()
-        .unwrap_or("")
-        .to_string();
-    if !ALLOWED.contains(&host.as_str()) {
-        return Err(format!("host not allowed: {host}"));
+    let parsed = reqwest::Url::parse(&url).map_err(|e| e.to_string())?;
+    if !allowed_market_url(&parsed) {
+        return Err(format!(
+            "blocked: only https GETs to allow-listed market-data hosts (got {})",
+            parsed.host_str().unwrap_or("?")
+        ));
     }
+    let host = parsed.host_str().unwrap_or("").to_string();
     let client = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Macintosh) Sampatti")
+        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+            if attempt.previous().len() > 4 || !allowed_market_url(attempt.url()) {
+                attempt.stop() // surfaces as a non-success status below
+            } else {
+                attempt.follow()
+            }
+        }))
         .build()
         .map_err(|e| e.to_string())?;
-    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    let resp = client.get(parsed).send().await.map_err(|e| e.to_string())?;
     if !resp.status().is_success() {
         return Err(format!("{host} returned {}", resp.status()));
     }
