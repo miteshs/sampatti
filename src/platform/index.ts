@@ -11,34 +11,51 @@ export const isTauri = (): boolean =>
 const WEB_KEY = "sampatti.portfolio";
 const FILE = "portfolio.json";
 
+// On desktop we prefer a real file in the app-data dir, but if the Tauri fs plugin
+// errors for any reason (scope/permissions/missing dir), we fall back to the webview's
+// localStorage so the app still loads and persists rather than hanging on boot.
 export async function readPortfolioRaw(): Promise<string | null> {
   if (isTauri()) {
-    const { exists, readTextFile, BaseDirectory } = await import("@tauri-apps/plugin-fs");
-    if (!(await exists(FILE, { baseDir: BaseDirectory.AppData }))) return null;
-    return readTextFile(FILE, { baseDir: BaseDirectory.AppData });
+    try {
+      const { exists, readTextFile, BaseDirectory } = await import("@tauri-apps/plugin-fs");
+      if (await exists(FILE, { baseDir: BaseDirectory.AppData })) {
+        return await readTextFile(FILE, { baseDir: BaseDirectory.AppData });
+      }
+    } catch (e) {
+      console.error("Tauri fs read failed; using local storage fallback:", e);
+      return localStorage.getItem(WEB_KEY);
+    }
+    return localStorage.getItem(WEB_KEY); // not yet written to the file; check fallback
   }
   return localStorage.getItem(WEB_KEY);
 }
 
 export async function writePortfolioRaw(json: string): Promise<void> {
   if (isTauri()) {
-    const { writeTextFile, mkdir, exists, BaseDirectory } = await import("@tauri-apps/plugin-fs");
-    if (!(await exists("", { baseDir: BaseDirectory.AppData }))) {
-      await mkdir("", { baseDir: BaseDirectory.AppData, recursive: true });
+    try {
+      const { writeTextFile, mkdir, BaseDirectory } = await import("@tauri-apps/plugin-fs");
+      try {
+        await mkdir("", { baseDir: BaseDirectory.AppData, recursive: true });
+      } catch { /* dir already exists, or creation not permitted — try the write anyway */ }
+      await writeTextFile(FILE, json, { baseDir: BaseDirectory.AppData });
+      return;
+    } catch (e) {
+      console.error("Tauri fs write failed; using local storage fallback:", e);
     }
-    await writeTextFile(FILE, json, { baseDir: BaseDirectory.AppData });
-    return;
   }
   localStorage.setItem(WEB_KEY, json);
 }
 
 export async function clearPortfolioRaw(): Promise<void> {
   if (isTauri()) {
-    const { remove, exists, BaseDirectory } = await import("@tauri-apps/plugin-fs");
-    if (await exists(FILE, { baseDir: BaseDirectory.AppData })) {
-      await remove(FILE, { baseDir: BaseDirectory.AppData });
+    try {
+      const { remove, exists, BaseDirectory } = await import("@tauri-apps/plugin-fs");
+      if (await exists(FILE, { baseDir: BaseDirectory.AppData })) {
+        await remove(FILE, { baseDir: BaseDirectory.AppData });
+      }
+    } catch (e) {
+      console.error("Tauri fs remove failed:", e);
     }
-    return;
   }
   localStorage.removeItem(WEB_KEY);
 }

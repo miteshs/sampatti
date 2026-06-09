@@ -53,18 +53,20 @@ export const useStore = create<State>((set, get) => ({
   loaded: false,
 
   load: async () => {
-    const raw = await readPortfolioRaw();
-    if (raw) {
-      try {
+    try {
+      const raw = await readPortfolioRaw();
+      if (raw) {
         const p = JSON.parse(raw) as Portfolio;
         // Forward-compatible defaults for any setting added after the file was written.
         p.settings = { ...emptyPortfolio().settings, ...p.settings };
         p.version = CURRENT_VERSION;
         set(() => ({ portfolio: p, loaded: true }));
         return;
-      } catch {
-        /* corrupt file → start clean rather than crash */
       }
+    } catch (e) {
+      // First run, unreadable/corrupt file, or storage error → start clean rather
+      // than spin forever. Always fall through to marking the app loaded.
+      console.error("portfolio load failed:", e);
     }
     set(() => ({ loaded: true }));
   },
