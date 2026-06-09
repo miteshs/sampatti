@@ -41,6 +41,7 @@ async fn claude_stream(
     req: Value,
     mode: String,
     relay_url: String,
+    app_token: Option<String>,
     on_event: Channel<String>,
 ) -> Result<(), String> {
     let mut body = req.clone();
@@ -55,7 +56,13 @@ async fn claude_stream(
             .header("anthropic-version", "2023-06-01")
             .header("content-type", "application/json")
     } else {
-        client.post(&relay_url).header("content-type", "application/json")
+        // Relay mode: include the shared app token when configured so the worker
+        // (if it has APP_TOKEN set) accepts the request.
+        let mut b = client.post(&relay_url).header("content-type", "application/json");
+        if let Some(token) = app_token.as_deref().filter(|t| !t.is_empty()) {
+            b = b.header("x-app-token", token);
+        }
+        b
     };
 
     let resp = builder.json(&body).send().await.map_err(|e| e.to_string())?;

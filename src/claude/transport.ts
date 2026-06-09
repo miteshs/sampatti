@@ -34,6 +34,11 @@ export interface ClaudeRequest {
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
+// Shared token sent to the relay as `x-app-token`, matching the worker's APP_TOKEN secret.
+// Baked in at build time from .env.local (gitignored). Lets the relay owner revoke access
+// by rotating the secret. Only used in relay mode; BYO talks to Anthropic directly.
+const RELAY_TOKEN = import.meta.env.VITE_RELAY_TOKEN ?? "";
+
 // Stream a completion. Calls onText(delta) as chunks arrive; resolves with the full text.
 export async function streamClaude(
   req: ClaudeRequest,
@@ -43,7 +48,7 @@ export async function streamClaude(
   const { claudeMode, relayUrl } = useStore.getState().portfolio.settings;
 
   if (isTauri()) {
-    return streamTauri(req, claudeMode, relayUrl, onText);
+    return streamTauri(req, claudeMode, relayUrl, RELAY_TOKEN, onText);
   }
 
   // ---- web: relay or direct-to-Anthropic ----
@@ -58,6 +63,7 @@ export async function streamClaude(
     headers["anthropic-dangerous-direct-browser-access"] = "true";
   } else {
     url = relayUrl;
+    if (RELAY_TOKEN) headers["x-app-token"] = RELAY_TOKEN;
   }
 
   const res = await fetch(url, {
@@ -108,7 +114,7 @@ async function parseSse(body: ReadableStream<Uint8Array>, onText?: (d: string) =
 // Desktop: the Rust side decides relay-vs-byo, reads the keychain, and streams chunks back
 // over a Channel so the key never touches JS.
 async function streamTauri(
-  req: ClaudeRequest, mode: string, relayUrl: string, onText?: (d: string) => void,
+  req: ClaudeRequest, mode: string, relayUrl: string, appToken: string, onText?: (d: string) => void,
 ): Promise<string> {
   const { invoke, Channel } = await import("@tauri-apps/api/core");
   const channel = new Channel<string>();
@@ -117,7 +123,7 @@ async function streamTauri(
     full += chunk;
     onText?.(chunk);
   };
-  await invoke("claude_stream", { req, mode, relayUrl, onEvent: channel });
+  await invoke("claude_stream", { req, mode, relayUrl, appToken, onEvent: channel });
   return full;
 }
 

@@ -118,7 +118,7 @@ export function emptyPortfolio(): Portfolio {
       country: "India",
       baseCurrency: "INR",
       claudeMode: "relay",
-      relayUrl: "", // set on the Privacy screen (deploy relay/) — or switch to your own key
+      relayUrl: "https://sampatti-relay.sampatti.workers.dev", // hosted relay; override or switch to your own key on Privacy
       usdInr: 83,
       byoKeySet: false,
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku on Privacy
