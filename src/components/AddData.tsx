@@ -330,8 +330,9 @@ function GettingStarted({ hasData }: { hasData: boolean }) {
           net worth is honest. Add income sources too. Everything stays editable later (Manage → ✎).
         </Step>
         <Step n={5} title="Mark to market.">
-          Manage → Refresh live prices; Overview → Reconstruct to back-fill a year of net-worth
-          history (it records daily on its own from then on). Performance shows each holding's P&L.
+          Manage → Refresh live prices. Overview records your real net worth automatically every
+          day you open the app; Performance shows each holding's P&L and can simulate the past
+          year from market data.
         </Step>
         <Step n={6} title="Run the AI analysis.">
           AI Analysis → ✨ Analyze. You can preview the exact compact brief being sent — totals and

@@ -72,16 +72,3 @@ export function snapshotSeries(
   return out;
 }
 
-// Stitch reconstruction + record into one curve: recorded points are the truth from the first
-// snapshot onward; reconstructed points only back-fill the time before it.
-export function mergeHistory(
-  reconstructed: NetWorthPoint[],
-  recorded: NetWorthPoint[],
-): { points: NetWorthPoint[]; recordedFromT: number | null } {
-  if (recorded.length === 0) return { points: reconstructed, recordedFromT: null };
-  const firstT = recorded[0].t;
-  return {
-    points: [...reconstructed.filter((p) => p.t < firstT), ...recorded],
-    recordedFromT: firstT,
-  };
-}

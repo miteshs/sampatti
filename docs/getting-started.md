@@ -71,10 +71,11 @@ field, every holding, cost basis, buy dates).
 - **Add data → Income** — salary, rent, dividends (powers the retirement sense-check).
 - **Manage tab** — ✎ to fix anything, untick accounts to exclude them from all analysis,
   **Refresh live prices** to mark everything to market.
-- **Overview** — sanity-check net worth and allocation; on the trend card, hit
-  **Reconstruct** once to back-fill the past year (from then on it records your real history
-  daily). **Performance** shows every holding's P&L — rows marked ≈ have no purchase cost on
-  file; add real costs whenever you find them.
+- **Overview** — sanity-check net worth and allocation. Your real net worth is recorded
+  automatically every day you open the app and charts itself as history accumulates.
+  **Performance** shows every holding's P&L — rows marked ≈ have no purchase cost on file;
+  add real costs whenever you find them — and can simulate the past year from market data
+  (clearly labelled as a what-if, since it back-prices today's holdings).
 
 ## 6. Run the AI analysis
 

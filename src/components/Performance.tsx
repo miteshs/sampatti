@@ -8,6 +8,7 @@ import { useStore } from "../storage/store";
 import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { holdingBase, holdingGain, inr, pct, type HoldingGain } from "../domain/format";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
+import { MarketHistory } from "./MarketHistory";
 
 const GREEN = "#1a9e6b", RED = "#d6455d";
 const signColor = (n: number) => (n >= 0 ? GREEN : RED);
@@ -122,6 +123,9 @@ export function Performance() {
           </div>
         </div>
       </div>
+
+      {/* What-if curve: today's holdings back-priced with market data (simulation, not record) */}
+      <MarketHistory />
 
       <div className="card">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.6rem", marginBottom: "0.6rem" }}>

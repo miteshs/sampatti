@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeHistory, snapshotOf, snapshotSeries, snapshotTime, upsertSnapshot } from "./snapshots";
+import { snapshotOf, snapshotSeries, snapshotTime, upsertSnapshot } from "./snapshots";
 import { emptyPortfolio, type DailySnapshot, type Holding } from "./types";
 
 function portfolioWith(): ReturnType<typeof emptyPortfolio> {
@@ -77,22 +77,5 @@ describe("snapshotSeries", () => {
     const pts = snapshotSeries(snaps, new Set(["a", "b", "loan"]), snapshotTime("2026-06-03"));
     expect(pts).toHaveLength(1);
     expect(pts[0].netWorth).toBe(142);
-  });
-});
-
-describe("mergeHistory", () => {
-  const recon = [
-    { t: 10, netWorth: 90 }, { t: 20, netWorth: 95 }, { t: 30, netWorth: 99 },
-  ];
-  it("recorded points replace reconstruction from the first snapshot on", () => {
-    const { points, recordedFromT } = mergeHistory(recon, [{ t: 20, netWorth: 100 }, { t: 40, netWorth: 110 }]);
-    expect(points.map((p) => p.t)).toEqual([10, 20, 40]);
-    expect(points[1].netWorth).toBe(100); // the RECORD wins at t=20
-    expect(recordedFromT).toBe(20);
-  });
-  it("falls back to pure reconstruction when nothing is recorded", () => {
-    const { points, recordedFromT } = mergeHistory(recon, []);
-    expect(points).toBe(recon);
-    expect(recordedFromT).toBeNull();
   });
 });
