@@ -25,9 +25,17 @@ const CSV_TEMPLATE =
   "Equity MF,CAMS,mutual_fund,taxable,India,INR,,Parag Parikh Flexi Cap,equity_mf,,5500000,3000000,2019-04-01,2026-05-31\n" +
   "PPF,SBI,epf_ppf,eee_exempt,India,INR,,PPF account,epf_ppf,,2800000,,,2026-03-31\n";
 
+// A pending draft carries a STABLE key so React preserves each review card's own state
+// (its "Apply to" target, edited fields) when other drafts are committed/removed. Keying by
+// array index instead silently reassigns one card's target to a different draft → wrong
+// merges and duplicate accounts.
+type Pending = { key: string; draft: ImportDraft };
+let draftSeq = 0;
+const wrapDrafts = (ds: ImportDraft[]): Pending[] => ds.map((draft) => ({ key: `d${draftSeq++}`, draft }));
+
 export function AddData() {
   const { replaceAll, addDraft, mergeDraftInto, addAccount, addHolding, addIncome, wipe, portfolio } = useStore();
-  const [drafts, setDrafts] = useState<ImportDraft[]>([]);
+  const [drafts, setDrafts] = useState<Pending[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
   const [skipped, setSkipped] = useState(0);
@@ -58,20 +66,23 @@ export function AddData() {
   // Override the currency of a parsed draft (e.g. a US statement that came back as INR) —
   // applies to the account and every holding so conversion uses the right rate.
   const setDraftCurrency = (index: number, currency: string) => {
-    setDrafts((all) => all.map((d, j) => (j === index ? {
-      ...d,
-      account: { ...d.account, currency },
-      holdings: d.holdings.map((h) => ({ ...h, currency })),
-    } : d)));
+    setDrafts((all) => all.map((p, j) => (j === index ? {
+      ...p,
+      draft: {
+        ...p.draft,
+        account: { ...p.draft.account, currency },
+        holdings: p.draft.holdings.map((h) => ({ ...h, currency })),
+      },
+    } : p)));
   };
 
   // Edit a single holding inside a draft (fix an AI/parse mislabel before saving).
   const updateDraftHolding = (di: number, hi: number, patch: Partial<ImportDraft["holdings"][number]>) =>
-    setDrafts((all) => all.map((d, j) => (j === di
-      ? { ...d, holdings: d.holdings.map((h, k) => (k === hi ? { ...h, ...patch } : h)) }
-      : d)));
+    setDrafts((all) => all.map((p, j) => (j === di
+      ? { ...p, draft: { ...p.draft, holdings: p.draft.holdings.map((h, k) => (k === hi ? { ...h, ...patch } : h)) } }
+      : p)));
   const removeDraftHolding = (di: number, hi: number) =>
-    setDrafts((all) => all.map((d, j) => (j === di ? { ...d, holdings: d.holdings.filter((_, k) => k !== hi) } : d)));
+    setDrafts((all) => all.map((p, j) => (j === di ? { ...p, draft: { ...p.draft, holdings: p.draft.holdings.filter((_, k) => k !== hi) } } : p)));
 
   // Selection from either picker (one file, many files, or a whole folder tree).
   const onPick = (list: FileList | null) => {
@@ -101,7 +112,7 @@ export function AddData() {
       setBusy(`Processing ${++done} of ${files.length}: ${f.name}…`);
       try {
         const result = await ingestFile(f);
-        setDrafts((d) => [...d, ...result]);
+        setDrafts((d) => [...d, ...wrapDrafts(result)]);
       } catch (e) {
         // Unrecognized CSV/Excel → offer Claude rather than just failing.
         if (e instanceof NeedsClaudeError) {
@@ -120,7 +131,7 @@ export function AddData() {
     setAiBusy(file.name);
     try {
       const result = await ingestWithClaude(file);
-      setDrafts((d) => [...d, ...result]);
+      setDrafts((d) => [...d, ...wrapDrafts(result)]);
       setNeedsClaude((n) => n.filter((x) => x.file !== file));
     } catch (e) {
       setErrors((er) => [...er, `${file.name} (Claude): ${e instanceof Error ? e.message : String(e)}`]);
@@ -246,20 +257,20 @@ export function AddData() {
         );
       })()}
 
-      {/* Draft review */}
-      {drafts.map((d, i) => (
+      {/* Draft review — keyed by a STABLE id (p.key), never the array index */}
+      {drafts.map((p, i) => (
         <DraftReview
-          key={i} draft={d}
+          key={p.key} draft={p.draft}
           accounts={portfolio.accounts}
           onCurrency={(c) => setDraftCurrency(i, c)}
           onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
           onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
           onApply={(target) => {
-            if (target === "new") addDraft(d, "new");
-            else mergeDraftInto(target, d);
-            setDrafts((all) => all.filter((_, j) => j !== i));
+            if (target === "new") addDraft(p.draft, "new");
+            else mergeDraftInto(target, p.draft);
+            setDrafts((all) => all.filter((x) => x.key !== p.key));
           }}
-          onDiscard={() => setDrafts((all) => all.filter((_, j) => j !== i))}
+          onDiscard={() => setDrafts((all) => all.filter((x) => x.key !== p.key))}
         />
       ))}
 
@@ -289,6 +300,9 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
   const matched = findMatchingAccount(accounts, draft.account);
   const [target, setTarget] = useState<"new" | string>(matched?.id ?? "new");
   const targetAcct = target === "new" ? undefined : accounts.find((a) => a.id === target);
+  // No exact (institution+name) match, but a same-name account exists (e.g. its institution was
+  // edited) — surface it so the user can choose to overwrite instead of silently duplicating.
+  const likely = matched ? undefined : accounts.find((a) => a.name.trim().toLowerCase() === draft.account.name.trim().toLowerCase());
   return (
     <div className="card" style={{ borderLeft: `3px solid ${matched ? "var(--amber, #d98324)" : "var(--primary)"}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -342,6 +356,18 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
         <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
           This will <strong>replace</strong> the holdings of <strong>{targetAcct.name}</strong> ({targetAcct.institution || "—"}) with
           this statement, and update its details. Items not in this statement are removed.
+        </div>
+      )}
+      {matched && target === "new" && (
+        <div className="badge badge-rose" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
+          ⚠ An account named <strong>{matched.name}</strong> ({matched.institution}) already exists. Saving as
+          <strong> New account</strong> will create a <strong>duplicate</strong> — switch “Apply to” to <strong>Update: {matched.name}</strong> above to overwrite it instead.
+        </div>
+      )}
+      {likely && target === "new" && (
+        <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
+          A possibly-matching account already exists: <strong>{likely.name}</strong> ({likely.institution}). If this statement is for
+          it, choose <strong>Update: {likely.name}</strong> under “Apply to” to overwrite rather than create a second copy.
         </div>
       )}
       {draft.warnings.length > 0 && (
