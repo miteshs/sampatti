@@ -97,8 +97,8 @@ export function Performance() {
     <div className="grid" style={{ gap: "1.25rem" }}>
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
-          <div className="muted" style={{ fontSize: "0.74rem", fontWeight: 600 }}>Unrealized P&amp;L</div>
-          <div style={{ fontSize: "1.9rem", fontWeight: 800, marginTop: "0.2rem", letterSpacing: "-0.02em", color: signColor(totals.gain) }}>
+          <div className="eyebrow">Unrealized P&amp;L</div>
+          <div style={{ fontSize: "1.95rem", fontWeight: 750, marginTop: "0.25rem", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: signColor(totals.gain) }}>
             {signed(totals.gain)}
           </div>
           <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>
@@ -106,8 +106,8 @@ export function Performance() {
           </div>
         </div>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
-          <div className="muted" style={{ fontSize: "0.74rem", fontWeight: 600 }}>Winners vs losers</div>
-          <div style={{ fontSize: "1.4rem", fontWeight: 800, marginTop: "0.2rem" }}>
+          <div className="eyebrow">Winners vs losers</div>
+          <div style={{ fontSize: "1.4rem", fontWeight: 750, marginTop: "0.25rem", fontVariantNumeric: "tabular-nums" }}>
             <span style={{ color: GREEN }}>{totals.up} up</span>
             <span className="muted" style={{ fontWeight: 400 }}> · </span>
             <span style={{ color: RED }}>{totals.down} down</span>
@@ -115,8 +115,8 @@ export function Performance() {
           <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>of {rows.length} holdings</div>
         </div>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
-          <div className="muted" style={{ fontSize: "0.74rem", fontWeight: 600 }}>Real cost basis</div>
-          <div style={{ fontSize: "1.4rem", fontWeight: 800, marginTop: "0.2rem" }}>{totals.realPct}%</div>
+          <div className="eyebrow">Real cost basis</div>
+          <div style={{ fontSize: "1.4rem", fontWeight: 750, marginTop: "0.25rem", fontVariantNumeric: "tabular-nums" }}>{totals.realPct}%</div>
           <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>
             of value has a true purchase cost — the rest is measured since first import (≈)
           </div>

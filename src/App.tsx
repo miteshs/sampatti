@@ -56,16 +56,18 @@ export default function App() {
           <span className="spinner" />
         </div>
       ) : (
-        <ErrorBoundary key={view}>
-          {view === "overview" && <Overview />}
-          {view === "performance" && <Performance />}
-          {view === "manage" && <Manage />}
-          {view === "analysis" && (hasData
-            ? <AnalysisChat onConfigure={() => setView("privacy")} />
-            : <Empty onAdd={() => setView("add")} />)}
-          {view === "add" && <AddData />}
-          {view === "privacy" && <Privacy />}
-        </ErrorBoundary>
+        <main className="view" key={view}>
+          <ErrorBoundary>
+            {view === "overview" && <Overview />}
+            {view === "performance" && <Performance />}
+            {view === "manage" && <Manage />}
+            {view === "analysis" && (hasData
+              ? <AnalysisChat onConfigure={() => setView("privacy")} />
+              : <Empty onAdd={() => setView("add")} />)}
+            {view === "add" && <AddData />}
+            {view === "privacy" && <Privacy />}
+          </ErrorBoundary>
+        </main>
       )}
     </div>
   );

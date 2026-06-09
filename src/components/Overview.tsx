@@ -11,14 +11,10 @@ import { NetWorthTrend } from "./NetWorthTrend";
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
     <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
-      <div className="muted" style={{ fontSize: "0.74rem", fontWeight: 600 }}>{label}</div>
+      <div className="eyebrow">{label}</div>
       <div style={{
-        fontSize: accent ? "1.9rem" : "1.4rem", fontWeight: 800, marginTop: "0.2rem",
-        letterSpacing: "-0.02em",
-        ...(accent ? {
-          background: "linear-gradient(135deg, var(--primary), var(--primary-2))",
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-        } : {}),
+        fontSize: accent ? "1.95rem" : "1.4rem", fontWeight: 750, marginTop: "0.25rem",
+        letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums",
       }}>{value}</div>
       {sub && <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>{sub}</div>}
     </div>
