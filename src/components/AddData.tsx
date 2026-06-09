@@ -150,6 +150,8 @@ export function AddData() {
 
   return (
     <div className="grid" style={{ gap: "1.25rem" }}>
+      <GettingStarted hasData={hasData} />
+
       {/* Demo + import */}
       <div className="card">
         <div className="eyebrow">Get started</div>
@@ -281,6 +283,63 @@ export function AddData() {
 
       <IncomeForm onAdd={addIncome} />
     </div>
+  );
+}
+
+// ---- first-run guide ----
+// The full guide also lives at github.com/miteshs/sampatti-releases (and docs/getting-started.md);
+// this is the in-app version, self-contained because the webview doesn't open external links.
+// Open by default until the portfolio has data, then collapses to a single reopenable line.
+function GettingStarted({ hasData }: { hasData: boolean }) {
+  const [open, setOpen] = useState(!hasData);
+  const Step = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (
+    <div style={{ display: "flex", gap: "0.7rem", alignItems: "baseline" }}>
+      <span style={{
+        flexShrink: 0, width: 22, height: 22, borderRadius: 999, background: "var(--primary-soft)",
+        color: "var(--primary)", fontSize: "0.74rem", fontWeight: 700, display: "inline-flex",
+        alignItems: "center", justifyContent: "center", transform: "translateY(3px)",
+      }}>{n}</span>
+      <div>
+        <span style={{ fontWeight: 650 }}>{title}</span>{" "}
+        <span className="muted" style={{ fontSize: "0.84rem", lineHeight: 1.55 }}>{children}</span>
+      </div>
+    </div>
+  );
+  return (
+    <details className="card" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <span className="eyebrow" style={{ flex: 1 }}>📖 Getting started — zero to an AI-reviewed portfolio</span>
+        <span className="muted" style={{ fontSize: "0.78rem" }}>{open ? "hide" : "show"}</span>
+      </summary>
+      <div className="grid" style={{ gap: "0.65rem", marginTop: "0.9rem" }}>
+        <Step n={1} title="Connect Claude (Privacy tab).">
+          Add your own Anthropic API key — it lives in the macOS Keychain. If you hold US assets, refresh the USD→INR rate there too.
+        </Step>
+        <Step n={2} title="Download a statement from every account into one folder.">
+          CSV/Excel beats PDF (parsed fully on this device). Choose exports that include
+          cost-basis / buy-value columns — that's what powers true P&L: broker holdings exports,
+          CDSL/NSDL Holding Statement, CAMS/KFintech, US broker positions CSV with Cost Basis + Date Acquired.
+        </Step>
+        <Step n={3} title="Import the whole folder below.">
+          Each statement becomes a review card — nothing saves until you approve it. Check the
+          currency, fix asset classes or values, fill missing cost bases, and use “Apply to”:
+          New account the first time, Update when it's a fresh statement of an account you already track.
+        </Step>
+        <Step n={4} title="Add the rest by hand.">
+          Property, PPF/EPF, FDs, insurance, gold by weight — and loans as a Liability account so
+          net worth is honest. Add income sources too. Everything stays editable later (Manage → ✎).
+        </Step>
+        <Step n={5} title="Mark to market.">
+          Manage → Refresh live prices; Overview → Reconstruct to back-fill a year of net-worth
+          history (it records daily on its own from then on). Performance shows each holding's P&L.
+        </Step>
+        <Step n={6} title="Run the AI analysis.">
+          AI Analysis → ✨ Analyze. You can preview the exact compact brief being sent — totals and
+          percentages, never your statements. Then ask follow-ups in plain language. Re-import newer
+          statements anytime; they update accounts instead of duplicating them.
+        </Step>
+      </div>
+    </details>
   );
 }
 
