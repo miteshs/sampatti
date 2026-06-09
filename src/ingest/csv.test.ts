@@ -287,6 +287,24 @@ ALT,SAMPLE OPPORTUNITIES FUND,"$50,000.00",Alternative Investments`;
   });
 });
 
+describe("structured notes", () => {
+  it("tags US bank-issued market-linked notes (Fixed Income) as structured_notes, leaving plain bonds as fd_rd", () => {
+    const csv = `Symbol,Description,Current Value,Asset Type
+N1,MORGAN STANLEY FIN VAR 26 DUE 10/09/26,"$10,000.00",Fixed Income
+N2,BNP PARIBAS SA 0% 29F DUE 03/05/29,"$20,000.00",Fixed Income
+B1,US TREASURY N/B 4.125% DUE 11/15/32,"$5,000.00",Fixed Income`;
+    const h = parseCsv(csv, "fi.csv")[0].holdings;
+    expect(h.find((x) => x.symbol === "N1")!.assetClass).toBe("structured_notes");
+    expect(h.find((x) => x.symbol === "N2")!.assetClass).toBe("structured_notes");
+    expect(h.find((x) => x.symbol === "B1")!.assetClass).toBe("fd_rd"); // Treasury, not bank-issued → stays FD/RD
+  });
+
+  it("classifies an Indian market-linked debenture by name, and an explicit asset_class", () => {
+    expect(parseCsv(`Scheme Name,Current Value\nXYZ Market Linked Debenture,"5,00,000"`, "mld.csv")[0].holdings[0].assetClass).toBe("structured_notes");
+    expect(parseCsv(`name,market_value,asset_class\nA,1000,structured note`, "x.csv")[0].holdings[0].assetClass).toBe("structured_notes");
+  });
+});
+
 describe("parseCsv (unrecognizable layout → nothing parses, so the UI can offer Claude)", () => {
   it("returns no holdings when no value/name columns are found", () => {
     const junk = `Foo,Bar,Baz\nhello,world,123\nlorem,ipsum,456`;

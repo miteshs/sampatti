@@ -44,13 +44,28 @@ function lower(row: Row): Lowered {
 const CASH_LIKE = /money market|fdic|treasury only|cash reserves|cash & cash|cash investment|SPAXX|FDRXX|FZFXX|SWVXX|VMFXX|SNSXX/i;
 
 // Detect the alternative asset classes from a holding's name (e.g. "Blackstone Private Credit
-// Fund", "KKR Private Equity", "Marcellus PMS"). Conservative — only fires on explicit phrases.
+// Fund", "KKR Private Equity", "Marcellus PMS", "… Market Linked Debenture"). Conservative —
+// only fires on explicit phrases.
 function classFromName(name: string): AssetClass | undefined {
   const n = name.toLowerCase();
+  if (/structured note|structured product|market.?linked|equity.?linked note|\bmld\b|\beln\b|autocallable/.test(n)) return "structured_notes";
   if (/private credit|direct lending|private debt|credit fund/.test(n)) return "private_credit";
   if (/private equity|buyout|venture capital|private assets|private markets/.test(n)) return "private_equity";
   if (/\bpms\b|portfolio management service/.test(n)) return "pms";
   return undefined;
+}
+
+// Brokerage "Fixed Income" rows that are really market-linked structured notes: a bank-issuer
+// financing entity, a "DUE <maturity>", and a VAR/coupon shape (e.g. "MORGAN STANLEY FIN VAR
+// 26 DUE 10/09/26", "BNP PARIBAS SA 0% 29F DUE 03/05/29"). Plain Treasuries/munis/corporates
+// (no bank-financing issuer) stay fd_rd; ambiguous bank bonds can be reclassified by hand.
+function looksLikeStructuredNote(name: string): boolean {
+  const n = name.toLowerCase();
+  if (!/\bdue\b|\bcalled\b|\beff:/.test(n)) return false; // a maturity / call marker
+
+  const bankIssuer = /\bfin\b|\bfinl\b|fin corp|global ma\b|global markets|bank plc|paribas|barclays|societe generale|credit agricole|\bubs\b|morgan stanley|citigroup global|goldman|gs fin|deutsche|\bhsbc\b|natwest/.test(n);
+  const noteShape = /\bvar\b|\d{1,2}(\.\d+)?\s*%|0%/.test(n);
+  return bankIssuer && noteShape;
 }
 
 // US broker "Asset Type"/"Security Type" column → our asset class. Used only for USD rows;
@@ -125,8 +140,10 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
     else if (isUsd) {
       const typeKey = (r.asset_type || r.security_type || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
       const byType = US_ASSET_TYPE[typeKey];
-      assetClass = (byType && byType !== "other") ? byType
-        : byName ?? byType ?? (CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity");
+      if (byName) assetClass = byName; // explicit name signal (structured note / PE / PC / PMS)
+      else if (byType === "fd_rd" && looksLikeStructuredNote(name)) assetClass = "structured_notes";
+      else if (byType && byType !== "other") assetClass = byType;
+      else assetClass = byType ?? (CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity");
     } else if (byName) assetClass = byName;
     else if ((r.instrument || r.symbol || r.scrip || r.isin) && num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net)) assetClass = "indian_equity";
     else assetClass = "other";

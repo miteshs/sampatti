@@ -22,7 +22,7 @@ Return ONE JSON object of the form { "accounts": [ ... ] }, where each entry is 
     {
       "symbol": "ticker / ISIN / scheme code if shown (omit if none)",
       "name": "security or scheme name",
-      "asset_class": one of ["indian_equity","equity_mf","index_etf","elss","debt_mf","nps","epf_ppf","fd_rd","gold_sgb","gold_other","reit_invit","us_equity","private_equity","private_credit","pms","insurance","crypto","real_estate","cash","other"],
+      "asset_class": one of ["indian_equity","equity_mf","index_etf","elss","debt_mf","nps","epf_ppf","fd_rd","structured_notes","gold_sgb","gold_other","reit_invit","us_equity","private_equity","private_credit","pms","insurance","crypto","real_estate","cash","other"],
       "units": number (omit if not applicable),
       "value": number (CURRENT market value in the account currency),
       "cost_basis": number (total invested / cost, omit if not shown)
@@ -38,7 +38,7 @@ Rules:
 - Extract EVERY position. value = current market value (not cost).
 - A single-balance statement (PMS, pension, insurance surrender value, a flat) = ONE holding equal to the total/closing value.
 - Indian numbers may use lakh/crore grouping like 1,08,31,366.11 — read them correctly. Strip ₹ , $ and spaces. Do NOT invent values you cannot read.
-- Choose the closest asset_class: equity MF = "equity_mf"; tax-saver/ELSS = "elss"; liquid/debt/gilt fund = "debt_mf"; Sovereign Gold Bond = "gold_sgb"; gold ETF/physical = "gold_other"; PPF/EPF/VPF = "epf_ppf"; FD/RD/NCD/bond = "fd_rd"; ULIP/endowment/LIC = "insurance"; RSU/ESPP/US stock = "us_equity"; private-equity / VC / buyout / private-markets fund = "private_equity"; private-credit / direct-lending / private-debt fund = "private_credit"; PMS / AIF / managed discretionary portfolio = "pms".
+- Choose the closest asset_class: equity MF = "equity_mf"; tax-saver/ELSS = "elss"; liquid/debt/gilt fund = "debt_mf"; Sovereign Gold Bond = "gold_sgb"; gold ETF/physical = "gold_other"; PPF/EPF/VPF = "epf_ppf"; FD/RD/NCD/plain bond = "fd_rd"; market-linked note / structured product / MLD / autocallable / equity-linked note, or a bank-issued note with a 'DUE' maturity and a VAR/0%/odd coupon (e.g. "Morgan Stanley Fin VAR … DUE", "BNP Paribas 0% … DUE") = "structured_notes"; ULIP/endowment/LIC = "insurance"; RSU/ESPP/US stock = "us_equity"; private-equity / VC / buyout / private-markets fund = "private_equity"; private-credit / direct-lending / private-debt fund = "private_credit"; PMS / AIF / managed discretionary portfolio = "pms".
 - Output ONLY the JSON object. No markdown, no commentary.`;
 
 // ---- JSON repair (handles truncation from weaker/vision outputs) ----

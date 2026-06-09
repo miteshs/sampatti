@@ -7,8 +7,8 @@ import type { AccountType, AssetClass, Region, TaxTreatment } from "./types";
 
 const ASSET_CLASSES: AssetClass[] = [
   "indian_equity", "equity_mf", "index_etf", "elss", "debt_mf", "nps", "epf_ppf",
-  "fd_rd", "gold_sgb", "gold_other", "reit_invit", "us_equity", "private_equity",
-  "private_credit", "pms", "insurance", "crypto", "real_estate", "cash", "other",
+  "fd_rd", "structured_notes", "gold_sgb", "gold_other", "reit_invit", "us_equity",
+  "private_equity", "private_credit", "pms", "insurance", "crypto", "real_estate", "cash", "other",
 ];
 
 const ACCOUNT_TYPES: AccountType[] = [
@@ -32,6 +32,10 @@ const CLASS_ALIAS: Record<string, AssetClass> = {
   epf: "epf_ppf", ppf: "epf_ppf", vpf: "epf_ppf", pf: "epf_ppf", provident_fund: "epf_ppf",
   fd: "fd_rd", rd: "fd_rd", fixed_deposit: "fd_rd", recurring_deposit: "fd_rd",
   deposit: "fd_rd", bond: "fd_rd", bonds: "fd_rd", ncd: "fd_rd",
+  structured_note: "structured_notes", structured_notes: "structured_notes",
+  structured_product: "structured_notes", market_linked: "structured_notes",
+  market_linked_debenture: "structured_notes", mld: "structured_notes",
+  eln: "structured_notes", equity_linked_note: "structured_notes", autocallable: "structured_notes",
   sgb: "gold_sgb", sovereign_gold: "gold_sgb", sovereign_gold_bond: "gold_sgb",
   gold: "gold_other", gold_etf: "gold_other", gold_fund: "gold_other", silver: "gold_other",
   reit: "reit_invit", invit: "reit_invit",
@@ -103,15 +107,15 @@ export const normRegion = (v: unknown, def: Region = "India"): [Region, boolean]
 export const ASSET_CLASS_ORDER: AssetClass[] = [
   "indian_equity", "equity_mf", "index_etf", "elss", "us_equity", "private_equity",
   "reit_invit", "private_credit", "pms", "debt_mf", "nps", "epf_ppf", "fd_rd",
-  "gold_sgb", "gold_other", "insurance", "crypto", "cash", "real_estate", "other",
+  "structured_notes", "gold_sgb", "gold_other", "insurance", "crypto", "cash", "real_estate", "other",
 ];
 
 export const ASSET_CLASS_LABEL: Record<AssetClass, string> = {
   indian_equity: "Indian Equity", equity_mf: "Equity MF", index_etf: "Index / ETF",
   elss: "ELSS", debt_mf: "Debt MF", nps: "NPS", epf_ppf: "EPF / PPF", fd_rd: "FD / RD",
-  gold_sgb: "Gold (SGB)", gold_other: "Gold (other)", reit_invit: "REIT / InvIT",
-  us_equity: "US Equity", private_equity: "Private Equity", private_credit: "Private Credit",
-  pms: "PMS / AIF", insurance: "Insurance", crypto: "Crypto",
+  structured_notes: "Structured Notes", gold_sgb: "Gold (SGB)", gold_other: "Gold (other)",
+  reit_invit: "REIT / InvIT", us_equity: "US Equity", private_equity: "Private Equity",
+  private_credit: "Private Credit", pms: "PMS / AIF", insurance: "Insurance", crypto: "Crypto",
   real_estate: "Real Estate", cash: "Cash", other: "Other",
 };
 

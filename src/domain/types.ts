@@ -13,6 +13,7 @@ export type AssetClass =
   | "nps" // National Pension System
   | "epf_ppf" // EPF / PPF / VPF
   | "fd_rd" // fixed & recurring deposits, bonds held to maturity
+  | "structured_notes" // market-linked notes / MLDs / autocallables (bank-issued, illiquid)
   | "gold_sgb" // Sovereign Gold Bonds
   | "gold_other" // physical gold, gold ETFs/funds
   | "reit_invit" // REITs / InvITs
