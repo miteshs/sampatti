@@ -9,7 +9,7 @@ import {
 import { findMatchingAccount } from "../domain/types";
 import { fetchGoldPerGramInr } from "../domain/gold";
 import type {
-  Account, AccountType, AssetClass, ImportDraft, IncomeKind, Region, TaxTreatment,
+  Account, AccountType, AssetClass, FlowKind, ImportDraft, IncomeKind, Region, TaxTreatment,
 } from "../domain/types";
 
 const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
@@ -267,8 +267,8 @@ export function AddData() {
           onCurrency={(c) => setDraftCurrency(i, c)}
           onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
           onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
-          onApply={(target) => {
-            if (target === "new") addDraft(p.draft, "new");
+          onApply={(target, money) => {
+            if (target === "new") addDraft(p.draft, "new", money);
             else mergeDraftInto(target, p.draft);
             setDrafts((all) => all.filter((x) => x.key !== p.key));
           }}
@@ -276,9 +276,9 @@ export function AddData() {
         />
       ))}
 
-      <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings) => {
+      <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings, money) => {
         const id = addAccount(acct);
-        for (const h of holdings) addHolding({ ...h, accountId: id });
+        for (const h of holdings) addHolding({ ...h, accountId: id }, money);
       }} />
 
       <IncomeForm onAdd={addIncome} />
@@ -353,12 +353,16 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
   draft: ImportDraft; accounts: Account[]; onCurrency: (currency: string) => void;
   onHolding: (hi: number, patch: Partial<ImportDraft["holdings"][number]>) => void;
   onRemoveHolding: (hi: number) => void;
-  onApply: (target: "new" | string) => void; onDiscard: () => void;
+  onApply: (target: "new" | string, money: FlowKind) => void; onDiscard: () => void;
 }) {
   const total = draft.holdings.reduce((s, h) => s + h.marketValue, 0);
   const fmt = (v: number) => draft.account.currency === "INR" ? inr(v) : `${draft.account.currency} ${v.toLocaleString("en-US")}`;
   const matched = findMatchingAccount(accounts, draft.account);
   const [target, setTarget] = useState<"new" | string>(matched?.id ?? "new");
+  // For a NEW account: is this money you already had (just starting to track it) or fresh
+  // savings? Drives the growth-vs-added split on the trend card. "Already owned" is the safe
+  // default — it never inflates your savings number.
+  const [money, setMoney] = useState<FlowKind>("tracking");
   const targetAcct = target === "new" ? undefined : accounts.find((a) => a.id === target);
   // No exact (institution+name) match, but a same-name account exists (e.g. its institution was
   // edited) — surface it so the user can choose to overwrite instead of silently duplicating.
@@ -397,7 +401,7 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
               </select>
             </label>
           )}
-          <button className="btn btn-primary" onClick={() => onApply(target)} style={{ alignSelf: "flex-end" }}>
+          <button className="btn btn-primary" onClick={() => onApply(target, money)} style={{ alignSelf: "flex-end" }}>
             {target === "new"
               ? `Add ${draft.holdings.length} holdings · ${fmt(total)}`
               : `↻ Replace with ${draft.holdings.length} · ${fmt(total)}`}
@@ -405,6 +409,16 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
           <button className="btn btn-ghost" onClick={onDiscard} style={{ alignSelf: "flex-end" }}>Discard</button>
         </div>
       </div>
+      {target === "new" && (
+        <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap", marginTop: "0.6rem" }}>
+          <span className="muted" style={{ fontSize: "0.76rem" }}>This money is:</span>
+          <button className={`chip ${money === "tracking" ? "active" : ""}`} style={{ padding: "0.14rem 0.6rem", fontSize: "0.76rem" }}
+            onClick={() => setMoney("tracking")}>I already owned it — just start tracking</button>
+          <button className={`chip ${money === "flow" ? "active" : ""}`} style={{ padding: "0.14rem 0.6rem", fontSize: "0.76rem" }}
+            onClick={() => setMoney("flow")}>It's new money (savings)</button>
+          <span className="muted" style={{ fontSize: "0.72rem" }}>— keeps "your investments grew" separate from "you added money" on the trend.</span>
+        </div>
+      )}
       {matched && target === matched.id && (
         <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
           Matches an account you already have ({matched.institution} · {matched.name}) — preselected to <strong>Update</strong>.
@@ -519,13 +533,14 @@ function DraftNum({ value, onChange }: { value: number; onChange: (n: number) =>
 
 // ---- manual account + holdings entry ----
 function ManualAccount({ onAdd, usdInr }: {
-  onAdd: (a: ImportDraft["account"], h: ImportDraft["holdings"]) => void;
+  onAdd: (a: ImportDraft["account"], h: ImportDraft["holdings"], money: FlowKind) => void;
   usdInr: number;
 }) {
   const [a, setA] = useState<ImportDraft["account"]>({
     name: "", institution: "", accountType: "demat", taxTreatment: "taxable",
     region: "India", currency: "INR", asOf: new Date().toISOString().slice(0, 10),
   });
+  const [money, setMoney] = useState<FlowKind>("tracking"); // pre-owned by default — see DraftReview
   const [hName, setHName] = useState("");
   const [hClass, setHClass] = useState<AssetClass>("indian_equity");
   const [hValue, setHValue] = useState("");
@@ -569,7 +584,7 @@ function ManualAccount({ onAdd, usdInr }: {
     const extra = pendingHolding();
     const all = extra ? [...holdings, extra] : holdings;
     if (!a.name.trim() || all.length === 0) return;
-    onAdd(a, all);
+    onAdd(a, all, money);
     setA({ ...a, name: "", institution: "" });
     setHoldings([]); setHName(""); setHValue(""); setHBasis(""); setHGrams("");
   };
@@ -651,6 +666,13 @@ function ManualAccount({ onAdd, usdInr }: {
       )}
       <div style={{ marginTop: "0.9rem", display: "flex", gap: "0.7rem", alignItems: "center", flexWrap: "wrap" }}>
         <button className="btn btn-primary" onClick={save} disabled={!canSave}>Save account</button>
+        <span style={{ display: "inline-flex", gap: "0.35rem", alignItems: "center" }}>
+          <span className="muted" style={{ fontSize: "0.74rem" }}>This money is:</span>
+          <button className={`chip ${money === "tracking" ? "active" : ""}`} style={{ padding: "0.12rem 0.55rem", fontSize: "0.74rem" }}
+            onClick={() => setMoney("tracking")}>already owned</button>
+          <button className={`chip ${money === "flow" ? "active" : ""}`} style={{ padding: "0.12rem 0.55rem", fontSize: "0.74rem" }}
+            onClick={() => setMoney("flow")}>new savings</button>
+        </span>
         {!canSave && (
           <span className="muted" style={{ fontSize: "0.78rem" }}>
             {!a.name.trim() ? "Enter an account name" : "Add at least one holding (fill the name + value above)"} to save.

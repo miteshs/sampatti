@@ -386,3 +386,72 @@ describe("daily net-worth snapshots", () => {
     expect(s().portfolio.snapshots).toHaveLength(0);
   });
 });
+
+describe("flows ledger — growth vs added-money classification", () => {
+  const s = () => useStore.getState();
+
+  it("a NEW account defaults to a 'tracking' event (pre-owned money, not savings)", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 100000 }]));
+    const f = s().portfolio.flows;
+    expect(f).toHaveLength(1);
+    expect(f[0].kind).toBe("tracking");
+    expect(f[0].amount).toBe(100000);
+    expect(f[0].source).toBe("account_added");
+  });
+
+  it("a NEW account marked as new money records a 'flow' event", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 100000 }]), "new", "flow");
+    expect(s().portfolio.flows[0].kind).toBe("flow");
+  });
+
+  it("a new LIABILITY account records a negative amount (matches the snapshot sign)", () => {
+    const loan: ImportDraft = {
+      account: { name: "Loan", institution: "Bank", accountType: "liability", taxTreatment: "na", region: "India", currency: "INR" },
+      holdings: [{ name: "Home loan", assetClass: "other", marketValue: 40000, currency: "INR" }],
+      warnings: [], source: "test",
+    };
+    s().addDraft(loan);
+    expect(s().portfolio.flows[0].amount).toBe(-40000);
+  });
+
+  it("re-import decomposes: bought units become a flow, price moves stay growth", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 1000, units: 10 }])); // tracking event
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 1800, units: 15 }])); // 15 @120
+    const f = s().portfolio.flows;
+    expect(f).toHaveLength(2);
+    expect(f[1].kind).toBe("flow");
+    expect(f[1].amount).toBe(600); // 5 bought × 120; the 200 price gain is residual growth
+    expect(f[1].source).toBe("import");
+  });
+
+  it("re-import with only a price move records NO event (zero amounts are skipped)", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 1000, units: 10 }]));
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 1200, units: 10 }]));
+    expect(s().portfolio.flows).toHaveLength(1); // just the original account_added
+  });
+
+  it("a no-units balance jump lands in 'unclassified', not savings", () => {
+    s().addDraft(basisDraft("PPF", [{ name: "PPF balance", marketValue: 1000 }]));
+    s().addDraft(basisDraft("PPF", [{ name: "PPF balance", marketValue: 1300 }]));
+    const last = s().portfolio.flows[s().portfolio.flows.length - 1];
+    expect(last.kind).toBe("unclassified");
+    expect(last.amount).toBe(300);
+  });
+
+  it("removing a holding by hand is a tracking change (stopped tracking, not a sale)", () => {
+    s().addDraft(basisDraft("Demat", [{ name: "TCS", marketValue: 5000 }]));
+    const hid = s().portfolio.holdings[0].id;
+    s().removeHolding(hid);
+    const last = s().portfolio.flows[s().portfolio.flows.length - 1];
+    expect(last.kind).toBe("tracking");
+    expect(last.amount).toBe(-5000);
+  });
+
+  it("load() backfills flows[] on files saved before the feature existed", async () => {
+    const saved = emptyPortfolio() as unknown as { flows?: unknown };
+    delete saved.flows;
+    localStorage.setItem("sampatti.portfolio", JSON.stringify(saved));
+    await useStore.getState().load();
+    expect(Array.isArray(useStore.getState().portfolio.flows)).toBe(true);
+  });
+});

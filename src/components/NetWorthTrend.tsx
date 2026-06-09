@@ -8,9 +8,13 @@ import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { visiblePortfolio } from "../domain/types";
 import { PERIODS, periodChange, periodStart, type Period } from "../domain/history";
-import { snapshotSeries } from "../domain/snapshots";
+import { snapshotSeries, snapshotTime } from "../domain/snapshots";
+import { flowsInWindow, incomeOverWindow } from "../domain/flows";
 import { inr } from "../domain/format";
 import { TrendChart } from "./TrendChart";
+
+const GREEN = "#1a9e6b", RED = "#d6455d";
+const signedInr = (n: number) => `${n >= 0 ? "+" : "−"}${inr(Math.abs(n))}`;
 
 export function NetWorthTrend() {
   const portfolio = useStore((s) => s.portfolio);
@@ -23,6 +27,21 @@ export function NetWorthTrend() {
     [portfolio.snapshots, visible.accounts, period],
   );
   const change = useMemo(() => periodChange(points), [points]);
+
+  // Why did it change? flows/tracking/unclassified come from the ledger; growth is the
+  // residual — so the three lines always sum exactly to the recorded change.
+  const split = useMemo(() => {
+    if (points.length < 2) return null;
+    const fromT = points[0].t, toT = points[points.length - 1].t;
+    const f = flowsInWindow(portfolio.flows ?? [], new Set(visible.accounts.map((a) => a.id)), fromT, toT, snapshotTime);
+    const growth = change.abs - f.flow - f.tracking - f.unclassified;
+    const days = Math.max(1, Math.round((toT - fromT) / 86_400_000));
+    const income = incomeOverWindow(portfolio.income, days, portfolio.settings.usdInr);
+    const savingsRate = f.flow > 0 && income > 0 ? Math.round((f.flow / income) * 100) : null;
+    return { ...f, growth, savingsRate };
+  }, [points, change.abs, portfolio.flows, portfolio.income, portfolio.settings.usdInr, visible.accounts]);
+
+  const anyFlows = !!split && (split.flow !== 0 || split.tracking !== 0 || split.unclassified !== 0);
 
   if (portfolio.holdings.length === 0) return null;
 
@@ -63,10 +82,39 @@ export function NetWorthTrend() {
             </div>
           </div>
           <TrendChart points={points} />
+          {anyFlows && split && (
+            <div style={{ marginTop: "0.6rem", padding: "0.55rem 0.8rem", background: "var(--surface-2)", borderRadius: "10px", fontSize: "0.84rem", display: "flex", gap: "1.1rem", flexWrap: "wrap", alignItems: "baseline" }}>
+              <span>
+                <span className="muted" style={{ fontSize: "0.72rem" }}>market growth </span>
+                <strong style={{ color: split.growth >= 0 ? GREEN : RED, fontVariantNumeric: "tabular-nums" }}>{signedInr(split.growth)}</strong>
+              </span>
+              {split.flow !== 0 && (
+                <span>
+                  <span className="muted" style={{ fontSize: "0.72rem" }}>{split.flow >= 0 ? "money added " : "money withdrawn "}</span>
+                  <strong style={{ fontVariantNumeric: "tabular-nums" }}>{signedInr(split.flow)}</strong>
+                  {split.savingsRate != null && <span className="muted" style={{ fontSize: "0.74rem" }}> · ≈{split.savingsRate}% of your income</span>}
+                </span>
+              )}
+              {split.tracking !== 0 && (
+                <span>
+                  <span className="muted" style={{ fontSize: "0.72rem" }}>tracking changes </span>
+                  <strong style={{ fontVariantNumeric: "tabular-nums" }}>{signedInr(split.tracking)}</strong>
+                  <span className="muted" style={{ fontSize: "0.74rem" }}> (assets you started/stopped tracking — not savings, not growth)</span>
+                </span>
+              )}
+              {split.unclassified !== 0 && (
+                <span>
+                  <span className="muted" style={{ fontSize: "0.72rem" }}>unclassified </span>
+                  <strong style={{ fontVariantNumeric: "tabular-nums" }}>{signedInr(split.unclassified)}</strong>
+                </span>
+              )}
+            </div>
+          )}
           <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem" }}>
             — Recorded daily as you use the app · {recordedDays} day{recordedDays === 1 ? "" : "s"} on file
-            {first ? ` since ${first}` : ""}. This is your actual history (growth + money added together);
-            it honors the account selection on Manage.
+            {first ? ` since ${first}` : ""}. {anyFlows
+              ? "Growth is what your investments did on their own; statement re-imports split bought/sold from price moves automatically (manual revaluations count as growth)."
+              : "This is your actual history; re-import statements and the change splits into growth vs money added."} Honors the account selection on Manage.
           </p>
         </div>
       )}

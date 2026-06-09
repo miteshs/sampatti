@@ -4,11 +4,13 @@
 
 import { create } from "zustand";
 import {
-  CURRENT_VERSION, emptyPortfolio, findMatchingAccount, type Account, type EditEvent, type Holding,
-  type Income, type ImportDraft, type Portfolio, type Settings,
+  CURRENT_VERSION, emptyPortfolio, findMatchingAccount, type Account, type EditEvent, type FlowEvent,
+  type FlowKind, type Holding, type Income, type ImportDraft, type Portfolio, type Settings,
 } from "../domain/types";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
-import { snapshotOf, upsertSnapshot } from "../domain/snapshots";
+import { snapshotOf, todayLocal, upsertSnapshot } from "../domain/snapshots";
+import { decomposeReplace } from "../domain/flows";
+import { holdingBase } from "../domain/format";
 import { clearLocalCaches, clearPortfolioRaw, readPortfolioRaw, writePortfolioRaw } from "../platform";
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -36,16 +38,29 @@ function recordSnapshot(p: Portfolio): boolean {
   return upsertSnapshot(p.snapshots, snapshotOf(p));
 }
 
+// Append a classified money movement (see FlowEvent in types.ts). Growth is never recorded —
+// it's the residual the trend card derives — so only flow/tracking/unclassified land here.
+const MAX_FLOWS = 2000;
+function pushFlow(p: Portfolio, accountId: string, amount: number, kind: FlowKind,
+                  source: FlowEvent["source"], label?: string) {
+  if (!Array.isArray(p.flows)) p.flows = [];
+  if (Math.round(amount) === 0) return;
+  p.flows.push({ id: uid(), date: todayLocal(), accountId, amount: Math.round(amount), kind, source, label });
+  if (p.flows.length > MAX_FLOWS) p.flows = p.flows.slice(-MAX_FLOWS);
+}
+
 interface State {
   portfolio: Portfolio;
   loaded: boolean;
   load: () => Promise<void>;
-  addDraft: (d: ImportDraft, mode?: "auto" | "new") => void;
+  // newAccountMoney: when the draft creates a NEW account, is its value money you already
+  // had (tracking — the safe default) or fresh savings (flow)? Asked on the review card.
+  addDraft: (d: ImportDraft, mode?: "auto" | "new", newAccountMoney?: FlowKind) => void;
   mergeDraftInto: (targetAccountId: string, d: ImportDraft) => void;
   addAccount: (a: Omit<Account, "id">) => string;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   removeAccount: (id: string) => void;
-  addHolding: (h: Omit<Holding, "id">) => string;
+  addHolding: (h: Omit<Holding, "id">, money?: FlowKind) => string;
   updateHolding: (id: string, patch: Partial<Holding>) => void;
   removeHolding: (id: string) => void;
   // Logging variants used by the manual editor (record the change to the edits[] trail).
@@ -69,6 +84,14 @@ interface State {
 function replaceAccountHoldings(p: Portfolio, existing: Account, d: ImportDraft) {
   const { excluded } = existing;
   const old = p.holdings.filter((h) => h.accountId === existing.id);
+
+  // Classify WHY this statement moved the account's value: units math splits bought/sold
+  // (flow) from price movement (growth, left as the residual); no-units deltas are honest
+  // "unclassified". Powers the growth-vs-added split on the trend card.
+  const dec = decomposeReplace(old, d.holdings, p.settings.usdInr);
+  pushFlow(p, existing.id, dec.flow, "flow", "import", `${d.account.name || existing.name} · statement update`);
+  pushFlow(p, existing.id, dec.unclassified, "unclassified", "import", `${d.account.name || existing.name} · statement update`);
+
   p.holdings = p.holdings.filter((h) => h.accountId !== existing.id);
   Object.assign(existing, d.account, { id: existing.id, excluded });
 
@@ -182,6 +205,7 @@ export const useStore = create<State>((set, get) => ({
         if (!p.settings.relayUrl) p.settings.relayUrl = defaults.relayUrl;
         if (!Array.isArray(p.edits)) p.edits = []; // added after some files were written
         if (!Array.isArray(p.snapshots)) p.snapshots = []; // ditto
+        if (!Array.isArray(p.flows)) p.flows = []; // ditto
         p.version = CURRENT_VERSION;
         // Migrate basis-less holdings + record today's snapshot (opening the app daily is what
         // builds the recorded history) — persist only when something actually changed.
@@ -199,7 +223,7 @@ export const useStore = create<State>((set, get) => ({
     set(() => ({ loaded: true }));
   },
 
-  addDraft: (d, mode = "auto") =>
+  addDraft: (d, mode = "auto", newAccountMoney = "tracking") =>
     commit(set, get, (p) => {
       // Re-import of a known account (same institution + name): replace its holdings in place,
       // keeping id + excluded flag, so it updates rather than duplicating.
@@ -210,6 +234,11 @@ export const useStore = create<State>((set, get) => ({
         const accountId = uid();
         p.accounts.push({ ...d.account, id: accountId });
         for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId });
+        // The whole account just appeared in the record — classify the step it creates
+        // (signed like the snapshot: liabilities pull net worth down).
+        const sign = d.account.accountType === "liability" ? -1 : 1;
+        const total = d.holdings.reduce((s, h) => s + holdingBase(h as Holding, p.settings.usdInr), 0);
+        pushFlow(p, accountId, sign * total, newAccountMoney, "account_added", d.account.name);
       }
     }),
 
@@ -237,9 +266,13 @@ export const useStore = create<State>((set, get) => ({
       p.holdings = p.holdings.filter((h) => h.accountId !== id);
     }),
 
-  addHolding: (h) => {
+  addHolding: (h, money = "tracking") => {
     const id = uid();
-    commit(set, get, (p) => p.holdings.push({ ...h, id }));
+    commit(set, get, (p) => {
+      p.holdings.push({ ...h, id });
+      const sign = p.accounts.find((a) => a.id === h.accountId)?.accountType === "liability" ? -1 : 1;
+      pushFlow(p, h.accountId, sign * holdingBase(h as Holding, p.settings.usdInr), money, "manual", `added: ${h.name}`);
+    });
     return id;
   },
   updateHolding: (id, patch) =>
@@ -247,7 +280,16 @@ export const useStore = create<State>((set, get) => ({
       const h = p.holdings.find((x) => x.id === id);
       if (h) Object.assign(h, patch);
     }),
-  removeHolding: (id) => commit(set, get, (p) => { p.holdings = p.holdings.filter((h) => h.id !== id); }),
+  removeHolding: (id) => commit(set, get, (p) => {
+    const h = p.holdings.find((x) => x.id === id);
+    p.holdings = p.holdings.filter((x) => x.id !== id);
+    if (h) {
+      // Stopped tracking it (a SALE should arrive via a statement re-import instead, where
+      // the units math classifies it as a flow).
+      const sign = p.accounts.find((a) => a.id === h.accountId)?.accountType === "liability" ? -1 : 1;
+      pushFlow(p, h.accountId, -sign * holdingBase(h, p.settings.usdInr), "tracking", "edit", `removed: ${h.name}`);
+    }
+  }),
 
   // Manual edits go through these so each changed field is recorded in the edits[] trail.
   editAccount: (id, patch) =>

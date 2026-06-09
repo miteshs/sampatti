@@ -123,6 +123,25 @@ export interface EditEvent {
   to?: string;
 }
 
+// A classified money movement, recorded whenever the app can tell WHY net worth changed —
+// so the trend can split "your investments grew" from "you added money" from "you merely
+// started/stopped tracking something". Growth itself is never stored: it is the residual
+// (ΔNW − flows − tracking − unclassified), so there is a single source of truth.
+export type FlowKind =
+  | "flow" // real money in/out: bought with new savings, sold & withdrew
+  | "tracking" // coverage change: started/stopped tracking an existing asset (NOT savings, NOT growth)
+  | "unclassified"; // a statement delta we couldn't attribute (no units to split price vs quantity)
+
+export interface FlowEvent {
+  id: string;
+  date: string; // YYYY-MM-DD (local) — same day-keying as snapshots
+  accountId: string; // events follow account visibility, exactly like snapshots
+  amount: number; // INR base, signed (+ in / − out)
+  kind: FlowKind;
+  source: "import" | "account_added" | "manual" | "edit";
+  label?: string;
+}
+
 // One day's recorded net worth, stored per account (INR base; liability accounts negative)
 // so the trend chart can re-sum over whichever accounts are currently included. Unlike the
 // price-history reconstruction, these are REAL records of what the app computed that day —
@@ -140,6 +159,7 @@ export interface Portfolio {
   settings: Settings;
   edits: EditEvent[];
   snapshots: DailySnapshot[]; // ascending by date; one entry per day the app saw data
+  flows: FlowEvent[]; // classified money movements (see FlowEvent); growth is the residual
   updatedAt: string;
 }
 
@@ -153,6 +173,7 @@ export function emptyPortfolio(): Portfolio {
     income: [],
     edits: [],
     snapshots: [],
+    flows: [],
     settings: {
       country: "India",
       baseCurrency: "INR",

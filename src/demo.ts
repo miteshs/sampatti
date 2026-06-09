@@ -204,6 +204,7 @@ export function demoPortfolio(): Portfolio {
     income,
     edits: [],
     snapshots: [],
+    flows: [],
     settings: {
       country: "India", baseCurrency: "INR", claudeMode: "relay",
       relayUrl: "https://sampatti-relay.sampatti.workers.dev", usdInr: 95, byoKeySet: false, analysisModel: "claude-sonnet-4-6",
