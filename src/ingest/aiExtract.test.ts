@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractJson, focus, validateDraft } from "./aiExtract";
+import { extractJson, focus, validateDraft, validateDrafts } from "./aiExtract";
 
 describe("extractJson", () => {
   it("pulls a clean JSON object out of fenced/chatty model output", () => {
@@ -54,6 +54,27 @@ describe("validateDraft", () => {
     };
     const d = validateDraft(raw, "test");
     expect(d.warnings.join(" ")).toMatch(/US stocks.*INR|switch.*USD/i);
+  });
+});
+
+describe("validateDrafts (multi-account)", () => {
+  it("returns one draft per account from the { accounts: [...] } shape", () => {
+    const raw = {
+      accounts: [
+        { name: "Taxable Brokerage", currency: "USD", region: "US", holdings: [{ name: "Apple", asset_class: "us_equity", value: 5000 }] },
+        { name: "Retirement IRA", currency: "USD", region: "US", holdings: [{ name: "Treasury Bond", asset_class: "fd_rd", value: 10000 }] },
+      ],
+    };
+    const drafts = validateDrafts(raw, "test");
+    expect(drafts.map((d) => d.account.name)).toEqual(["Taxable Brokerage", "Retirement IRA"]);
+    expect(drafts[0].holdings[0].name).toBe("Apple");
+    expect(drafts[1].holdings[0].name).toBe("Treasury Bond");
+  });
+
+  it("falls back to a single account for the bare-object shape", () => {
+    const drafts = validateDrafts({ name: "Solo", holdings: [{ name: "X", value: 100 }] }, "test");
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].account.name).toBe("Solo");
   });
 });
 

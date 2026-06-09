@@ -1,0 +1,4 @@
+Record Type,Symbol,Purchase Date,Purchase Price,Purchased Qty.,Net Shares,Est. Market Value,Grant Date FMV,Purchase Date FMV,Discount Percent
+Purchase,ACME,31-AUG-2020,38.79,100,100,12000.00,$45.64,$59.29,15%
+Purchase,ACME,28-FEB-2021,40.00,50,50,6000.00,$50.00,$62.00,15%
+Totals,,,,,150,18000.00,,,

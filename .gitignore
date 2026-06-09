@@ -16,3 +16,6 @@ src-tauri/gen/
 # locally, never committed). The README is kept so the folder + instructions exist.
 samples/*
 !samples/README.md
+
+# Scratch dir for real exports under active debugging — never committed.
+testfiles/

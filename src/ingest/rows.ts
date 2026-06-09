@@ -24,17 +24,37 @@ export function num(s: unknown): number | undefined {
 }
 
 // Normalize header keys so "Market Value", "market_value", "MARKET VALUE", "Cur. val",
-// and "Qty." all collapse to comparable snake_case keys (punctuation → underscore).
+// and "Qty." all collapse to comparable snake_case keys (punctuation → underscore). A
+// parenthetical qualifier is dropped first, so Schwab's "Mkt Val (Market Value)" → "mkt_val"
+// and "Qty (Quantity)" → "qty" rather than a run-on key that matches nothing.
+const PLACEHOLDER = new Set(["", "-", "--", "n/a", "na", "none"]);
 function lower(row: Row): Lowered {
   const out: Lowered = {};
   for (const [k, v] of Object.entries(row)) {
-    const key = String(k ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-    if (key) out[key] = String(v ?? "").trim();
+    const key = String(k ?? "").toLowerCase().replace(/\([^)]*\)/g, " ").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    if (!key) continue;
+    // Treat broker placeholder dashes ("--", "N/A") as empty so a "--" Description doesn't
+    // win over the real label, and so they never leak into names/symbols/currencies.
+    const val = String(v ?? "").trim();
+    out[key] = PLACEHOLDER.has(val.toLowerCase()) ? "" : val;
   }
   return out;
 }
 
-const CASH_LIKE = /money market|fdic|treasury only|cash reserves|SPAXX|FDRXX|FZFXX|SWVXX|VMFXX/i;
+const CASH_LIKE = /money market|fdic|treasury only|cash reserves|cash & cash|cash investment|SPAXX|FDRXX|FZFXX|SWVXX|VMFXX|SNSXX/i;
+
+// US broker "Asset Type"/"Security Type" column → our asset class. Used only for USD rows;
+// keeps a Schwab "All Accounts" export from dumping bonds, cash and alts into "US Equity".
+// (Keys are header-normalized, e.g. "ETFs & Closed End Funds" → "etfs_closed_end_funds".)
+const US_ASSET_TYPE: Record<string, AssetClass> = {
+  equity: "us_equity",
+  etfs_closed_end_funds: "index_etf",
+  etf: "index_etf",
+  fixed_income: "fd_rd",
+  cash_and_money_market: "cash",
+  mutual_fund: "equity_mf",
+  alternative_investments: "other",
+};
 
 export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
   const byAccount = new Map<string, ImportDraft>();
@@ -52,17 +72,19 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
     const r = lower(raw);
     const accountName = r.account || r.account_name || r.account_number || (hasAccountCol ? "" : fallbackAccount);
     const name = r.name || r.description || r.security || r.instrument || r.scheme_name || r.scheme || r.stock || r.symbol;
-    const rawMv = String(r.market_value ?? r.value ?? r.amount ?? r.current_value ?? r.cur_val ?? r.closing_value ?? r.market_val ?? "");
+    const rawMv = String(r.market_value ?? r.value ?? r.amount ?? r.current_value ?? r.cur_val ?? r.closing_value ?? r.market_val ?? r.mkt_val ?? r.est_market_value ?? "");
     const mv = num(rawMv);
     if (!accountName || !name || mv === undefined || mv === 0) {
       skipped += 1;
       continue;
     }
 
-    // Detect USD from the data itself — an explicit currency, or a $ in the value. (Indian
-    // statements also have a "Current Value" column, so column names alone aren't enough.)
+    // Detect USD from the data itself — an explicit currency, or a $ anywhere in the row.
+    // (Indian statements also have a "Current Value" column, so column names alone aren't
+    // enough; and some US exports — e.g. ESPP sheets — put $ only in a per-share FMV column,
+    // not the market-value cell, so we scan the whole row rather than just the value.)
     const rowCcy = r.currency ? r.currency.toUpperCase() : "";
-    const isUsd = rowCcy === "USD" || (!rowCcy && /\$/.test(rawMv));
+    const isUsd = rowCcy === "USD" || (!rowCcy && Object.values(r).some((v) => v.includes("$")));
 
     let draft = byAccount.get(accountName);
     if (!draft) {
@@ -83,19 +105,23 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
       byAccount.set(accountName, draft);
     }
 
-    // Asset class: explicit column wins; otherwise infer (US cash funds vs equity; Indian
-    // demat rows with a ticker + units → indian_equity).
+    // Asset class: explicit column wins; otherwise infer. For USD rows we prefer the broker's
+    // "Asset Type" column (bonds/cash/ETFs/alts), then a cash-fund name check, else us_equity.
+    // Indian demat rows with a ticker + units → indian_equity.
     let assetClass: AssetClass;
     if (r.asset_class) assetClass = normAssetClass(r.asset_class)[0];
-    else if (isUsd) assetClass = CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity";
-    else if ((r.instrument || r.symbol) && num(r.units ?? r.quantity ?? r.qty ?? r.shares)) assetClass = "indian_equity";
+    else if (isUsd) {
+      const typeKey = (r.asset_type || r.security_type || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      const byType = US_ASSET_TYPE[typeKey];
+      assetClass = byType ?? (CASH_LIKE.test(`${name} ${r.symbol ?? ""}`) ? "cash" : "us_equity");
+    } else if ((r.instrument || r.symbol || r.scrip || r.isin) && num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net)) assetClass = "indian_equity";
     else assetClass = "other";
 
     draft.holdings.push({
-      symbol: (r.symbol || r.isin || "").toUpperCase() || undefined,
+      symbol: (r.symbol || r.scrip || r.isin || "").toUpperCase() || undefined,
       name,
       assetClass,
-      units: num(r.units ?? r.quantity ?? r.qty ?? r.shares),
+      units: num(r.units ?? r.quantity ?? r.qty ?? r.shares ?? r.net_shares ?? r.net),
       marketValue: mv,
       costBasis: num(r.cost_basis ?? r.cost_basis_total ?? r.invested ?? r.amount_invested),
       buyDate: r.buy_date || undefined,

@@ -38,6 +38,39 @@ describe("parseXlsx", () => {
     expect(xlsxToCsv(ab)).toMatch(/Benefit Type.*\n.*Medical/);
   });
 
+  it("parses an ESPP stock-plan sheet (Est. Market Value / Net Shares, $ only in FMV cols)", () => {
+    const ab = makeXlsx([
+      ["Record Type", "Symbol", "Purchase Date", "Net Shares", "Est. Market Value", "Grant Date FMV"],
+      ["Purchase", "ACME", "31-AUG-2020", 100, 12000, "$45.64"],
+      ["Purchase", "ACME", "28-FEB-2021", 50, 6000, "$50.00"],
+      ["Totals", "", "", 150, 18000, ""],
+    ], "ESPP");
+    const drafts = parseXlsx(ab, "ByBenefitType.xlsx");
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].holdings).toHaveLength(2); // two lots, Totals row dropped
+    expect(drafts[0].account.currency).toBe("USD");
+    expect(drafts[0].holdings[0].marketValue).toBe(12000);
+    expect(drafts[0].holdings[0].units).toBe(100);
+    expect(drafts[0].holdings.every((h) => h.assetClass === "us_equity")).toBe(true);
+  });
+
+  it("finds the header below a title/preamble in the SAME sheet (Indian Holding Statement)", () => {
+    const ab = makeXlsx([
+      ["Holding Statement", "", "", ""],
+      ["", "", "", ""],
+      ["Scrip", "Name", "Net", "Market Value"],
+      ["ZEBRAINFRA", "ZEBRA INFRA LTD", 100, 25000],
+      ["MANGOFOODS", "MANGO FOODS LTD", 40, 20000],
+      ["", "", "", 45000], // totals row — no name, dropped
+    ], "Report");
+    const drafts = parseXlsx(ab, "HoldingStatement.xlsx");
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].holdings.map((h) => h.symbol)).toEqual(["ZEBRAINFRA", "MANGOFOODS"]);
+    expect(drafts[0].holdings[0].units).toBe(100);
+    expect(drafts[0].account.currency).toBe("INR");
+    expect(drafts[0].holdings.every((h) => h.assetClass === "indian_equity")).toBe(true);
+  });
+
   it("finds the data sheet even when the first sheet is a cover/summary", () => {
     const ws1 = XLSX.utils.aoa_to_sheet([["Summary"], ["Generated", "2026-06-09"]]);
     const ws2 = XLSX.utils.aoa_to_sheet([

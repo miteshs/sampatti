@@ -1,0 +1,23 @@
+"Positions for All-Accounts as of 04:00 PM ET, 01/02/2026"
+
+
+Taxable_Brokerage ...111
+"Symbol","Description","Price","Qty (Quantity)","Mkt Val (Market Value)","Cost Basis","Asset Type",
+"ACME","ACME CORP","100.00","50","$5,000.00","$4,000.00","Equity",
+"BNDX","SAMPLE TOTAL BOND ETF","50.00","100","$5,000.00","$5,200.00","ETFs & Closed End Funds",
+"Cash & Cash Investments","--","--","--","$1,000.00","--","Cash and Money Market",
+"Positions Total","","--","--","$11,000.00","$9,200.00","--",
+
+
+Retirement_IRA ...222
+"Symbol","Description","Price","Qty (Quantity)","Mkt Val (Market Value)","Cost Basis","Asset Type",
+"99XYZ1234","SAMPLE BANK 0% DUE 2030","100.00","10,000","$10,000.00","$10,000.00","Fixed Income",
+"PRIVCO","SAMPLE PRIVATE FUND CLASS I","20.00","500","$10,000.00","$9,000.00","Alternative Investments",
+"Cash & Cash Investments","--","--","--","$0.00","--","Cash and Money Market",
+"Positions Total","","--","--","$20,000.00","$19,000.00","--",
+
+
+Empty_Account ...333
+"Symbol","Description","Price","Qty (Quantity)","Mkt Val (Market Value)","Cost Basis","Asset Type",
+"Cash & Cash Investments","--","--","--","$0.00","--","Cash and Money Market",
+"Positions Total","","--","--","$0.00","--","--",

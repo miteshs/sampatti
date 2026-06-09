@@ -8,7 +8,7 @@ import type { ImportDraft } from "../domain/types";
 import { callClaude, EXTRACT_MODEL, type Block } from "../claude/transport";
 
 const PROMPT = `You extract holdings from an Indian (or foreign) brokerage / mutual-fund / PMS / bank / insurance statement, or a screenshot of one.
-Return ONE JSON object for the single account in this document, matching EXACTLY this shape:
+Return ONE JSON object of the form { "accounts": [ ... ] }, where each entry is ONE account matching EXACTLY this shape:
 
 {
   "name": "account name (e.g. 'Zerodha Demat', 'HDFC MF Folio', 'Marcellus PMS')",
@@ -31,6 +31,7 @@ Return ONE JSON object for the single account in this document, matching EXACTLY
 }
 
 Rules:
+- ACCOUNT SEGREGATION MATTERS. Most statements are ONE account → return a single entry in "accounts". But if the document clearly holds MULTIPLE distinct accounts — e.g. a Schwab/Fidelity "Positions for All-Accounts" / consolidated export where each account is its own section with a name header (often with a masked number like "...827") and its own holdings, or a CAS/NSDL statement spanning several demat/folio accounts — return ONE entry PER account. Put each account's own holdings under that account; NEVER merge holdings from different accounts together, and NEVER emit a section's "Positions Total" / subtotal as a holding.
 - CURRENCY MATTERS — detect it, do not assume INR. Dollar amounts ($), a US broker (Fidelity, Schwab, Charles Schwab, Morgan Stanley, Robinhood, E*Trade, Vanguard, Merrill, Interactive Brokers), or US-listed tickers ⇒ currency "USD" and region "US". Indian (₹, lakh/crore, NSE/BSE/CAMS/KFintech) ⇒ "INR". Set currency to what the VALUES are actually denominated in.
 - Statements often include PAGES of disclaimers/boilerplate — IGNORE them. Find the holdings table and the portfolio/account TOTAL. The "KEY LINES" block (if present) lists the lines with amounts and headers — use it.
 - If ANY balance, position, or portfolio value appears, you MUST capture it. NEVER return an empty holdings list when a value is present.
@@ -137,17 +138,29 @@ export function validateDraft(raw: unknown, source: string): ImportDraft {
   };
 }
 
+// Model output → one draft per account. Accepts the multi-account { accounts: [...] } shape
+// and, for back-compat, a bare single-account object.
+export function validateDrafts(raw: unknown, source: string): ImportDraft[] {
+  const obj = (raw ?? {}) as Record<string, unknown>;
+  const list = Array.isArray(obj.accounts) && obj.accounts.length ? obj.accounts : [raw];
+  return list.map((a) => validateDraft(a, source));
+}
+
 // Pull the financially-relevant lines so boilerplate doesn't bury the data (ai_import._focus).
 const MONEY = /[\d][\d,]{2,}\.\d{2}|[₹$]\s?[\d,]+/;
 const HEADERS = /\b(total|market value|portfolio value|closing balance|net asset|nav|balance|holding|position|symbol|isin|scheme|folio|units|quantity|cost|invested|account)\b/i;
+// Account-section boundaries in consolidated exports — a masked number like "...827" or a
+// common account label — so multi-account segregation survives the boilerplate filter.
+const ACCT_SECTION = /\.{2,}\s*\d{3,}\b|\b(ira|roth|rollover|brokerage|demat)\b/i;
 
 export function focus(text: string): string {
-  const hot = text.split("\n").map((l) => l.trim()).filter((l) => l && (MONEY.test(l) || HEADERS.test(l)));
+  const hot = text.split("\n").map((l) => l.trim()).filter((l) => l && (MONEY.test(l) || HEADERS.test(l) || ACCT_SECTION.test(l)));
   return hot.slice(0, 160).join("\n");
 }
 
-// Build the message content for a text statement or an image, and call Claude.
-export async function extractFromText(text: string, source: string): Promise<ImportDraft> {
+// Build the message content for a text statement or an image, and call Claude. Returns one
+// draft per account the model finds (usually one; more for a consolidated multi-account export).
+export async function extractFromText(text: string, source: string): Promise<ImportDraft[]> {
   const focused = focus(text);
   const payload =
     text.length > 6000 && focused
@@ -155,14 +168,14 @@ export async function extractFromText(text: string, source: string): Promise<Imp
       : text;
   const content: Block[] = [{ type: "text", text: `${PROMPT}\n\n--- STATEMENT TEXT ---\n${payload.slice(0, 24000)}` }];
   const out = await callClaude({ model: EXTRACT_MODEL, max_tokens: 4000, messages: [{ role: "user", content }] });
-  return validateDraft(extractJson(out), source);
+  return validateDrafts(extractJson(out), source);
 }
 
-export async function extractFromImage(mediaType: string, base64: string, source: string): Promise<ImportDraft> {
+export async function extractFromImage(mediaType: string, base64: string, source: string): Promise<ImportDraft[]> {
   const content: Block[] = [
     { type: "text", text: PROMPT },
     { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
   ];
   const out = await callClaude({ model: EXTRACT_MODEL, max_tokens: 4000, messages: [{ role: "user", content }] });
-  return validateDraft(extractJson(out), source);
+  return validateDrafts(extractJson(out), source);
 }

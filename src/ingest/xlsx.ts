@@ -1,14 +1,15 @@
 // XLS/XLSX → ImportDrafts via SheetJS, fully in-browser. We scan every sheet (real exports
-// often put the data behind a summary/cover sheet) and use the one that yields the most
-// holdings, treating its first row as headers and reusing the canonical CSV mapping.
+// often put the data behind a summary/cover sheet, or a title/preamble above the header) and
+// use the one that yields the most holdings. Each sheet is read as a raw grid and handed to
+// gridToDrafts, which locates the header row and splits stacked multi-account exports.
 
 import * as XLSX from "xlsx";
-import { rowsToDrafts, type Row } from "./rows";
+import { gridToDrafts, type Grid } from "./grid";
 import type { ImportDraft } from "../domain/types";
 
-const sheetRows = (wb: XLSX.WorkBook, name: string): Row[] => {
+const sheetGrid = (wb: XLSX.WorkBook, name: string): Grid => {
   const sheet = wb.Sheets[name];
-  return sheet ? XLSX.utils.sheet_to_json<Row>(sheet, { defval: "", raw: false }) : [];
+  return sheet ? XLSX.utils.sheet_to_json<Grid[number]>(sheet, { header: 1, defval: "", raw: false, blankrows: false }) : [];
 };
 
 export function parseXlsx(data: ArrayBuffer, source = "xlsx"): ImportDraft[] {
@@ -16,7 +17,7 @@ export function parseXlsx(data: ArrayBuffer, source = "xlsx"): ImportDraft[] {
   let best: ImportDraft[] = [];
   let bestCount = 0;
   for (const name of wb.SheetNames) {
-    const drafts = rowsToDrafts(sheetRows(wb, name), source);
+    const drafts = gridToDrafts(sheetGrid(wb, name), source);
     const count = drafts.reduce((n, d) => n + d.holdings.length, 0);
     if (count > bestCount) { best = drafts; bestCount = count; }
   }

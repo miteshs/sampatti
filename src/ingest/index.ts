@@ -90,11 +90,11 @@ export async function ingestFile(file: File): Promise<ImportDraft[]> {
           "page(s) and import the image instead.",
       );
     }
-    return [await extractFromText(text, file.name)];
+    return extractFromText(text, file.name);
   }
 
   if (ext in IMG_MIME) {
-    return [await extractFromImage(IMG_MIME[ext], await fileBase64(file), file.name)];
+    return extractFromImage(IMG_MIME[ext], await fileBase64(file), file.name);
   }
 
   // Unknown extension: try CSV as a last resort.
@@ -106,7 +106,7 @@ export async function ingestFile(file: File): Promise<ImportDraft[]> {
 export async function ingestWithClaude(file: File): Promise<ImportDraft[]> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
   if (ext in IMG_MIME) {
-    return [await extractFromImage(IMG_MIME[ext], await fileBase64(file), file.name)];
+    return extractFromImage(IMG_MIME[ext], await fileBase64(file), file.name);
   }
   let text: string;
   if (ext === "pdf") {
@@ -118,5 +118,5 @@ export async function ingestWithClaude(file: File): Promise<ImportDraft[]> {
     text = await fileText(file);
   }
   if (!text.trim()) throw new Error("This file appears to be empty.");
-  return [await extractFromText(text, file.name)];
+  return extractFromText(text, file.name);
 }

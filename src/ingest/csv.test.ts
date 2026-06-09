@@ -127,6 +127,143 @@ describe("currency detection is value-based, not column-name-based", () => {
   });
 });
 
+// Charles Schwab "Positions for All-Accounts" export: a title line, then several account
+// SECTIONS — each a bare account-label line, a repeated column header (with parenthetical
+// qualifiers), holdings, a real cash sweep, and a "Positions Total" subtotal to discard.
+const SCHWAB_ALL_ACCOUNTS = `"Positions for All-Accounts as of 04:00 PM ET, 01/02/2026"
+
+
+Taxable_Brokerage ...111
+"Symbol","Description","Price","Qty (Quantity)","Mkt Val (Market Value)","Cost Basis","Asset Type",
+"ACME","ACME CORP","100.00","50","$5,000.00","$4,000.00","Equity",
+"BNDX","SAMPLE TOTAL BOND ETF","50.00","100","$5,000.00","$5,200.00","ETFs & Closed End Funds",
+"Cash & Cash Investments","--","--","--","$1,000.00","--","Cash and Money Market",
+"Positions Total","","--","--","$11,000.00","$9,200.00","--",
+
+
+Retirement_IRA ...222
+"Symbol","Description","Price","Qty (Quantity)","Mkt Val (Market Value)","Cost Basis","Asset Type",
+"99XYZ1234","SAMPLE BANK 0% DUE 2030","100.00","10,000","$10,000.00","$10,000.00","Fixed Income",
+"PRIVCO","SAMPLE PRIVATE FUND CLASS I","20.00","500","$10,000.00","$9,000.00","Alternative Investments",
+"Positions Total","","--","--","$20,000.00","$19,000.00","--",
+
+
+Empty_Account ...333
+"Symbol","Description","Price","Qty (Quantity)","Mkt Val (Market Value)","Cost Basis","Asset Type",
+"Cash & Cash Investments","--","--","--","$0.00","--","Cash and Money Market",
+"Positions Total","","--","--","$0.00","--","--",`;
+
+describe("parseCsv (Schwab multi-account 'All-Accounts' export)", () => {
+  const drafts = parseCsv(SCHWAB_ALL_ACCOUNTS, "All-Accounts-Positions.csv");
+
+  it("splits the sections into separate accounts (and drops the empty one)", () => {
+    expect(drafts.map((d) => d.account.name)).toEqual(["Taxable_Brokerage ...111", "Retirement_IRA ...222"]);
+  });
+
+  it("keeps each account's holdings under that account — no cross-account merge", () => {
+    const tax = drafts.find((d) => d.account.name.startsWith("Taxable"))!;
+    const ira = drafts.find((d) => d.account.name.startsWith("Retirement"))!;
+    expect(tax.holdings.map((h) => h.symbol).slice(0, 2)).toEqual(["ACME", "BNDX"]);
+    expect(tax.holdings).toHaveLength(3); // ACME, BNDX, and the cash sweep
+    expect(ira.holdings.map((h) => h.symbol)).toEqual(["99XYZ1234", "PRIVCO"]);
+  });
+
+  it("discards the 'Positions Total' subtotal rows (no double counting)", () => {
+    const all = drafts.flatMap((d) => d.holdings);
+    expect(all.some((h) => /^positions?\s+total$/i.test(h.name))).toBe(false);
+    const tax = drafts.find((d) => d.account.name.startsWith("Taxable"))!;
+    expect(tax.holdings.reduce((s, h) => s + h.marketValue, 0)).toBe(11_000); // == the dropped subtotal
+  });
+
+  it("detects USD/US and maps the Asset Type column to real classes", () => {
+    const tax = drafts.find((d) => d.account.name.startsWith("Taxable"))!;
+    const ira = drafts.find((d) => d.account.name.startsWith("Retirement"))!;
+    expect(tax.account.currency).toBe("USD");
+    expect(tax.account.region).toBe("US");
+    expect(tax.holdings.find((h) => h.symbol === "ACME")!.assetClass).toBe("us_equity");
+    expect(tax.holdings.find((h) => h.symbol === "BNDX")!.assetClass).toBe("index_etf");
+    expect(tax.holdings.find((h) => h.name === "Cash & Cash Investments")!.assetClass).toBe("cash");
+    expect(ira.holdings.find((h) => h.symbol === "99XYZ1234")!.assetClass).toBe("fd_rd"); // Fixed Income
+    expect(ira.holdings.find((h) => h.symbol === "PRIVCO")!.assetClass).toBe("other"); // Alternative Investments
+  });
+});
+
+// An ESPP / stock-plan export: a "Record Type" column, holding value in "Est. Market Value",
+// share count in "Net Shares", and the only $ signs in per-share FMV columns (not the value).
+const ESPP_CSV = `Record Type,Symbol,Purchase Date,Purchase Price,Purchased Qty.,Net Shares,Est. Market Value,Grant Date FMV,Purchase Date FMV,Discount Percent
+Purchase,ACME,31-AUG-2020,38.79,100,100,12000.00,$45.64,$59.29,15%
+Purchase,ACME,28-FEB-2021,40.00,50,50,6000.00,$50.00,$62.00,15%
+Totals,,,,,150,18000.00,,,`;
+
+describe("parseCsv (ESPP / stock-plan export)", () => {
+  const drafts = parseCsv(ESPP_CSV, "StockPlan.csv");
+
+  it("maps 'Est. Market Value' and 'Net Shares', and drops the Totals row", () => {
+    expect(drafts).toHaveLength(1);
+    const h = drafts[0].holdings;
+    expect(h).toHaveLength(2); // two purchase lots, no Totals row
+    expect(h[0].marketValue).toBe(12_000);
+    expect(h[0].units).toBe(100);
+  });
+
+  it("detects USD from a $ in a non-value column (per-share FMV)", () => {
+    expect(drafts[0].account.currency).toBe("USD");
+    expect(drafts[0].account.region).toBe("US");
+    expect(drafts[0].holdings.every((h) => h.assetClass === "us_equity")).toBe(true);
+  });
+});
+
+// A CDSL/NSDL demat "Holding Statement": a title + blank line above the real header, a blank
+// spacer column, "Scrip"/"Net" instead of Symbol/Quantity, and a trailing totals row.
+const DEMAT_HOLDING = `Holding Statement,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+Scrip,Name,,ISIN,Collateral,Broker Beneficiary,Depository,Inward Short,OutWard Short,Net,Previous Day Closing Price,Market Value,%,Sector
+ZEBRAINFRA,ZEBRA INFRA LTD,,INE000A01001,0,0,100,0,0,100,250.00,25000,55.55,Infrastructure
+MANGOFOODS,MANGO FOODS LTD,,INE000A01002,0,0,40,0,0,40,500.00,20000,44.44,FMCG
+TIGERSTEEL,TIGER STEEL LTD,,INE000A01003,0,0,10,0,0,10,0,0,0,Metals
+,,,,,,,,,,,45000,100.00,`;
+
+describe("parseCsv (Indian demat Holding Statement)", () => {
+  const drafts = parseCsv(DEMAT_HOLDING, "HoldingStatement.xlsx.csv");
+
+  it("finds the header below the title/preamble and maps Scrip/Net/Market Value", () => {
+    expect(drafts).toHaveLength(1);
+    const h = drafts[0].holdings;
+    expect(h.map((x) => x.symbol)).toEqual(["ZEBRAINFRA", "MANGOFOODS"]); // 0-value scrip + totals row dropped
+    expect(h[0].units).toBe(100);
+    expect(h[0].marketValue).toBe(25000);
+  });
+
+  it("stays INR and classifies demat rows (ticker + units) as indian_equity", () => {
+    expect(drafts[0].account.currency).toBe("INR");
+    expect(drafts[0].holdings.every((x) => x.assetClass === "indian_equity")).toBe(true);
+  });
+});
+
+// A Fidelity "Portfolio Positions" export with several accounts in ONE file, segregated by the
+// Account Name column (not stacked sections), plus a money-market sweep and an all-"--" row.
+const FIDELITY_MULTI = `Account Number,Account Name,Symbol,Description,Quantity,Last Price,Current Value,Cost Basis Total,Type
+111,Brokerage,AAPL,APPLE INC,100,$220.00,"$22,000.00","$15,000.00",Cash
+111,Brokerage,SPAXX**,HELD IN MONEY MARKET,,,"$0.01",,Cash
+222,Roth IRA,VTI,VANGUARD TOTAL STOCK MARKET ETF,50,$280.00,"$14,000.00","$9,000.00",Cash
+333,Empty IRA,GHOST,PLACEHOLDER SECURITY,0.5,--,--,--,Cash
+"Brokerage services are provided by Sample Brokerage LLC, Member NYSE, SIPC."`;
+
+describe("parseCsv (Fidelity multi-account, segregated by Account Name column)", () => {
+  const drafts = parseCsv(FIDELITY_MULTI, "Portfolio_Positions.csv");
+
+  it("splits into one account per Account Name, dropping the all-'--' account", () => {
+    expect(drafts.map((d) => d.account.name).sort()).toEqual(["Brokerage", "Roth IRA"]);
+  });
+
+  it("keeps each account's own holdings and reads the money-market sweep as cash", () => {
+    const brok = drafts.find((d) => d.account.name === "Brokerage")!;
+    expect(brok.holdings.map((h) => h.symbol)).toEqual(["AAPL", "SPAXX**"]); // ** = Fidelity footnote
+    expect(brok.holdings.find((h) => h.symbol === "SPAXX**")!.assetClass).toBe("cash");
+    expect(brok.account.currency).toBe("USD");
+  });
+});
+
 describe("parseCsv (unrecognizable layout → nothing parses, so the UI can offer Claude)", () => {
   it("returns no holdings when no value/name columns are found", () => {
     const junk = `Foo,Bar,Baz\nhello,world,123\nlorem,ipsum,456`;
