@@ -8,20 +8,22 @@
 # computes its sha256, fills in the fields below, and (optionally) copies it into the tap
 # repo `miteshs/homebrew-sampatti` (Casks/sampatti.rb).
 #
-# REQUIREMENTS for `brew install` to work for other people (see docs/homebrew.md):
-#   1. The dmg must be downloadable from a PUBLIC url (a GitHub Release on a public repo, or
-#      any public bucket). brew cannot fetch a private repo's release without a token.
-#   2. The build is currently UNSIGNED + UN-NOTARIZED. The postflight below strips the
+# NOTES (see docs/homebrew.md):
+#   1. The dmg is served from the PUBLIC releases-only repo miteshs/sampatti-releases —
+#      the source repo stays private; brew can't fetch a private repo's assets anyway.
+#   2. Public builds ship WITHOUT the hosted-relay token: users bring their own Anthropic
+#      key (Privacy screen → macOS Keychain). Keeps strangers off the relay owner's bill.
+#   3. The build is currently UNSIGNED + UN-NOTARIZED. The postflight below strips the
 #      quarantine flag so it still launches, but the proper fix is an Apple Developer ID
 #      signature + notarization (then the postflight can be removed).
 cask "sampatti" do
   version "0.1.0"
   sha256 "e5d77fe467fac3df3ad01022a927f48f630947c952543a0d55723a9d90503165" # set per-release by scripts/release.sh
 
-  url "https://github.com/miteshs/sampatti/releases/download/v#{version}/Sampatti_#{version}_aarch64.dmg"
+  url "https://github.com/miteshs/sampatti-releases/releases/download/v#{version}/Sampatti_#{version}_aarch64.dmg"
   name "Sampatti"
   desc "Private, India-first portfolio analysis (Tauri desktop app)"
-  homepage "https://github.com/miteshs/sampatti"
+  homepage "https://github.com/miteshs/sampatti-releases"
 
   # The release artifact is an Apple-Silicon dmg.
   depends_on arch: :arm64

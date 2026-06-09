@@ -39,6 +39,18 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 // by rotating the secret. Only used in relay mode; BYO talks to Anthropic directly.
 const RELAY_TOKEN = import.meta.env.VITE_RELAY_TOKEN ?? "";
 
+// Public builds ship WITHOUT the relay token (so strangers can't spend the relay owner's API
+// credits) — a relay 401/403 then just means "this build has no hosted access": point the
+// user at the BYO-key path instead of showing a bare status code.
+function relayHint(mode: string, message: string): Error {
+  if (mode === "relay" && /\(40[13][^)]*\)/.test(message)) {
+    return new Error(
+      `${message} — this build doesn't include hosted-relay access. Add your own Anthropic API key on the Privacy screen (it stays in your Mac's Keychain), or set your own relay URL.`,
+    );
+  }
+  return new Error(message);
+}
+
 // Stream a completion. Calls onText(delta) as chunks arrive; resolves with the full text.
 export async function streamClaude(
   req: ClaudeRequest,
@@ -48,7 +60,11 @@ export async function streamClaude(
   const { claudeMode, relayUrl } = useStore.getState().portfolio.settings;
 
   if (isTauri()) {
-    return streamTauri(req, claudeMode, relayUrl, RELAY_TOKEN, onText);
+    try {
+      return await streamTauri(req, claudeMode, relayUrl, RELAY_TOKEN, onText);
+    } catch (e) {
+      throw relayHint(claudeMode, e instanceof Error ? e.message : String(e));
+    }
   }
 
   // ---- web: relay or direct-to-Anthropic ----
@@ -74,7 +90,7 @@ export async function streamClaude(
   });
   if (!res.ok || !res.body) {
     const detail = await res.text().catch(() => "");
-    throw new Error(`Claude request failed (${res.status}). ${detail.slice(0, 300)}`);
+    throw relayHint(claudeMode, `Claude request failed (${res.status}). ${detail.slice(0, 300)}`);
   }
   return parseSse(res.body, onText);
 }

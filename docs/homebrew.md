@@ -1,77 +1,66 @@
 # Installing Sampatti with Homebrew
 
-Goal: `brew install --cask sampatti` on macOS (Apple Silicon).
-
-There's no separate "Homebrew package" format for a GUI app — you ship a **cask** (which
-points at a downloadable `.dmg`/`.zip` and installs the `.app`) from a **tap** (a GitHub repo
-named `homebrew-<name>`). So the user flow is:
+User flow (macOS, Apple Silicon):
 
 ```sh
 brew tap miteshs/sampatti          # adds github.com/miteshs/homebrew-sampatti
 brew install --cask sampatti
 ```
 
-The cask itself lives at [`packaging/homebrew/sampatti.rb`](../packaging/homebrew/sampatti.rb)
-in this repo as the source of truth; `scripts/release.sh` fills in the version + sha256 and can
-copy it into the tap repo.
+## How distribution is laid out (decided June 2026)
 
-## What has to be true for this to work for other people
+Three repos, only the last two public — the source stays private:
 
-1. **A public download URL for the dmg.** Homebrew fetches the artifact over plain HTTPS with
-   no auth, so the dmg must be public. Options:
-   - **GitHub Release on a public repo** — simplest. Either make `miteshs/sampatti` public, or
-     create a small **public** repo (e.g. `miteshs/sampatti-releases`) that holds only the dmg
-     releases and point the cask `url` there. (A private repo's release assets need a token and
-     won't work with a plain `brew install`.)
-   - **Any public bucket/CDN** (Cloudflare R2, S3, GitHub Pages) hosting the dmg.
-   The cask `url` in `packaging/homebrew/sampatti.rb` currently assumes a GitHub Release on
-   `miteshs/sampatti` — change it if you host elsewhere.
+| Repo | Visibility | Holds |
+|---|---|---|
+| `miteshs/sampatti` | **private** | the source (this repo) + `packaging/homebrew/sampatti.rb` as the cask's source of truth |
+| `miteshs/sampatti-releases` | public | GitHub Releases with the dmg artifacts only (brew needs a public, unauthenticated URL) |
+| `miteshs/homebrew-sampatti` | public | the tap: `Casks/sampatti.rb` |
 
-2. **Signing + notarization (recommended).** The build today is **unsigned and un-notarized**.
-   macOS Gatekeeper will quarantine an unsigned download, so the cask includes a `postflight`
-   that runs `xattr -dr com.apple.quarantine` to let it launch. That works, but the *proper*
-   fix — and what makes `brew install` feel first-class — is to sign with an **Apple Developer
-   ID** ($99/yr) and **notarize**:
-   - Add the cert to the keychain and set Tauri signing in `src-tauri/tauri.conf.json`
-     (`bundle.macOS.signingIdentity`) + notarize with `notarytool`.
-   - Once notarized, **delete the `postflight` block** from the cask (no longer needed).
-
-   The tap repo can stay public regardless; only the code repo's visibility is a separate
-   decision.
+**Public builds carry no relay token.** The hosted-relay app-token (`VITE_RELAY_TOKEN`) is
+deliberately baked as empty by `scripts/release.sh`, because anything inside a public dmg is
+extractable — shipping the token would let anyone spend the relay owner's Anthropic credits.
+Public users add their **own** Anthropic key on the Privacy screen (stored in the macOS
+Keychain); the app shows exactly that hint if a relay call comes back 401/403. Your personal
+build (`npm run tauri build`, which reads `.env.local`) still includes relay access.
 
 ## Cutting a release
 
 ```sh
-# Local: build the dmg, compute its sha256, update packaging/homebrew/sampatti.rb
-scripts/release.sh
-
-# Also create the GitHub Release and upload the dmg (needs the repo's releases to be public
-# for brew to fetch them):
+# 1. Bump version in src-tauri/tauri.conf.json (and package.json if you keep them in sync).
+# 2. Public build + sha256 + cask update + publish the GitHub release:
 scripts/release.sh --gh-release
 
-# Also drop the updated cask into a checked-out tap repo:
-scripts/release.sh --gh-release --tap ../homebrew-sampatti
+# 3. Update the tap (any checkout location works):
+git clone https://github.com/miteshs/homebrew-sampatti /tmp/homebrew-sampatti  # if not already
+scripts/release.sh --tap /tmp/homebrew-sampatti     # copies the cask in
+cd /tmp/homebrew-sampatti && git commit -am "sampatti <version>" && git push
+
+# 4. Rebuild your OWN copy with relay access and reinstall it:
+npm run tauri build
+cp -R src-tauri/target/release/bundle/macos/Sampatti.app /Applications/
 ```
 
-Then in the tap repo (`miteshs/homebrew-sampatti`), commit `Casks/sampatti.rb` and push.
-
-## Creating the tap repo (one-time)
+Verify the public path without clobbering your local install:
 
 ```sh
-# scaffold locally
-brew tap-new miteshs/sampatti
-# this creates a repo dir under $(brew --repository)/Library/Taps/miteshs/homebrew-sampatti
-# put Casks/sampatti.rb there (scripts/release.sh --tap can do this), then:
-#   create github.com/miteshs/homebrew-sampatti (public) and push.
+brew tap miteshs/sampatti
+brew fetch --cask sampatti     # downloads from the public URL and checks the sha256
 ```
 
-Users on a different Mac then just `brew tap miteshs/sampatti && brew install --cask sampatti`.
+## Signing + notarization (the remaining gap)
+
+The build is **unsigned and un-notarized**, so the cask carries a `postflight` that strips
+`com.apple.quarantine` after install. It works, but the first-class experience is an Apple
+Developer ID ($99/yr) + `notarytool`:
+
+- Set `bundle.macOS.signingIdentity` in `src-tauri/tauri.conf.json` and notarize the dmg.
+- Then **delete the `postflight` block** from the cask.
 
 ## Notes / limits
 
-- The dmg is **Apple-Silicon only** (`aarch64`). For Intel Macs you'd add an `x86_64` build (or
-  a universal binary) and a second `sha256`/`url` (cask `on_arm` / `on_intel` blocks).
+- Apple-Silicon only (`aarch64`). Intel/universal would add an `on_intel` block + second sha.
 - `brew uninstall --cask sampatti` removes the app; `--zap` also deletes the on-device
   portfolio under `~/Library/Application Support/app.sampatti.desktop`.
-- The full `brew install --cask` path (download → install → quarantine strip → launch) was
-  validated locally against a tap using a `file://` url to the built dmg.
+- The full install path (download → install → quarantine strip → launch) was validated locally
+  via a `file://` tap before publishing; the public URL + sha are validated with `brew fetch`.

@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
-# Cut a Sampatti release and prepare the Homebrew cask.
+# Cut a PUBLIC Sampatti release and prepare the Homebrew cask.
 #
-#   scripts/release.sh                 # build dmg, compute sha256, update the cask locally
-#   scripts/release.sh --gh-release    # also create the GitHub Release and upload the dmg
-#   scripts/release.sh --gh-release --tap ../homebrew-sampatti   # also copy cask into a tap
+#   scripts/release.sh                 # public build (NO relay token), sha256, update the cask
+#   scripts/release.sh --gh-release    # also publish the GitHub Release on miteshs/sampatti-releases
+#   scripts/release.sh --tap ../homebrew-sampatti   # also copy the cask into a tap checkout
 #
 # Notes:
 #   • Version comes from src-tauri/tauri.conf.json.
+#   • PUBLIC builds bake an EMPTY VITE_RELAY_TOKEN: anyone can download the dmg, so it must
+#     not carry the relay app-token (that would let strangers spend the relay owner's API
+#     credits). Public users add their own Anthropic key on the Privacy screen.
+#     → After cutting a release, rebuild WITHOUT the override (plain `npm run tauri build`,
+#       which reads .env.local) before reinstalling YOUR OWN /Applications copy.
 #   • The dmg is Apple-Silicon only and (today) unsigned/un-notarized — see docs/homebrew.md.
-#   • This never makes anything public on its own beyond what you pass: plain run is local-only.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+RELEASES_REPO="miteshs/sampatti-releases"
 GH_RELEASE=0
 TAP_DIR=""
 while [ $# -gt 0 ]; do
@@ -27,9 +32,18 @@ VERSION=$(node -e "console.log(require('./src-tauri/tauri.conf.json').version)")
 DMG="src-tauri/target/release/bundle/dmg/Sampatti_${VERSION}_aarch64.dmg"
 CASK="packaging/homebrew/sampatti.rb"
 
-echo "▶ Building Sampatti ${VERSION} (this runs npm run build + a Rust release build)…"
-npm run tauri build >/dev/null
+echo "▶ Building PUBLIC Sampatti ${VERSION} (relay token excluded)…"
+VITE_RELAY_TOKEN="" npm run tauri build >/dev/null
 [ -f "$DMG" ] || { echo "✗ dmg not found at $DMG"; exit 1; }
+
+# Belt & braces: the published bundle must not contain the relay token from .env.local.
+if [ -f .env.local ]; then
+  TOKEN=$(sed -n 's/^VITE_RELAY_TOKEN=//p' .env.local | tr -d '"' | tr -d "'")
+  if [ -n "$TOKEN" ] && grep -rqs "$TOKEN" dist/assets 2>/dev/null; then
+    echo "✗ ABORT: relay token found in the built bundle — refusing to release."
+    exit 1
+  fi
+fi
 
 SHA=$(shasum -a 256 "$DMG" | awk '{print $1}')
 SIZE=$(du -h "$DMG" | awk '{print $1}')
@@ -42,12 +56,13 @@ echo "  sha256: $SHA"
 echo "✓ Updated $CASK"
 
 if [ "$GH_RELEASE" = "1" ]; then
-  echo "▶ Creating GitHub release v${VERSION} and uploading the dmg…"
+  echo "▶ Publishing release v${VERSION} on ${RELEASES_REPO} (public, dmg-only repo)…"
   gh release create "v${VERSION}" "$DMG" \
+    --repo "$RELEASES_REPO" \
     --title "Sampatti ${VERSION}" \
-    --notes "Apple-Silicon build. Install: brew install --cask sampatti (after tapping miteshs/sampatti)." \
-    || gh release upload "v${VERSION}" "$DMG" --clobber
-  echo "✓ Release v${VERSION} ready"
+    --notes "Apple-Silicon build. Install: \`brew tap miteshs/sampatti && brew install --cask sampatti\`. AI analysis needs your own Anthropic API key (Privacy screen → stored in the macOS Keychain). All portfolio data stays on your device." \
+    || gh release upload "v${VERSION}" "$DMG" --repo "$RELEASES_REPO" --clobber
+  echo "✓ Release v${VERSION} ready on ${RELEASES_REPO}"
 fi
 
 if [ -n "$TAP_DIR" ]; then
@@ -58,6 +73,6 @@ fi
 
 echo
 echo "Next:"
-echo "  • Verify locally:  brew install --cask ./$CASK   (needs the url reachable, or use a file:// url)"
-echo "  • Publish:         push the dmg to a PUBLIC location and the cask to miteshs/homebrew-sampatti"
-echo "  • Users then:      brew tap miteshs/sampatti && brew install --cask sampatti"
+echo "  • Push the tap:    cd <tap checkout> && git commit -am 'sampatti ${VERSION}' && git push"
+echo "  • Users install:   brew tap miteshs/sampatti && brew install --cask sampatti"
+echo "  • Your own copy:   npm run tauri build   (re-bakes the relay token from .env.local)"
