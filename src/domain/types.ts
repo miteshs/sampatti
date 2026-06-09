@@ -103,12 +103,27 @@ export interface Settings {
   analysisModel: string; // which Claude model writes the analysis (cost vs. quality)
 }
 
+// A record of a manual edit the user made (so overrides are visible, and they know a value
+// won't match a fresh import). Logged only for hand edits in the editor — never for live-price
+// refreshes, account include/exclude, or imports.
+export interface EditEvent {
+  id: string;
+  at: string; // ISO timestamp
+  entity: "account" | "holding";
+  entityId: string;
+  label: string; // the account/holding name at edit time
+  field: string; // human label, e.g. "asset class", "value", "added", "removed"
+  from?: string;
+  to?: string;
+}
+
 export interface Portfolio {
   version: number;
   accounts: Account[];
   holdings: Holding[];
   income: Income[];
   settings: Settings;
+  edits: EditEvent[];
   updatedAt: string;
 }
 
@@ -120,6 +135,7 @@ export function emptyPortfolio(): Portfolio {
     accounts: [],
     holdings: [],
     income: [],
+    edits: [],
     settings: {
       country: "India",
       baseCurrency: "INR",

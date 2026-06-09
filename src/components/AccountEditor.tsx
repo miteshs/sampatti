@@ -42,25 +42,40 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
   // array/object straight from a zustand selector (e.g. `.filter(...)`) makes every render
   // look like a new snapshot to useSyncExternalStore → infinite re-render loop → blank screen.
   const portfolio = useStore((s) => s.portfolio);
-  const updateAccount = useStore((s) => s.updateAccount);
+  const editAccount = useStore((s) => s.editAccount);
+  const editHolding = useStore((s) => s.editHolding);
   const updateHolding = useStore((s) => s.updateHolding);
   const removeHolding = useStore((s) => s.removeHolding);
   const addHolding = useStore((s) => s.addHolding);
+  const logEdit = useStore((s) => s.logEdit);
 
   const account = useMemo(() => portfolio.accounts.find((a) => a.id === accountId), [portfolio.accounts, accountId]);
   const holdings = useMemo(() => portfolio.holdings.filter((h) => h.accountId === accountId), [portfolio.holdings, accountId]);
 
   if (!account) return null;
-  const set = (patch: Parameters<typeof updateAccount>[1]) => updateAccount(accountId, patch);
+  const set = (patch: Parameters<typeof editAccount>[1]) => editAccount(accountId, patch);
 
-  const addBlank = () =>
-    addHolding({
+  const addBlank = () => {
+    const id = addHolding({
       accountId,
       name: "New holding",
       assetClass: account.defaultAssetClass ?? (account.region === "US" ? "us_equity" : "indian_equity"),
       marketValue: 0,
       currency: account.currency,
     });
+    logEdit({ entity: "holding", entityId: id, label: "New holding", field: "added" });
+  };
+
+  // Cascade currency to every holding — recorded as one summary edit (not 50 line edits).
+  const setAllCurrency = () => {
+    holdings.forEach((h) => updateHolding(h.id, { currency: account.currency }));
+    logEdit({ entity: "account", entityId: accountId, label: account.name, field: "all holdings currency", to: account.currency });
+  };
+
+  const removeWithLog = (id: string, name: string) => {
+    logEdit({ entity: "holding", entityId: id, label: name, field: "removed" });
+    removeHolding(id);
+  };
 
   return (
     <div className="card" style={{ background: "var(--surface-2, #fafafe)", borderLeft: "3px solid var(--primary)", marginTop: "0.4rem" }}>
@@ -93,7 +108,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
             <input value={account.currency} onChange={(e) => set({ currency: e.target.value.toUpperCase() })} style={{ minWidth: 0 }} />
             <button className="btn btn-ghost" title="Set every holding in this account to this currency"
               style={{ padding: "0.2rem 0.45rem", whiteSpace: "nowrap" }}
-              onClick={() => holdings.forEach((h) => updateHolding(h.id, { currency: account.currency }))}>↧ all</button>
+              onClick={setAllCurrency}>↧ all</button>
           </div>
         </div>
         <div><label>Statement date</label><input type="date" value={account.asOf ?? ""} onChange={(e) => set({ asOf: e.target.value || undefined })} /></div>
@@ -123,23 +138,23 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
             <tbody>
               {holdings.map((h) => (
                 <tr key={h.id}>
-                  <td><input value={h.name} onChange={(e) => updateHolding(h.id, { name: e.target.value })} style={{ width: "100%" }} /></td>
+                  <td><input value={h.name} onChange={(e) => editHolding(h.id, { name: e.target.value })} style={{ width: "100%" }} /></td>
                   <td>
-                    <select value={h.assetClass} onChange={(e) => updateHolding(h.id, { assetClass: e.target.value as AssetClass })}>
+                    <select value={h.assetClass} onChange={(e) => editHolding(h.id, { assetClass: e.target.value as AssetClass })}>
                       {ASSET_CLASSES.map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
                     </select>
                   </td>
                   <td className="num" style={{ maxWidth: 90 }}>
-                    <NumInput initial={h.units} allowEmpty placeholder="—" onCommit={(n) => updateHolding(h.id, { units: n })} />
+                    <NumInput initial={h.units} allowEmpty placeholder="—" onCommit={(n) => editHolding(h.id, { units: n })} />
                   </td>
                   <td className="num" style={{ maxWidth: 130 }}>
-                    <NumInput initial={h.marketValue} onCommit={(n) => { if (n !== undefined) updateHolding(h.id, { marketValue: n }); }} />
+                    <NumInput initial={h.marketValue} onCommit={(n) => { if (n !== undefined) editHolding(h.id, { marketValue: n }); }} />
                   </td>
                   <td style={{ maxWidth: 70 }}>
-                    <input value={h.currency} onChange={(e) => updateHolding(h.id, { currency: e.target.value.toUpperCase() })} style={{ width: 56 }} />
+                    <input value={h.currency} onChange={(e) => editHolding(h.id, { currency: e.target.value.toUpperCase() })} style={{ width: 56 }} />
                   </td>
                   <td className="num">
-                    <button className="btn btn-ghost" title="Remove holding" style={{ padding: "0.15rem 0.45rem" }} onClick={() => removeHolding(h.id)}>✕</button>
+                    <button className="btn btn-ghost" title="Remove holding" style={{ padding: "0.15rem 0.45rem" }} onClick={() => removeWithLog(h.id, h.name)}>✕</button>
                   </td>
                 </tr>
               ))}

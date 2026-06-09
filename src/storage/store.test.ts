@@ -186,6 +186,52 @@ describe("statement update scenarios", () => {
   });
 });
 
+describe("manual-edit trail", () => {
+  const s = () => useStore.getState();
+  const seed = () => {
+    const aid = s().addAccount({ name: "Demat", institution: "Z", accountType: "demat", taxTreatment: "taxable", region: "India", currency: "INR" });
+    const hid = s().addHolding({ accountId: aid, name: "RELIANCE", assetClass: "indian_equity", marketValue: 1000, currency: "INR" });
+    return { aid, hid };
+  };
+
+  it("records a holding asset-class change with readable from → to", () => {
+    const { hid } = seed();
+    s().editHolding(hid, { assetClass: "private_equity" });
+    expect(s().portfolio.edits).toHaveLength(1);
+    expect(s().portfolio.edits[0]).toMatchObject({
+      entity: "holding", entityId: hid, field: "asset class", from: "Indian Equity", to: "Private Equity",
+    });
+  });
+
+  it("records an account field change with a readable label", () => {
+    const { aid } = seed();
+    s().editAccount(aid, { taxTreatment: "eee_exempt" });
+    expect(s().portfolio.edits.find((e) => e.entity === "account")).toMatchObject({ field: "tax", to: "Tax-free (EEE)" });
+  });
+
+  it("logs nothing when the value is unchanged", () => {
+    const { hid } = seed();
+    s().editHolding(hid, { assetClass: "indian_equity" }); // same value
+    expect(s().portfolio.edits).toHaveLength(0);
+  });
+
+  it("does NOT log programmatic updates (live-price refresh / exclude toggle)", () => {
+    const { aid, hid } = seed();
+    s().updateHolding(hid, { marketValue: 2000 }); // a price refresh
+    s().updateAccount(aid, { excluded: true }); // include/exclude toggle
+    expect(s().portfolio.edits).toHaveLength(0);
+  });
+
+  it("clearEdits empties the trail but keeps the data", () => {
+    const { hid } = seed();
+    s().editHolding(hid, { marketValue: 5000 });
+    expect(s().portfolio.edits.length).toBeGreaterThan(0);
+    s().clearEdits();
+    expect(s().portfolio.edits).toHaveLength(0);
+    expect(s().portfolio.holdings.find((h) => h.id === hid)!.marketValue).toBe(5000);
+  });
+});
+
 describe("store persistence across a restart", () => {
   it("saves committed data to disk and reloads it on next boot", async () => {
     const id = useStore.getState().addAccount({

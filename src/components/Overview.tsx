@@ -9,6 +9,7 @@ import { Donut } from "./Donut";
 import { AccountEditor } from "./AccountEditor";
 import { NetWorthTrend } from "./NetWorthTrend";
 import { RefreshPrices } from "./RefreshPrices";
+import { ManualEdits } from "./ManualEdits";
 import { freshness, FRESH_BADGE } from "./ui";
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
@@ -57,6 +58,18 @@ export function Overview() {
   }, [portfolio.holdings, usdInr]);
 
   const acctById = useMemo(() => new Map(view.accounts.map((a) => [a.id, a])), [view.accounts]);
+
+  // Accounts that carry any manual edit (account-level, or a still-present holding's edit),
+  // so the management list can flag them.
+  const editedAccountIds = useMemo(() => {
+    const ids = new Set<string>();
+    const holdAcct = new Map(portfolio.holdings.map((h) => [h.id, h.accountId]));
+    for (const e of portfolio.edits) {
+      if (e.entity === "account") ids.add(e.entityId);
+      else { const aid = holdAcct.get(e.entityId); if (aid) ids.add(aid); }
+    }
+    return ids;
+  }, [portfolio.edits, portfolio.holdings]);
 
   // Holdings grouped by the active dimension (same keys the donut uses), so each segment
   // row can expand to reveal the holdings inside it.
@@ -133,6 +146,7 @@ export function Overview() {
                   <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} style={{ flexShrink: 0, cursor: "pointer" }} />
                   <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
                     <span style={{ fontWeight: 600 }}>{a.name}</span>
+                    {editedAccountIds.has(a.id) && <span className="badge badge-amber" style={{ marginLeft: "0.4rem", fontSize: "0.66rem" }} title="Has manual edits">✎ edited</span>}
                     <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
                   </div>
                   <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
@@ -153,6 +167,8 @@ export function Overview() {
           })}
         </div>
       </div>
+
+      <ManualEdits />
 
       {view.holdings.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: "1.5rem" }}>
