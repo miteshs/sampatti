@@ -18,7 +18,7 @@
 #      signature + notarization (then the postflight can be removed).
 cask "sampatti" do
   version "0.1.0"
-  sha256 "e5d77fe467fac3df3ad01022a927f48f630947c952543a0d55723a9d90503165" # set per-release by scripts/release.sh
+  sha256 "b0e017c8ac4321175166a8eb770b4e53b59dcb0978ac9149c5856ec9e5b8ab8e" # set per-release by scripts/release.sh
 
   url "https://github.com/miteshs/sampatti-releases/releases/download/v#{version}/Sampatti_#{version}_aarch64.dmg"
   name "Sampatti"
@@ -27,7 +27,7 @@ cask "sampatti" do
 
   # The release artifact is an Apple-Silicon dmg.
   depends_on arch: :arm64
-  depends_on macos: ">= :catalina"
+  depends_on macos: :big_sur
 
   app "Sampatti.app"
 
