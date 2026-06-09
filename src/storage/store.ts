@@ -16,6 +16,7 @@ interface State {
   loaded: boolean;
   load: () => Promise<void>;
   addDraft: (d: ImportDraft, mode?: "auto" | "new") => void;
+  mergeDraftInto: (targetAccountId: string, d: ImportDraft) => void;
   addAccount: (a: Omit<Account, "id">) => string;
   updateAccount: (id: string, patch: Partial<Account>) => void;
   removeAccount: (id: string) => void;
@@ -27,6 +28,19 @@ interface State {
   updateSettings: (patch: Partial<Settings>) => void;
   replaceAll: (p: Portfolio) => void;
   wipe: () => Promise<void>;
+}
+
+// Replace an existing account's holdings wholesale from a freshly imported statement, keeping
+// the account's id and excluded flag. "Wholesale" is deliberate: a new statement reflects
+// reality at its date — items sold/liquidated since the last import simply aren't in it, so
+// dropping the old holdings and taking the statement's set is correct (no merge/dedupe of
+// individual lots). The account's metadata (name, type, tax, currency, as-of date…) is also
+// refreshed from the statement.
+function replaceAccountHoldings(p: Portfolio, existing: Account, d: ImportDraft) {
+  const { excluded } = existing;
+  p.holdings = p.holdings.filter((h) => h.accountId !== existing.id);
+  Object.assign(existing, d.account, { id: existing.id, excluded });
+  for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId: existing.id });
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -78,20 +92,24 @@ export const useStore = create<State>((set, get) => ({
 
   addDraft: (d, mode = "auto") =>
     commit(set, get, (p) => {
+      // Re-import of a known account (same institution + name): replace its holdings in place,
+      // keeping id + excluded flag, so it updates rather than duplicating.
       const existing = mode === "auto" ? findMatchingAccount(p.accounts, d.account) : undefined;
       if (existing) {
-        // Re-import of a known account (same institution + name): drop its old holdings
-        // and refresh from the statement in place, keeping the id and excluded flag so it
-        // updates rather than creating a duplicate.
-        const { excluded } = existing;
-        p.holdings = p.holdings.filter((h) => h.accountId !== existing.id);
-        Object.assign(existing, d.account, { id: existing.id, excluded });
-        for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId: existing.id });
+        replaceAccountHoldings(p, existing, d);
       } else {
         const accountId = uid();
         p.accounts.push({ ...d.account, id: accountId });
         for (const h of d.holdings) p.holdings.push({ ...h, id: uid(), accountId });
       }
+    }),
+
+  // Apply a statement to a user-chosen existing account (when auto-match didn't fire but the
+  // user knows it's the same account, possibly renamed). Same wholesale-replace semantics.
+  mergeDraftInto: (targetAccountId, d) =>
+    commit(set, get, (p) => {
+      const existing = p.accounts.find((a) => a.id === targetAccountId);
+      if (existing) replaceAccountHoldings(p, existing, d);
     }),
 
   addAccount: (a) => {

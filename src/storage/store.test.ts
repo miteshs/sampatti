@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { useStore } from "./store";
-import { emptyPortfolio, type ImportDraft } from "../domain/types";
+import { emptyPortfolio, type AccountType, type ImportDraft } from "../domain/types";
 
 afterEach(() => {
   localStorage.clear();
@@ -94,6 +94,95 @@ describe("store addDraft — re-import upserts an account in place", () => {
     const acct = useStore.getState().portfolio.accounts[0];
     expect(acct.id).toBe(id);
     expect(acct.excluded).toBe(true);
+  });
+});
+
+// A richer statement builder that carries an as-of date and lets type vary, to exercise the
+// "import an updated statement for an existing account" flows the way real re-imports behave.
+const stmt = (
+  name: string, institution: string, holdings: [string, number][],
+  opts: { asOf?: string; accountType?: AccountType } = {},
+): ImportDraft => ({
+  account: {
+    name, institution, accountType: opts.accountType ?? "demat",
+    taxTreatment: "taxable", region: "India", currency: "INR", asOf: opts.asOf,
+  },
+  holdings: holdings.map(([n, v]) => ({ name: n, assetClass: "indian_equity", marketValue: v, currency: "INR" })),
+  warnings: [], source: "stmt.csv",
+});
+
+describe("statement update scenarios", () => {
+  const s = () => useStore.getState();
+
+  it("a newer statement adds new items and drops ones that are gone (sold/liquidated)", () => {
+    s().addDraft(stmt("Schwab", "Schwab", [["AAPL", 100], ["MSFT", 50], ["TSLA", 30]], { asOf: "2026-01-01" }));
+    // Next statement: TSLA sold, values changed, NVDA newly bought.
+    s().addDraft(stmt("Schwab", "Schwab", [["AAPL", 120], ["MSFT", 60], ["NVDA", 80]], { asOf: "2026-06-01" }));
+
+    const p = s().portfolio;
+    expect(p.accounts).toHaveLength(1);
+    const acct = p.accounts[0];
+    const hs = p.holdings.filter((h) => h.accountId === acct.id);
+    expect(hs.map((h) => h.name).sort()).toEqual(["AAPL", "MSFT", "NVDA"]); // TSLA gone, NVDA added
+    expect(hs.find((h) => h.name === "AAPL")!.marketValue).toBe(120); // value refreshed
+    expect(p.holdings.some((h) => h.name === "TSLA")).toBe(false); // fully removed — no orphan
+    expect(acct.asOf).toBe("2026-06-01"); // metadata refreshed from the new statement
+  });
+
+  it("refreshes account metadata (type / as-of) on re-import while keeping the same id", () => {
+    s().addDraft(stmt("ICICI", "ICICI", [["X", 1]], { asOf: "2026-01-01", accountType: "demat" }));
+    const id = s().portfolio.accounts[0].id;
+    s().addDraft(stmt("ICICI", "ICICI", [["X", 2]], { asOf: "2026-05-01", accountType: "bank" }));
+    const a = s().portfolio.accounts[0];
+    expect(a.id).toBe(id);
+    expect(a.accountType).toBe("bank");
+    expect(a.asOf).toBe("2026-05-01");
+  });
+
+  it("mergeDraftInto overwrites a user-chosen account that didn't auto-match (renamed statement)", () => {
+    s().addDraft(stmt("Old Name", "Kotak", [["A", 10], ["B", 20]]));
+    const id = s().portfolio.accounts[0].id;
+    s().updateAccount(id, { excluded: true });
+    // New statement labelled differently → no auto-match → the user points it at the account.
+    s().mergeDraftInto(id, stmt("Kotak Securities 1234", "Kotak", [["A", 15], ["C", 30]], { asOf: "2026-06-01" }));
+
+    const p = s().portfolio;
+    expect(p.accounts).toHaveLength(1); // overwritten, not duplicated
+    const a = p.accounts[0];
+    expect(a.id).toBe(id);
+    expect(a.excluded).toBe(true); // excluded flag preserved
+    expect(a.name).toBe("Kotak Securities 1234"); // adopts the new statement's name/metadata
+    const hs = p.holdings.filter((h) => h.accountId === id);
+    expect(hs.map((h) => h.name).sort()).toEqual(["A", "C"]); // B dropped, C added
+    expect(hs.find((h) => h.name === "A")!.marketValue).toBe(15);
+  });
+
+  it("a re-import never touches OTHER accounts' holdings", () => {
+    s().addDraft(stmt("Zerodha", "Zerodha", [["RELIANCE", 100]]));
+    s().addDraft(stmt("HDFC", "HDFC", [["FD", 200]]));
+    s().addDraft(stmt("Zerodha", "Zerodha", [["RELIANCE", 150], ["TCS", 90]]));
+
+    const p = s().portfolio;
+    const hdfc = p.accounts.find((a) => a.name === "HDFC")!;
+    expect(p.holdings.filter((h) => h.accountId === hdfc.id).map((h) => h.name)).toEqual(["FD"]); // untouched
+    const z = p.accounts.find((a) => a.name === "Zerodha")!;
+    expect(p.holdings.filter((h) => h.accountId === z.id)).toHaveLength(2);
+  });
+
+  it("mergeDraftInto a non-existent account is a safe no-op", () => {
+    s().addDraft(stmt("A", "A", [["x", 1]]));
+    const before = JSON.stringify(s().portfolio.holdings);
+    s().mergeDraftInto("does-not-exist", stmt("B", "B", [["y", 2]]));
+    expect(JSON.stringify(s().portfolio.holdings)).toBe(before);
+    expect(s().portfolio.accounts).toHaveLength(1);
+  });
+
+  it("'Add as separate' (mode 'new') keeps both the old account and the updated statement", () => {
+    s().addDraft(stmt("Demat", "Broker", [["A", 1]]));
+    s().addDraft(stmt("Demat", "Broker", [["A", 2]]), "new");
+    const p = s().portfolio;
+    expect(p.accounts).toHaveLength(2);
+    expect(p.holdings).toHaveLength(2);
   });
 });
 

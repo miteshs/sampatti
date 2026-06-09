@@ -26,7 +26,7 @@ const CSV_TEMPLATE =
   "PPF,SBI,epf_ppf,eee_exempt,India,INR,,PPF account,epf_ppf,,2800000,,,2026-03-31\n";
 
 export function AddData() {
-  const { replaceAll, addDraft, addAccount, addHolding, addIncome, wipe, portfolio } = useStore();
+  const { replaceAll, addDraft, mergeDraftInto, addAccount, addHolding, addIncome, wipe, portfolio } = useStore();
   const [drafts, setDrafts] = useState<ImportDraft[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
@@ -242,9 +242,13 @@ export function AddData() {
       {drafts.map((d, i) => (
         <DraftReview
           key={i} draft={d}
-          existing={findMatchingAccount(portfolio.accounts, d.account)}
+          accounts={portfolio.accounts}
           onCurrency={(c) => setDraftCurrency(i, c)}
-          onCommit={(mode) => { addDraft(d, mode); setDrafts((all) => all.filter((_, j) => j !== i)); }}
+          onApply={(target) => {
+            if (target === "new") addDraft(d, "new");
+            else mergeDraftInto(target, d);
+            setDrafts((all) => all.filter((_, j) => j !== i));
+          }}
           onDiscard={() => setDrafts((all) => all.filter((_, j) => j !== i))}
         />
       ))}
@@ -260,14 +264,21 @@ export function AddData() {
 }
 
 // ---- review an AI/file draft before saving ----
-function DraftReview({ draft, existing, onCurrency, onCommit, onDiscard }: {
-  draft: ImportDraft; existing?: Account; onCurrency: (currency: string) => void;
-  onCommit: (mode: "auto" | "new") => void; onDiscard: () => void;
+// "Apply to" lets the user steer the re-import: auto-matched accounts (same institution+name)
+// are preselected to Update; otherwise they can still pick any existing account to overwrite,
+// or add as a new one. Updating replaces that account's holdings wholesale (items sold since
+// the last statement simply drop off; new items are added).
+function DraftReview({ draft, accounts, onCurrency, onApply, onDiscard }: {
+  draft: ImportDraft; accounts: Account[]; onCurrency: (currency: string) => void;
+  onApply: (target: "new" | string) => void; onDiscard: () => void;
 }) {
   const total = draft.holdings.reduce((s, h) => s + h.marketValue, 0);
   const fmt = (v: number) => draft.account.currency === "INR" ? inr(v) : `${draft.account.currency} ${v.toLocaleString("en-US")}`;
+  const matched = findMatchingAccount(accounts, draft.account);
+  const [target, setTarget] = useState<"new" | string>(matched?.id ?? "new");
+  const targetAcct = target === "new" ? undefined : accounts.find((a) => a.id === target);
   return (
-    <div className="card" style={{ borderLeft: `3px solid ${existing ? "var(--amber, #d98324)" : "var(--primary)"}` }}>
+    <div className="card" style={{ borderLeft: `3px solid ${matched ? "var(--amber, #d98324)" : "var(--primary)"}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
         <div>
           <div className="eyebrow">Review draft · {draft.source}</div>
@@ -288,22 +299,37 @@ function DraftReview({ draft, existing, onCurrency, onCommit, onDiscard }: {
             )}
           </div>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          {existing ? (
-            <>
-              <button className="btn btn-primary" onClick={() => onCommit("auto")}>↻ Update · replace with {draft.holdings.length} · {fmt(total)}</button>
-              <button className="btn" onClick={() => onCommit("new")}>Add as separate</button>
-            </>
-          ) : (
-            <button className="btn btn-primary" onClick={() => onCommit("auto")}>Add {draft.holdings.length} holdings · {fmt(total)}</button>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+          {accounts.length > 0 && (
+            <label style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+              <span className="muted" style={{ fontSize: "0.7rem", fontWeight: 600 }}>Apply to</span>
+              <select value={target} onChange={(e) => setTarget(e.target.value)} style={{ maxWidth: 220 }}>
+                <option value="new">➕ New account</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>↻ Update: {a.name}{a.institution ? ` · ${a.institution}` : ""}</option>
+                ))}
+              </select>
+            </label>
           )}
-          <button className="btn btn-ghost" onClick={onDiscard}>Discard</button>
+          <button className="btn btn-primary" onClick={() => onApply(target)} style={{ alignSelf: "flex-end" }}>
+            {target === "new"
+              ? `Add ${draft.holdings.length} holdings · ${fmt(total)}`
+              : `↻ Replace with ${draft.holdings.length} · ${fmt(total)}`}
+          </button>
+          <button className="btn btn-ghost" onClick={onDiscard} style={{ alignSelf: "flex-end" }}>Discard</button>
         </div>
       </div>
-      {existing && (
+      {matched && target === matched.id && (
         <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
-          Matches an account you already have ({existing.institution} · {existing.name}). <strong>Update</strong> replaces
-          its current holdings with this statement; <strong>Add as separate</strong> keeps both.
+          Matches an account you already have ({matched.institution} · {matched.name}) — preselected to <strong>Update</strong>.
+          Updating replaces its current holdings with this statement (sold/removed items drop off). Switch “Apply to” to
+          <strong> New account</strong> to keep both.
+        </div>
+      )}
+      {targetAcct && !(matched && target === matched.id) && (
+        <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
+          This will <strong>replace</strong> the holdings of <strong>{targetAcct.name}</strong> ({targetAcct.institution || "—"}) with
+          this statement, and update its details. Items not in this statement are removed.
         </div>
       )}
       {draft.warnings.length > 0 && (
