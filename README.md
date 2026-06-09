@@ -64,6 +64,20 @@ The user just downloads the `.dmg`, drags Sampatti to Applications, and opens it
 build, no install scripts. (A Windows `.msi` comes from `tauri build` on Windows; a hosted web
 build is just `npm run build` served as static files.)
 
+## Install with Homebrew
+
+Once a release is published to a tap (see [`docs/homebrew.md`](docs/homebrew.md)):
+
+```
+brew tap miteshs/sampatti
+brew install --cask sampatti
+```
+
+The cask lives at [`packaging/homebrew/sampatti.rb`](packaging/homebrew/sampatti.rb);
+`scripts/release.sh` builds the dmg, computes its sha256, and updates the cask. Publishing
+needs a **public** download URL for the dmg and (ideally) Developer-ID **signing + notarization**
+— details and the unsigned-build workaround are in `docs/homebrew.md`.
+
 ## How analysis reaches Claude
 
 Two modes, switchable on the Privacy screen:
