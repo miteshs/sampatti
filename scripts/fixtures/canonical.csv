@@ -1,0 +1,4 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Zerodha Demat,Zerodha,demat,taxable,India,INR,RELIANCE,Reliance Industries,indian_equity,100,300000,210000,2019-07-12,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,INFY,Infosys,indian_equity,50,80000,55000,2018-11-05,2026-05-31
+PPF,SBI,epf_ppf,eee_exempt,India,INR,,PPF account,epf_ppf,,2800000,,,2026-03-31

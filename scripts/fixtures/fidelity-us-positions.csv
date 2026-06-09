@@ -1,0 +1,6 @@
+Account Number,Account Name,Symbol,Description,Quantity,Last Price,Current Value,Cost Basis Total,Type
+Z12345678,Individual,AAPL,APPLE INC,100,$220.00,"$22,000.00","$15,000.00",Cash
+Z12345678,Individual,SPAXX,FIDELITY GOVERNMENT MONEY MARKET,5000,$1.00,"$5,000.00",--,Cash
+Z12345678,Individual,VTI,VANGUARD TOTAL STOCK MARKET ETF,50,$280.00,"$14,000.00","$9,000.00",Cash
+
+"Brokerage services are provided by Fidelity Brokerage Services LLC, Member NYSE, SIPC."
