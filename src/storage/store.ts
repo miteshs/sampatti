@@ -58,7 +58,12 @@ export const useStore = create<State>((set, get) => ({
       if (raw) {
         const p = JSON.parse(raw) as Portfolio;
         // Forward-compatible defaults for any setting added after the file was written.
-        p.settings = { ...emptyPortfolio().settings, ...p.settings };
+        const defaults = emptyPortfolio().settings;
+        p.settings = { ...defaults, ...p.settings };
+        // Backfill an empty relay URL with the current default. A portfolio saved before
+        // a relay was configured stores relayUrl:"" which would otherwise win the merge
+        // above and leave relay mode unconfigured on upgrade.
+        if (!p.settings.relayUrl) p.settings.relayUrl = defaults.relayUrl;
         p.version = CURRENT_VERSION;
         set(() => ({ portfolio: p, loaded: true }));
         return;
