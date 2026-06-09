@@ -6,8 +6,11 @@ import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { holdingBase, inr } from "../domain/format";
 import { ACCOUNT_TYPE_LABEL } from "../domain/classify";
+import { visiblePortfolio } from "../domain/types";
 import { AccountEditor } from "./AccountEditor";
 import { ManualEdits } from "./ManualEdits";
+import { RefreshPrices } from "./RefreshPrices";
+import { freshness, FRESH_BADGE } from "./ui";
 
 export function Manage() {
   const portfolio = useStore((s) => s.portfolio);
@@ -16,6 +19,13 @@ export function Manage() {
   const usdInr = portfolio.settings.usdInr;
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Freshness over the *visible* accounts (matches the dashboard's net-worth scope).
+  const staleAccounts = useMemo(() => visiblePortfolio(portfolio).accounts
+    .filter((a) => a.accountType !== "liability" && a.accountType !== "income")
+    .map((a) => ({ a, f: freshness(a.asOf) }))
+    .filter((x) => x.f.status !== "fresh")
+    .sort((x, y) => (y.f.days ?? 1e9) - (x.f.days ?? 1e9)), [portfolio]);
 
   // Per-account totals from the raw portfolio (so excluded accounts still show a value).
   const acctTotals = useMemo(() => {
@@ -90,6 +100,35 @@ export function Manage() {
             );
           })}
         </div>
+      </div>
+
+      <RefreshPrices />
+
+      <div className="card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ fontSize: "1.05rem" }}>Data freshness</h2>
+          <span className="muted" style={{ fontSize: "0.8rem" }}>
+            {staleAccounts.length === 0 ? "Everything is current" : `${staleAccounts.length} account(s) could use a fresh statement`}
+          </span>
+        </div>
+        {staleAccounts.length > 0 && (
+          <div style={{ marginTop: "0.75rem" }}>
+            {staleAccounts.map(({ a, f }) => (
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.45rem 0", borderTop: "1px solid var(--line-2)" }}>
+                <span style={{ fontWeight: 600 }}>{a.name}</span>
+                <span style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
+                  <span className="muted" style={{ fontSize: "0.8rem" }}>
+                    {a.asOf ? `as of ${a.asOf}${f.days != null ? ` · ${f.days}d ago` : ""}` : "no date"}
+                  </span>
+                  <span className={`badge ${FRESH_BADGE[f.status]}`}>{f.status}</span>
+                </span>
+              </div>
+            ))}
+            <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.6rem" }}>
+              Statement values are held until you import a newer one. Amber ≈ 1–4 months old, red ≈ older.
+            </p>
+          </div>
+        )}
       </div>
 
       <ManualEdits />

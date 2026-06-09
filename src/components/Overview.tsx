@@ -4,11 +4,9 @@ import { buildBrief } from "../domain/brief";
 import { buildSegments, keyFor, DIMENSIONS, type Dimension } from "../domain/group";
 import { holdingBase, inr, pct } from "../domain/format";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
-import { visiblePortfolio, type Account, type Holding } from "../domain/types";
+import { visiblePortfolio, type Account, type AssetClass, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
 import { NetWorthTrend } from "./NetWorthTrend";
-import { RefreshPrices } from "./RefreshPrices";
-import { freshness, FRESH_BADGE } from "./ui";
 
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
@@ -69,11 +67,14 @@ export function Overview() {
       return next;
     });
 
-  const staleAccounts = view.accounts
-    .filter((a) => a.accountType !== "liability" && a.accountType !== "income")
-    .map((a) => ({ a, f: freshness(a.asOf) }))
-    .filter((x) => x.f.status !== "fresh")
-    .sort((x, y) => (y.f.days ?? 1e9) - (x.f.days ?? 1e9));
+  // Headline metrics. Equity exposure = all public-equity classes as a share of assets (the
+  // growth/risk dial); top-10 concentration = your 10 biggest positions as a share of assets.
+  const EQUITY = new Set<AssetClass>(["indian_equity", "equity_mf", "index_etf", "elss", "us_equity"]);
+  const equityBase = view.holdings.filter((h) => EQUITY.has(h.assetClass)).reduce((s, h) => s + holdingBase(h, usdInr), 0);
+  const equityPct = pct(equityBase, brief.totalAssets);
+  const top10Value = brief.concentration.topHoldings.reduce((s, h) => s + h.value, 0);
+  const top10Pct = pct(top10Value, brief.totalAssets);
+  const top10Count = brief.concentration.topHoldings.length;
 
   if (portfolio.accounts.length === 0) {
     return (
@@ -91,9 +92,9 @@ export function Overview() {
     <div className="grid" style={{ gap: "1.25rem" }}>
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         <StatCard label="Net worth" value={inr(brief.netWorth)} sub={`${inr(brief.totalAssets)} assets · ${inr(brief.totalLiabilities)} debt`} accent />
+        <StatCard label="Equity exposure" value={`${equityPct}%`} sub={`${inr(equityBase)} in equities`} />
         <StatCard label="Liquid assets" value={inr(brief.liquidAssets)} sub={`${brief.liquidPct}% of assets`} />
-        <StatCard label="Largest single stock" value={`${brief.concentration.largestPctOfLiquid}%`} sub="of liquid assets" />
-        <StatCard label="Annual income" value={inr(brief.income.annualTotal)} sub={brief.income.netWorthYears ? `net worth ≈ ${brief.income.netWorthYears}× income` : undefined} />
+        <StatCard label="Top 10 holdings" value={`${top10Pct}%`} sub={`of assets · ${top10Count} position${top10Count === 1 ? "" : "s"}`} />
       </div>
 
       {/* Net worth over time — reconstructed from market history, honors the account selection (Manage tab) */}
@@ -176,34 +177,6 @@ export function Overview() {
         </div>
       </div>
 
-      <RefreshPrices />
-
-      <div className="card">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ fontSize: "1.05rem" }}>Data freshness</h2>
-          <span className="muted" style={{ fontSize: "0.8rem" }}>
-            {staleAccounts.length === 0 ? "Everything is current" : `${staleAccounts.length} account(s) could use a fresh statement`}
-          </span>
-        </div>
-        {staleAccounts.length > 0 && (
-          <div style={{ marginTop: "0.75rem" }}>
-            {staleAccounts.map(({ a, f }) => (
-              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.45rem 0", borderTop: "1px solid var(--line-2)" }}>
-                <span style={{ fontWeight: 600 }}>{a.name}</span>
-                <span style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
-                  <span className="muted" style={{ fontSize: "0.8rem" }}>
-                    {a.asOf ? `as of ${a.asOf}${f.days != null ? ` · ${f.days}d ago` : ""}` : "no date"}
-                  </span>
-                  <span className={`badge ${FRESH_BADGE[f.status]}`}>{f.status}</span>
-                </span>
-              </div>
-            ))}
-            <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.6rem" }}>
-              Statement values are held until you import a newer one. Amber ≈ 1–4 months old, red ≈ older.
-            </p>
-          </div>
-        )}
-      </div>
       </>)}
     </div>
   );
