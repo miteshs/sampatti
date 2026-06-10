@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
-import { clearByoKey, hasByoKey, setByoKey, storageLocation, isTauri } from "../platform";
+import { clearByoKey, diskEncryption, hasByoKey, keyStoreName, setByoKey, storageLocation, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
 import { fetchUsdInr } from "../domain/fx";
 
@@ -66,10 +66,10 @@ export function Privacy() {
             Anthropic and never touches our servers. Anthropic does not train on API data.</>} />
         <Flow icon="🔐" title="At rest"
           body={isTauri()
-            ? <>Turn on macOS <strong>FileVault</strong> (System Settings → Privacy &amp; Security) to
+            ? <>Turn on {diskEncryption().os} <strong>{diskEncryption().tool}</strong> ({diskEncryption().where}) to
               encrypt the whole disk, including this app's data file.</>
             : <>You're viewing the web preview, so data sits in this browser's local storage. The
-              desktop app stores it as a file on your Mac instead.</>} />
+              desktop app stores it as a file on your computer instead.</>} />
       </div>
 
       <div className="card">
@@ -98,7 +98,7 @@ export function Privacy() {
             <label>Anthropic API key</label>
             {keySet ? (
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <span className="badge badge-green">key set · {isTauri() ? "stored in macOS Keychain" : "kept in this tab only"}</span>
+                <span className="badge badge-green">key set · {isTauri() ? `stored in ${keyStoreName()}` : "kept in this tab only"}</span>
                 <button className="btn btn-ghost" onClick={removeKey}>Remove</button>
               </div>
             ) : (
@@ -109,8 +109,8 @@ export function Privacy() {
             )}
             <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
               {isTauri()
-                ? "Stored in the macOS Keychain and used from the app's native layer — it never enters the web view."
-                : "In the web preview the key is kept in this tab's memory only (cleared when you close it); the desktop app uses the system Keychain."}
+                ? `Stored in the ${keyStoreName()} and used from the app's native layer — it never enters the web view.`
+                : "In the web preview the key is kept in this tab's memory only (cleared when you close it); the desktop app uses the system keychain."}
             </p>
           </div>
         )}

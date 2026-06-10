@@ -14,8 +14,11 @@ Three repos, only the last two public — the source stays private:
 | Repo | Visibility | Holds |
 |---|---|---|
 | `miteshs/sampatti` | **private** | the source (this repo) + `packaging/homebrew/sampatti.rb` as the cask's source of truth |
-| `miteshs/sampatti-releases` | public | GitHub Releases with the dmg artifacts only (brew needs a public, unauthenticated URL) |
+| `miteshs/sampatti-releases` | public | GitHub Releases with the installers only — macOS `.dmg` + Windows `-setup.exe` (brew needs a public, unauthenticated URL) |
 | `miteshs/homebrew-sampatti` | public | the tap: `Casks/sampatti.rb` |
+
+(The Windows installer is built and uploaded by CI on tag push — see
+[windows.md](windows.md); this doc is the macOS/Homebrew leg.)
 
 **Public builds carry no relay token.** The hosted-relay app-token (`VITE_RELAY_TOKEN`) is
 deliberately baked as empty by `scripts/release.sh`, because anything inside a public dmg is
@@ -31,12 +34,15 @@ build (`npm run tauri build`, which reads `.env.local`) still includes relay acc
 # 2. Public build + sha256 + cask update + publish the GitHub release:
 scripts/release.sh --gh-release
 
-# 3. Update the tap (any checkout location works):
+# 3. Windows leg — push the version tag; CI adds the NSIS exe to the same release:
+git tag v<version> && git push origin v<version>    # see docs/windows.md
+
+# 4. Update the tap (any checkout location works):
 git clone https://github.com/miteshs/homebrew-sampatti /tmp/homebrew-sampatti  # if not already
 scripts/release.sh --tap /tmp/homebrew-sampatti     # copies the cask in
 cd /tmp/homebrew-sampatti && git commit -am "sampatti <version>" && git push
 
-# 4. Rebuild your OWN copy with relay access and reinstall it:
+# 5. Rebuild your OWN copy with relay access and reinstall it:
 npm run tauri build
 cp -R src-tauri/target/release/bundle/macos/Sampatti.app /Applications/
 ```

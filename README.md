@@ -5,9 +5,9 @@ AIF, debt funds, EPF/PPF, NPS, FDs, gold/SGB, insurance, US RSUs, real estate �
 allocation view, and gives you an **interactive AI portfolio review** acting as a top Indian
 financial analyst. Your data lives on your machine; only a compact summary goes to Claude.
 
-Built on a **Tauri + React** core: the desktop app (a signed `.dmg`) is the shipping
-product, but the same code runs as a plain web app, so a Windows build or a hosted web
-version is a configuration change, not a rewrite.
+Built on a **Tauri + React** core: the desktop app ships for **macOS** (`.dmg`, Homebrew
+cask) and **Windows** (`.exe`, NSIS installer built by CI), and the same code runs as a
+plain web app for development.
 
 ## What it does
 
@@ -61,8 +61,16 @@ npm run tauri build                     # Tauri signs, then submits to Apple not
 ```
 
 The user just downloads the `.dmg`, drags Sampatti to Applications, and opens it — no git, no
-build, no install scripts. (A Windows `.msi` comes from `tauri build` on Windows; a hosted web
-build is just `npm run build` served as static files.)
+build, no install scripts.
+
+## Build the Windows app (`.exe`)
+
+CI does this: pushing a `v*` tag runs
+[`.github/workflows/windows-release.yml`](.github/workflows/windows-release.yml) — tests,
+NSIS x64 installer, upload to the public releases repo. Manual builds for click-testing:
+Actions → *windows-release* → Run workflow. On an actual Windows machine a plain
+`npm run tauri build` works (`tauri.windows.conf.json` selects the NSIS target).
+Install/runbook details: [`docs/windows.md`](docs/windows.md).
 
 ## Install with Homebrew
 
@@ -85,7 +93,7 @@ Two modes, switchable on the Privacy screen:
 - **Relay (default)** — a tiny stateless [relay](../relay) holds the Anthropic key so clients
   need nothing. It forwards the brief and stores nothing.
 - **My own key (max privacy)** — the app calls Anthropic directly with a key kept in the
-  macOS Keychain (desktop) and never touches the relay.
+  macOS Keychain / Windows Credential Manager (desktop) and never touches the relay.
 
 ## Layout
 
@@ -96,7 +104,7 @@ src/storage     the on-device portfolio store (one JSON file)
 src/claude      transport (relay/BYO, streaming) + the analyst prompts
 src/platform    Tauri-vs-web abstraction (storage, keychain, network)
 src/components   Overview, AnalysisChat, AddData, Privacy, Donut, Markdown
-src-tauri        the Rust shell: keychain + the native Claude stream, macOS bundle config
+src-tauri        the Rust shell: OS keystore + the native Claude stream, macOS/Windows bundle config
 ```
 
 Educational use only — not a substitute for a SEBI-registered investment adviser.

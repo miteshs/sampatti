@@ -6,6 +6,41 @@
 export const isTauri = (): boolean =>
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
+// ---- which OS the desktop app is on (drives copy, never behavior) -----------
+// The webview's UA is reliable for the big two: WebView2 says "Windows NT",
+// WKWebView says "Macintosh". Everything else is treated as Linux.
+
+export type DesktopOS = "macos" | "windows" | "linux";
+
+export function detectOS(): DesktopOS {
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  if (/Windows/i.test(ua)) return "windows";
+  if (/Macintosh|Mac OS X/i.test(ua)) return "macos";
+  return "linux";
+}
+
+// Where the BYO Anthropic key lives on this platform — shown wherever the UI
+// promises the key never leaves the machine.
+export function keyStoreName(): string {
+  switch (detectOS()) {
+    case "windows": return "Windows Credential Manager";
+    case "macos": return "macOS Keychain";
+    default: return "system keyring";
+  }
+}
+
+// The platform's full-disk encryption, for the Privacy screen's "at rest" advice.
+export function diskEncryption(): { os: string; tool: string; where: string } {
+  switch (detectOS()) {
+    case "windows":
+      return { os: "Windows", tool: "Device encryption (BitLocker)", where: "Settings → Privacy & security" };
+    case "macos":
+      return { os: "macOS", tool: "FileVault", where: "System Settings → Privacy & Security" };
+    default:
+      return { os: "Linux", tool: "full-disk encryption (LUKS)", where: "usually chosen at install time" };
+  }
+}
+
 // ---- local persistence (the portfolio file) --------------------------------
 
 const WEB_KEY = "sampatti.portfolio";
@@ -74,8 +109,10 @@ export function clearLocalCaches(): void {
 export async function storageLocation(): Promise<string> {
   if (isTauri()) {
     try {
-      const { appDataDir } = await import("@tauri-apps/api/path");
-      return `${await appDataDir()}${FILE}`;
+      // join(), not string concat: appDataDir() has no trailing separator, and the
+      // separator itself differs on Windows.
+      const { appDataDir, join } = await import("@tauri-apps/api/path");
+      return await join(await appDataDir(), FILE);
     } catch {
       return "your app-data folder";
     }

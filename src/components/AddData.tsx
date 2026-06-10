@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../storage/store";
+import { keyStoreName } from "../platform";
 import { demoPortfolio } from "../demo";
 import { classifyFile, ingestFile, ingestWithClaude, isImportable, NeedsClaudeError } from "../ingest";
 import { inr } from "../domain/format";
@@ -313,7 +314,7 @@ function GettingStarted({ hasData }: { hasData: boolean }) {
       </summary>
       <div className="grid" style={{ gap: "0.65rem", marginTop: "0.9rem" }}>
         <Step n={1} title="Connect Claude (Privacy tab).">
-          Add your own Anthropic API key — it lives in the macOS Keychain. If you hold US assets, refresh the USD→INR rate there too.
+          Add your own Anthropic API key — it lives in the {keyStoreName()}. If you hold US assets, refresh the USD→INR rate there too.
         </Step>
         <Step n={2} title="Download a statement from every account into one folder.">
           CSV/Excel beats PDF (parsed fully on this device). Choose exports that include

@@ -83,7 +83,7 @@ if [ "$GH_RELEASE" = "1" ]; then
   gh release create "v${VERSION}" "$DMG" \
     --repo "$RELEASES_REPO" \
     --title "Sampatti ${VERSION}" \
-    --notes "Apple-Silicon build. Install: \`brew tap miteshs/sampatti && brew install --cask sampatti\`. AI analysis needs your own Anthropic API key (Privacy screen → stored in the macOS Keychain). All portfolio data stays on your device." \
+    --notes "macOS (Apple Silicon): \`brew tap miteshs/sampatti && brew install --cask sampatti\`. Windows (x64): the \`*-setup.exe\` below (SmartScreen → More info → Run anyway). AI analysis needs your own Anthropic API key (Privacy screen → stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device." \
     || gh release upload "v${VERSION}" "$DMG" --repo "$RELEASES_REPO" --clobber
   echo "✓ Release v${VERSION} ready on ${RELEASES_REPO}"
 fi
@@ -96,6 +96,8 @@ fi
 
 echo
 echo "Next:"
+echo "  • Windows build:   git tag v${VERSION} && git push origin v${VERSION}"
+echo "                     (CI builds the NSIS exe and adds it to the same release — docs/windows.md)"
 echo "  • Push the tap:    cd <tap checkout> && git commit -am 'sampatti ${VERSION}' && git push"
 echo "  • Users install:   brew tap miteshs/sampatti && brew install --cask sampatti"
 echo "  • Your own copy:   npm run tauri build   (re-bakes the relay token from .env.local)"

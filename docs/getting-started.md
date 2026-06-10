@@ -1,10 +1,12 @@
 # Getting started with Sampatti
 
-From zero to an AI-reviewed portfolio in about 20 minutes. Everything stays on your Mac —
+From zero to an AI-reviewed portfolio in about 20 minutes. Everything stays on your machine —
 statements are parsed locally; only a compact numeric summary is sent to Claude, and only
 when you run the analysis.
 
 ## 1. Install
+
+**macOS (Apple Silicon):**
 
 ```sh
 brew tap miteshs/sampatti
@@ -16,10 +18,15 @@ brew install --cask sampatti
 drag **Sampatti** into *Applications*, then right-click → **Open** on first launch — the build
 is unsigned for now.)
 
+**Windows (x64):** download `Sampatti_<version>_x64-setup.exe` from the same
+[releases page](https://github.com/miteshs/sampatti-releases/releases) and run it. SmartScreen
+will object once (unsigned build): **More info → Run anyway**. Details in [windows.md](windows.md).
+
 ## 2. One-time setup (Privacy tab)
 
 - **Connect Claude** — add your own Anthropic API key (`platform.claude.com` → API keys). It's
-  stored in the macOS Keychain and never leaves your machine except to call Anthropic directly.
+  stored in the macOS Keychain (on Windows: the Credential Manager) and never leaves your
+  machine except to call Anthropic directly.
 - **USD→INR rate** — tap the refresh button to pull the live rate if you hold US assets
   (RSUs/ESPP/US brokerage).
 - Optional: pick the analysis model — Sonnet is the balanced default; Opus is the most

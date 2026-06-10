@@ -1,0 +1,100 @@
+# Windows installer build.
+#
+#   • Tag push (v*): runs the full gate (vitest + tsc + cargo test, incl. a real Credential
+#     Manager round-trip on the runner), builds the NSIS installer, and uploads it to the
+#     matching release on the PUBLIC miteshs/sampatti-releases repo — alongside the macOS dmg
+#     that scripts/release.sh publishes.
+#   • Manual run (workflow_dispatch): same build, but the .exe is attached to the run as an
+#     artifact for VM click-testing. No release is touched.
+#
+# Public-by-construction: .env.local is gitignored so CI can never see the relay token, and
+# VITE_RELAY_TOKEN is pinned empty below — the same guarantee scripts/release.sh enforces for
+# the macOS artifact. Public users bring their own Anthropic key (Credential Manager).
+#
+# The build is unsigned: first launch shows SmartScreen — "More info → Run anyway".
+
+name: windows-release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      VITE_RELAY_TOKEN: "" # never bake hosted-relay access into a public artifact
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Tag must match the app version
+        if: github.ref_type == 'tag'
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          if [ "v${VERSION}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match tauri.conf.json version ${VERSION}"
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - name: Frontend tests
+        run: npm test
+
+      - name: Typecheck + frontend build (cargo needs dist/ for generate_context!)
+        run: npm run build
+
+      - name: Rust tests (incl. Credential Manager round-trip on this runner)
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      # Bundle targets come from src-tauri/tauri.windows.conf.json (nsis only).
+      - name: Build NSIS installer (token-less public build)
+        run: npx tauri build
+
+      - name: Locate installer
+        id: exe
+        run: |
+          EXE=$(ls src-tauri/target/release/bundle/nsis/*-setup.exe)
+          echo "path=$EXE" >> "$GITHUB_OUTPUT"
+          echo "sha256:"
+          sha256sum "$EXE"
+
+      - name: Attach to this run (manual build for click-testing)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sampatti-windows-x64
+          path: ${{ steps.exe.outputs.path }}
+
+      # Cross-repo upload — needs the RELEASES_TOKEN secret: a fine-grained PAT with
+      # Contents read/write on miteshs/sampatti-releases (see docs/windows.md).
+      - name: Publish to miteshs/sampatti-releases
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          REPO="miteshs/sampatti-releases"
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$REPO" --title "Sampatti ${TAG#v}" \
+              --notes "Windows x64 installer. macOS: \`brew tap miteshs/sampatti && brew install --cask sampatti\`. AI analysis needs your own Anthropic API key (Privacy screen). All portfolio data stays on your device."
+          fi
+          gh release upload "$TAG" "${{ steps.exe.outputs.path }}" --repo "$REPO" --clobber

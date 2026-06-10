@@ -3,7 +3,7 @@
 // user's own key (BYO / "max privacy"). On desktop the call is made from Rust so the key
 // never enters the webview; on web it streams over fetch.
 
-import { isTauri, webByoKey } from "../platform";
+import { isTauri, keyStoreName, webByoKey } from "../platform";
 import { useStore } from "../storage/store";
 
 export const EXTRACT_MODEL = "claude-sonnet-4-6";
@@ -42,10 +42,12 @@ const RELAY_TOKEN = import.meta.env.VITE_RELAY_TOKEN ?? "";
 // Public builds ship WITHOUT the relay token (so strangers can't spend the relay owner's API
 // credits) — a relay 401/403 then just means "this build has no hosted access": point the
 // user at the BYO-key path instead of showing a bare status code.
-function relayHint(mode: string, message: string): Error {
+// Exported for tests.
+export function relayHint(mode: string, message: string): Error {
   if (mode === "relay" && /\(40[13][^)]*\)/.test(message)) {
+    const where = isTauri() ? `it stays in the ${keyStoreName()}` : "it stays on this device";
     return new Error(
-      `${message} — this build doesn't include hosted-relay access. Add your own Anthropic API key on the Privacy screen (it stays in your Mac's Keychain), or set your own relay URL.`,
+      `${message} — this build doesn't include hosted-relay access. Add your own Anthropic API key on the Privacy screen (${where}), or set your own relay URL.`,
     );
   }
   return new Error(message);

@@ -5,7 +5,7 @@ Sampatti is built so your financial data stays with you. Here is exactly what ha
 ## Stored only on your device
 
 Your accounts, holdings, and income are saved to a single file in the app's data folder on
-your Mac (the Privacy screen shows the exact path). There is **no account, no sign-in, and
+your computer (the Privacy screen shows the exact path). There is **no account, no sign-in, and
 no cloud database**. Nothing is uploaded for storage. Back it up or wipe it yourself anytime
 (Privacy → Export / Erase).
 
@@ -31,9 +31,11 @@ Nothing else is ever transmitted.
 
 ## At rest
 
-On macOS, turn on **FileVault** (System Settings → Privacy & Security → FileVault) to encrypt
-the whole disk, including this app's data file. Your bring-your-own Anthropic key, if you use
-one, is stored in the **macOS Keychain** and never enters the app's web view.
+Turn on full-disk encryption — **FileVault** on macOS (System Settings → Privacy & Security),
+**Device encryption / BitLocker** on Windows (Settings → Privacy & security) — so the app's
+data file is encrypted with everything else. Your bring-your-own Anthropic key, if you use
+one, is stored in the **macOS Keychain** / **Windows Credential Manager** and never enters
+the app's web view.
 
 ## Your controls
 

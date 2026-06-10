@@ -117,6 +117,15 @@ const MARKET_HOSTS: [&str; 5] = [
     "api.mfapi.in",
 ];
 
+// A plausible browser UA for the current platform (Yahoo throttles obviously non-browser agents).
+const MARKET_UA: &str = if cfg!(target_os = "windows") {
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Sampatti"
+} else if cfg!(target_os = "macos") {
+    "Mozilla/5.0 (Macintosh) Sampatti"
+} else {
+    "Mozilla/5.0 (X11; Linux x86_64) Sampatti"
+};
+
 // https + allow-listed host, checked on the INITIAL url and on every redirect hop — an
 // allow-listed host must never be able to bounce the request to plaintext or elsewhere.
 fn allowed_market_url(u: &reqwest::Url) -> bool {
@@ -134,7 +143,7 @@ async fn market_fetch(url: String) -> Result<String, String> {
     }
     let host = parsed.host_str().unwrap_or("").to_string();
     let client = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (Macintosh) Sampatti")
+        .user_agent(MARKET_UA)
         .redirect(reqwest::redirect::Policy::custom(|attempt| {
             if attempt.previous().len() > 4 || !allowed_market_url(attempt.url()) {
                 attempt.stop() // surfaces as a non-success status below
@@ -149,6 +158,65 @@ async fn market_fetch(url: String) -> Result<String, String> {
         return Err(format!("{host} returned {}", resp.status()));
     }
     resp.text().await.map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn url(s: &str) -> reqwest::Url {
+        reqwest::Url::parse(s).unwrap()
+    }
+
+    #[test]
+    fn market_allowlist_accepts_each_host_https_only() {
+        for h in MARKET_HOSTS {
+            assert!(allowed_market_url(&url(&format!("https://{h}/any/path?q=1"))), "{h} should pass");
+            assert!(!allowed_market_url(&url(&format!("http://{h}/any/path"))), "plain http must fail for {h}");
+        }
+    }
+
+    #[test]
+    fn market_allowlist_rejects_lookalikes_and_url_tricks() {
+        for bad in [
+            "https://evil.example/",
+            "https://query1.finance.yahoo.com.evil.example/",  // allow-listed host as a subdomain of another
+            "https://xquery1.finance.yahoo.com/",               // prefixed lookalike
+            "https://query1.finance.yahoo.com@evil.example/",   // userinfo trick — real host is evil.example
+            "ftp://query1.finance.yahoo.com/",                  // non-https scheme
+            "https://api.mfapi.in.evil.example/x",
+        ] {
+            assert!(!allowed_market_url(&url(bad)), "{bad} must be rejected");
+        }
+    }
+
+    // The BYO key must land in a REAL persistent OS store (macOS Keychain / Windows
+    // Credential Manager). keyring v3 silently substitutes an in-memory mock when the
+    // platform feature flag is missing — the mock reports EntryOnly persistence and the
+    // saved key would die with the process (the regression this test exists to catch).
+    #[test]
+    fn keystore_backend_is_a_persistent_os_store() {
+        use keyring::credential::CredentialPersistence;
+        let p = keyring::default::default_credential_builder().persistence();
+        assert!(
+            matches!(p, CredentialPersistence::UntilDelete),
+            "keyring default backend is not a persistent OS store — check the platform feature flags in Cargo.toml"
+        );
+    }
+
+    // Round-trip through the real OS store, with a test-only service name so the app's
+    // actual saved credential is never touched. Exercises Keychain on macOS and
+    // Credential Manager on Windows (where it runs in CI).
+    #[test]
+    fn keystore_roundtrip_set_get_delete() {
+        let e = keyring::Entry::new("sampatti-test", "roundtrip").expect("entry");
+        e.set_password("s3cret-roundtrip").expect("set");
+        // A FRESH entry must see the credential — the mock store fails exactly here.
+        let e2 = keyring::Entry::new("sampatti-test", "roundtrip").expect("entry2");
+        assert_eq!(e2.get_password().expect("get"), "s3cret-roundtrip");
+        e2.delete_credential().expect("delete");
+        assert!(matches!(e2.get_password(), Err(keyring::Error::NoEntry)));
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

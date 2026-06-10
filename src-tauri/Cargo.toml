@@ -21,7 +21,9 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "stream"] }
 futures-util = "0.3"
-keyring = "3"
+# The platform keystores are opt-in features in keyring v3 — without them EVERY platform
+# silently falls back to the in-memory mock store and the saved key dies with the process.
+keyring = { version = "3", features = ["apple-native", "windows-native"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
