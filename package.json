@@ -1,7 +1,7 @@
 {
   "name": "sampatti",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "India-first portfolio analysis \u2014 your data stays on your machine.",
   "scripts": {
