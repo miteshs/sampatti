@@ -30,7 +30,20 @@ done
 
 VERSION=$(node -e "console.log(require('./src-tauri/tauri.conf.json').version)")
 DMG="src-tauri/target/release/bundle/dmg/Sampatti_${VERSION}_aarch64.dmg"
+APP="src-tauri/target/release/bundle/macos/Sampatti.app"
 CASK="packaging/homebrew/sampatti.rb"
+
+# Signing + notarization are fully handled by Tauri when the env vars exist — source them
+# from the gitignored .env.signing (see .env.signing.example). Absent → unsigned, as before.
+SIGNED=0
+if [ -f .env.signing ]; then
+  set -a; . ./.env.signing; set +a
+  if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
+    SIGNED=1
+    echo "▶ Signing as: $APPLE_SIGNING_IDENTITY (notarization via Tauri)"
+  fi
+fi
+[ "$SIGNED" = "1" ] || echo "⚠ UNSIGNED build (no .env.signing) — the cask postflight strips quarantine instead."
 
 echo "▶ Building PUBLIC Sampatti ${VERSION} (relay token excluded)…"
 VITE_RELAY_TOKEN="" npm run tauri build >/dev/null
@@ -43,6 +56,16 @@ if [ -f .env.local ]; then
     echo "✗ ABORT: relay token found in the built bundle — refusing to release."
     exit 1
   fi
+fi
+
+# When signed, prove it before publishing: Gatekeeper assessment + stapled notarization
+# ticket. Fail the release rather than ship a half-signed artifact.
+if [ "$SIGNED" = "1" ]; then
+  spctl -a -vv "$APP" 2>&1 | grep -q "accepted" || { echo "✗ spctl did not accept the app — not releasing."; exit 1; }
+  xcrun stapler validate "$DMG" >/dev/null 2>&1 || xcrun stapler validate "$APP" >/dev/null 2>&1 \
+    || { echo "✗ no stapled notarization ticket — not releasing."; exit 1; }
+  echo "✓ Signed, notarized & stapled (spctl accepted)"
+  echo "  → once this release ships, DELETE the postflight block from the cask."
 fi
 
 SHA=$(shasum -a 256 "$DMG" | awk '{print $1}')

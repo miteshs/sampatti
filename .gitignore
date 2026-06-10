@@ -22,3 +22,6 @@ testfiles/
 
 # Personal PII patterns for the pre-commit scanner — never commit
 scripts/.pii-denylist
+
+# Apple signing/notarization credentials — never commit
+.env.signing

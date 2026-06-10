@@ -48,14 +48,29 @@ brew tap miteshs/sampatti
 brew fetch --cask sampatti     # downloads from the public URL and checks the sha256
 ```
 
-## Signing + notarization (the remaining gap)
+## Signing + notarization — runbook (wired, awaiting enrollment)
 
-The build is **unsigned and un-notarized**, so the cask carries a `postflight` that strips
-`com.apple.quarantine` after install. It works, but the first-class experience is an Apple
-Developer ID ($99/yr) + `notarytool`:
+The build ships **unsigned** today (cask `postflight` strips quarantine). Everything is
+pre-wired so signing turns on the moment credentials exist — no config edits:
 
-- Set `bundle.macOS.signingIdentity` in `src-tauri/tauri.conf.json` and notarize the dmg.
-- Then **delete the `postflight` block** from the cask.
+1. **Enroll** (only the owner can): developer.apple.com → Apple Developer Program,
+   *individual*, $99/yr, Apple ID with 2FA. Approval is usually <48 h.
+2. **Certificate**: Xcode → Settings → Accounts → Manage Certificates → **+** →
+   *Developer ID Application*. Confirm with `security find-identity -v -p codesigning`.
+3. **Notarization key** (recommended over Apple-ID/password): App Store Connect → Users and
+   Access → Integrations → App Store Connect API → new key, role *Developer*. Download the
+   `.p8` once, store it outside the repo (e.g. `~/.appstoreconnect/`).
+4. **Credentials file**: `cp .env.signing.example .env.signing` and fill it in (gitignored).
+5. **Release as usual**: `scripts/release.sh --gh-release --tap …`. Tauri signs with the
+   hardened runtime, submits for notarization, and staples the ticket; the script then
+   *verifies* (`spctl` must accept + stapled ticket present) and refuses to publish a
+   half-signed artifact. Unsigned fallback still works when `.env.signing` is absent.
+6. **First signed release shipped → delete the `postflight` block** from
+   `packaging/homebrew/sampatti.rb` (and the tap copy). Gatekeeper then handles everything.
+
+Notes: the first signed build changes the app's code signature, so macOS asks once to
+re-authorize access to the saved Anthropic key in the Keychain. Notarization itself takes
+~1–15 min inside the build.
 
 ## Notes / limits
 
