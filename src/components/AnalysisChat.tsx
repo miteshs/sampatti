@@ -47,14 +47,21 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
 
   const start = () => { setStarted(true); void run(initialMessages(brief), []); };
 
-  const ask = () => {
-    const q = question.trim();
+  const askText = (q: string) => {
     if (!q || streaming) return;
     setQuestion("");
     const history: Msg[] = turns.map((t) => ({ role: t.role, content: t.text }));
     const seed: Turn[] = [...turns, { role: "user", text: q }];
     void run(chatMessages(brief, history, q), seed);
   };
+  const ask = () => askText(question.trim());
+
+  // The real superpower for a non-technical user is asking in their own words — show them.
+  const EXAMPLES = [
+    "Am I too dependent on one stock?",
+    "Should I continue my LIC / endowment policies?",
+    "How can I pay less tax on my gains this year?",
+  ];
 
   const c = brief.concentration;
 
@@ -80,9 +87,21 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
               retirement & income read — grounded in your actual numbers. Then ask anything.
             </p>
             {ready ? (
-              <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.5rem" }} onClick={start}>
-                ✨ Analyze my portfolio
-              </button>
+              <>
+                <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.5rem" }} onClick={start}>
+                  ✨ Analyze my portfolio
+                </button>
+                <div style={{ marginTop: "1.4rem" }}>
+                  <div className="muted" style={{ fontSize: "0.8rem", marginBottom: "0.5rem" }}>
+                    Afterwards, ask anything in your own words — like:
+                  </div>
+                  <div style={{ display: "flex", gap: "0.45rem", justifyContent: "center", flexWrap: "wrap" }}>
+                    {EXAMPLES.map((q) => (
+                      <span key={q} className="qchip" style={{ cursor: "default" }}>“{q}”</span>
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : (
               <div style={{ maxWidth: 460, margin: "0 auto", background: "var(--primary-soft)", border: "1px solid #e0e0ff", borderRadius: 12, padding: "1rem 1.1rem" }}>
                 <div style={{ fontWeight: 700, fontSize: "0.92rem", marginBottom: "0.3rem" }}>One quick step to enable AI analysis</div>
@@ -112,9 +131,16 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
                 {error}
               </div>
             )}
+            {!streaming && (
+              <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+                {EXAMPLES.map((q) => (
+                  <button key={q} className="qchip" onClick={() => askText(q)}>{q}</button>
+                ))}
+              </div>
+            )}
             <div className="card" style={{ display: "flex", gap: "0.5rem", position: "sticky", bottom: "1rem" }}>
               <input
-                placeholder={streaming ? "Claude is responding…" : "Ask a follow-up — e.g. how do I cut my Reliance concentration tax-efficiently?"}
+                placeholder={streaming ? "Claude is responding…" : "Ask anything in your own words…"}
                 value={question}
                 disabled={streaming}
                 onChange={(e) => setQuestion(e.target.value)}
@@ -137,11 +163,11 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
         <div className="eyebrow">Computed on your device</div>
         <h3 style={{ fontSize: "1rem", margin: "0.2rem 0 0.8rem" }}>The brief sent to Claude</h3>
         <Fact label="Net worth" value={inr(brief.netWorth)} />
-        <Fact label="Liquid" value={`${inr(brief.liquidAssets)} · ${brief.liquidPct}%`} />
-        <Fact label="Largest stock" value={`${c.largestPctOfLiquid}% of liquid`} />
-        <Fact label="Top 5 stocks" value={`${c.top5PctOfLiquid}% of liquid`} />
-        <Fact label="Equity HHI" value={String(c.hhi)} />
-        <Fact label="Tax-free (EEE)" value={inr(brief.taxWrappers.exemptEEE)} />
+        <Fact label="Easy to reach" value={`${inr(brief.liquidAssets)} · ${brief.liquidPct}%`} />
+        <Fact label="Biggest single stock" value={`${c.largestPctOfLiquid}% of liquid money`} />
+        <Fact label="Top 5 stocks" value={`${c.top5PctOfLiquid}% of liquid money`} />
+        <Fact label="Concentration score" value={String(c.hhi)} />
+        <Fact label="Tax-free savings (PF/PPF…)" value={inr(brief.taxWrappers.exemptEEE)} />
         <div style={{ marginTop: "0.8rem" }}>
           <div className="muted" style={{ fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem" }}>Top asset classes</div>
           {brief.allocationByClass.slice(0, 5).map((a) => (

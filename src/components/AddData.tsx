@@ -151,14 +151,15 @@ export function AddData() {
 
   return (
     <div className="grid" style={{ gap: "1.25rem" }}>
-      <GettingStarted hasData={hasData} />
+      {!hasData && <Welcome onDemo={loadDemo} onImport={() => folderRef.current?.click()} />}
+      <GettingStarted />
 
       {/* Demo + import */}
       <div className="card">
-        <div className="eyebrow">Get started</div>
-        <h2 style={{ fontSize: "1.2rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
+        <div className="eyebrow">{hasData ? "Add more" : "Get started"}</div>
+        <h2 style={{ fontSize: "1.3rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-          <button className="btn btn-primary" onClick={loadDemo}>▶ Load demo portfolio (₹13.5 Cr)</button>
+          {hasData && <button className="btn" onClick={loadDemo}>▶ Load demo portfolio (₹13.5 Cr)</button>}
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import files (CSV / Excel / PDF / image)</button>
           <button className="btn" onClick={() => folderRef.current?.click()}>📁 Import a whole folder</button>
           <button className="btn btn-ghost" onClick={downloadTemplate}>Download CSV template</button>
@@ -287,12 +288,41 @@ export function AddData() {
   );
 }
 
+// ---- first-run welcome ----
+// The first thing a brand-new user sees. The audience has no finance/computer vocabulary,
+// so this screen makes exactly ONE ask — try the sample, or bring your own files — and
+// keeps the step-by-step under a collapsed "How it works".
+function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => void }) {
+  return (
+    <div className="card card-pad-lg" style={{ textAlign: "center", padding: "2.6rem 1.5rem" }}>
+      <div className="eyebrow">Welcome</div>
+      <h1 style={{ fontSize: "1.9rem", margin: "0.35rem 0 0.5rem" }}>All your money, in one private picture</h1>
+      <p className="muted" style={{ maxWidth: 520, margin: "0 auto 1.5rem", fontSize: "0.95rem", lineHeight: 1.6 }}>
+        Stocks, mutual funds, PF, FDs, property, gold — added up, explained in plain words, and
+        reviewed by AI when you ask. Everything stays on this computer; nothing is uploaded.
+      </p>
+      <div style={{ display: "flex", gap: "0.7rem", justifyContent: "center", flexWrap: "wrap" }}>
+        <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onDemo}>
+          ▶ Load demo portfolio — see it working first
+        </button>
+        <button className="btn" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onImport}>
+          📁 Add my own statements
+        </button>
+      </div>
+      <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.9rem" }}>
+        The demo is a made-up ₹13.5 Cr portfolio — play freely, then clear it with one click.
+      </p>
+    </div>
+  );
+}
+
 // ---- first-run guide ----
 // The full guide also lives at github.com/miteshs/sampatti-releases (and docs/getting-started.md);
 // this is the in-app version, self-contained because the webview doesn't open external links.
-// Open by default until the portfolio has data, then collapses to a single reopenable line.
-function GettingStarted({ hasData }: { hasData: boolean }) {
-  const [open, setOpen] = useState(!hasData);
+// Plain words on purpose: the reader may have never used anything beyond WhatsApp and
+// net banking. Collapsed by default — the Welcome card above carries the first ask.
+function GettingStarted() {
+  const [open, setOpen] = useState(false);
   const Step = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (
     <div style={{ display: "flex", gap: "0.7rem", alignItems: "baseline" }}>
       <span style={{
@@ -309,36 +339,36 @@ function GettingStarted({ hasData }: { hasData: boolean }) {
   return (
     <details className="card" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-        <span className="eyebrow" style={{ flex: 1 }}>📖 Getting started — zero to an AI-reviewed portfolio</span>
+        <span className="eyebrow" style={{ flex: 1 }}>📖 How it works, step by step</span>
         <span className="muted" style={{ fontSize: "0.78rem" }}>{open ? "hide" : "show"}</span>
       </summary>
       <div className="grid" style={{ gap: "0.65rem", marginTop: "0.9rem" }}>
-        <Step n={1} title="Connect Claude (Privacy tab).">
-          Add your own Anthropic API key — it lives in the {keyStoreName()}. If you hold US assets, refresh the USD→INR rate there too.
+        <Step n={1} title="Collect a statement from each place your money lives.">
+          From your broker, bank, fund house or employer, download the holdings statement —
+          Excel or CSV files are best (they're read on this computer and never sent anywhere),
+          but PDFs and even screenshots work too. Put them all in one folder.
         </Step>
-        <Step n={2} title="Download a statement from every account into one folder.">
-          CSV/Excel beats PDF (parsed fully on this device). Choose exports that include
-          cost-basis / buy-value columns — that's what powers true P&L: broker holdings exports,
-          CDSL/NSDL Holding Statement, CAMS/KFintech, US broker positions CSV with Cost Basis + Date Acquired.
+        <Step n={2} title="Import that folder here.">
+          Every statement becomes a card for you to check — the account name, the amounts,
+          anything that looks off. Nothing is saved until you approve each card. Import a newer
+          statement next month and it updates that account instead of duplicating it.
         </Step>
-        <Step n={3} title="Import the whole folder below.">
-          Each statement becomes a review card — nothing saves until you approve it. Check the
-          currency, fix asset classes or values, fill missing cost bases, and use “Apply to”:
-          New account the first time, Update when it's a fresh statement of an account you already track.
+        <Step n={3} title="Add the rest by hand.">
+          Your house, PF, FDs, insurance, gold — and any loans, so the total is honest. There's
+          a simple form below; everything can be edited later on the Manage tab.
         </Step>
-        <Step n={4} title="Add the rest by hand.">
-          Property, PPF/EPF, FDs, insurance, gold by weight — and loans as a Liability account so
-          net worth is honest. Add income sources too. Everything stays editable later (Manage → ✎).
+        <Step n={4} title="Bring values up to today.">
+          Manage → Refresh live prices. The app also quietly records your net worth every day
+          you open it, so a personal history chart builds itself.
         </Step>
-        <Step n={5} title="Mark to market.">
-          Manage → Refresh live prices. Overview records your real net worth automatically every
-          day you open the app; Performance shows each holding's P&L and can simulate the past
-          year from market data.
+        <Step n={5} title="Connect Claude for the AI review (Privacy tab).">
+          Paste your Claude key there once — the screen shows where to get it. It's stored in
+          the {keyStoreName()} on this computer and used only when you ask for an analysis.
         </Step>
-        <Step n={6} title="Run the AI analysis.">
-          AI Analysis → ✨ Analyze. You can preview the exact compact brief being sent — totals and
-          percentages, never your statements. Then ask follow-ups in plain language. Re-import newer
-          statements anytime; they update accounts instead of duplicating them.
+        <Step n={6} title="Ask anything, in your own words.">
+          Run the analysis, then ask questions like “am I too dependent on one stock?” —
+          only a small summary of totals and percentages is ever sent, never your statements.
+          You can preview exactly what goes before anything is sent.
         </Step>
       </div>
     </details>

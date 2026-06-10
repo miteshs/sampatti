@@ -1,16 +1,18 @@
-/* Sampatti — quiet, modern wealth-app aesthetic: near-flat surfaces, one disciplined accent,
-   crisp hairlines, tabular numerals. Inter is bundled locally (no font CDN — privacy). */
+/* Sampatti — "editorial calm": warm paper ground, one disciplined indigo accent, a serious
+   serif for the numbers that matter, generous legibility for 45–65-year-old eyes.
+   Inter (body) + Fraunces (display) are bundled locally — no font CDN, privacy intact. */
 
 :root {
-  --bg: #f6f7f9;
-  --bg-grad: radial-gradient(1100px 420px at 85% -8%, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0) 60%), #f6f7f9;
+  --bg: #f7f5f0; /* warm paper, not office grey */
+  --bg-grad: radial-gradient(1100px 420px at 85% -8%, rgba(72, 69, 229, 0.045) 0%, rgba(72, 69, 229, 0) 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(217, 165, 20, 0.04) 0%, rgba(217, 165, 20, 0) 55%), #f7f5f0;
   --card: #ffffff;
-  --surface-2: #f8f9fc; /* nested panels (inline editor, previews) */
-  --ink: #101523;
-  --ink-2: #424b63;
-  --ink-3: #818aa0;
-  --line: #e6e8ef;
-  --line-2: #eef0f5;
+  --surface-2: #faf9f6; /* nested panels (inline editor, previews) */
+  --ink: #23211b; /* warm near-black, matches the paper ground */
+  --ink-2: #514e45;
+  --ink-3: #6e6a5e; /* darker than before — small muted text must stay readable (~5:1) */
+  --line: #e7e4da;
+  --line-2: #efede5;
   --primary: #4845e5;
   --primary-down: #3a38c8;
   --primary-2: #7c6cf6; /* gradient partner — logo only */
@@ -18,16 +20,18 @@
   --emerald: #0e9f6e;
   --emerald-soft: #e6f7f0;
   --amber: #d98324;
+  --amber-soft: #fbf1e2;
   --rose: #e5485f;
   --rose-soft: #fdecef;
   --up: #1a9e6b;
   --down: #d6455d;
-  --shadow: 0 1px 2px rgba(16, 21, 35, 0.05);
-  --shadow-lg: 0 2px 6px rgba(16, 21, 35, 0.05), 0 16px 40px rgba(16, 21, 35, 0.09);
+  --shadow: 0 1px 2px rgba(26, 31, 23, 0.05);
+  --shadow-lg: 0 2px 6px rgba(26, 31, 23, 0.05), 0 16px 40px rgba(26, 31, 23, 0.09);
   --radius: 14px;
   --radius-sm: 10px;
   --font: "Inter Variable", "InterVariable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", sans-serif;
+  --font-display: "Fraunces Variable", Fraunces, Georgia, "Times New Roman", serif;
 }
 
 * { box-sizing: border-box; }
@@ -48,6 +52,9 @@ body {
 ::selection { background: var(--primary-soft); color: var(--ink); }
 
 h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; font-weight: 700; }
+/* Section headlines get the editorial serif; h3/h4 stay Inter for dense UI. */
+h1, h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+.display { font-family: var(--font-display); }
 
 button { font-family: inherit; }
 
@@ -180,26 +187,75 @@ input[type="checkbox"], input[type="radio"] {
   width: auto; padding: 0; margin: 0; border-radius: 0; box-shadow: none;
   accent-color: var(--primary);
 }
-label { font-size: 0.71rem; color: var(--ink-3); font-weight: 600; display: block; margin-bottom: 0.25rem; }
+label { font-size: 0.78rem; color: var(--ink-3); font-weight: 600; display: block; margin-bottom: 0.25rem; }
 
 /* ---- tables ---- */
 table { width: 100%; border-collapse: collapse; }
 th {
-  text-align: left; font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em;
+  text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--ink-3); font-weight: 650; padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
-td { padding: 0.62rem 0.5rem; font-size: 0.85rem; border-bottom: 1px solid var(--line-2); }
+td { padding: 0.66rem 0.5rem; font-size: 0.88rem; border-bottom: 1px solid var(--line-2); }
 tbody tr { transition: background 0.1s ease; }
 tbody tr:hover { background: color-mix(in srgb, var(--line-2) 55%, transparent); }
 tr:last-child td { border-bottom: none; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .muted { color: var(--ink-3); }
+/* Sentence-case section labels — the old ALL-CAPS micro-eyebrows read like a terminal and
+   were hard on older eyes. The JSX already writes sentence case; CSS no longer shouts it. */
 .eyebrow {
-  font-size: 0.69rem; font-weight: 650; letter-spacing: 0.09em; text-transform: uppercase;
+  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.005em;
   color: var(--ink-3);
 }
+
+/* ---- verdict sublines: a number, then what it MEANS, in plain words ---- */
+.verdict { display: flex; align-items: baseline; gap: 0.4rem; margin-top: 0.3rem; font-size: 0.8rem; line-height: 1.45; }
+.verdict .dot { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; transform: translateY(-1px); }
+.verdict.good { color: #19724f; } .verdict.good .dot { background: var(--up); }
+.verdict.ok { color: var(--ink-2); } .verdict.ok .dot { background: #b3ae9f; }
+.verdict.watch { color: #9a5a10; } .verdict.watch .dot { background: var(--amber); }
+
+/* ---- the Overview hero: the one number they open the app for ---- */
+.hero-figure {
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: clamp(2.4rem, 5vw, 3.1rem);
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  font-variant-numeric: lining-nums;
+}
+.delta-chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.22rem 0.6rem; border-radius: 999px; font-size: 0.82rem; font-weight: 650;
+}
+.delta-chip.up { background: var(--emerald-soft); color: #19724f; }
+.delta-chip.down { background: var(--rose-soft); color: var(--down); }
+.delta-chip.flat { background: var(--line-2); color: var(--ink-2); }
+
+/* ---- staggered reveal for the Overview load (one orchestrated moment) ---- */
+@keyframes settle { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.stagger > * { animation: settle 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.09s; }
+.stagger > *:nth-child(3) { animation-delay: 0.16s; }
+.stagger > *:nth-child(4) { animation-delay: 0.23s; }
+.stagger > *:nth-child(n + 5) { animation-delay: 0.3s; }
+@media (prefers-reduced-motion: reduce) {
+  .stagger > * { animation: none; }
+}
+
+/* ---- example-question chips on the AI screen ---- */
+.qchip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.85rem; border-radius: 999px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+  font-size: 0.84rem; font-weight: 550; cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.qchip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+.qchip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ---- thin scrollbars for overflow tables/panes ---- */
 ::-webkit-scrollbar { width: 8px; height: 8px; }

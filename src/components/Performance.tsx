@@ -98,12 +98,12 @@ export function Performance() {
     <div className="grid" style={{ gap: "1.25rem" }}>
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
-          <div className="eyebrow">Unrealized P&amp;L</div>
+          <div className="eyebrow">Profit so far (on paper)</div>
           <div style={{ fontSize: "1.95rem", fontWeight: 750, marginTop: "0.25rem", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: signColor(totals.gain) }}>
             {signed(totals.gain)}
           </div>
-          <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>
-            {signedPct(totals.gainPct)} on {inr(totals.invested)} invested
+          <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.15rem" }}>
+            {signedPct(totals.gainPct)} on the {inr(totals.invested)} you put in
           </div>
         </div>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
@@ -113,13 +113,13 @@ export function Performance() {
             <span className="muted" style={{ fontWeight: 400 }}> · </span>
             <span style={{ color: RED }}>{totals.down} down</span>
           </div>
-          <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>of {rows.length} holdings</div>
+          <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.15rem" }}>of {rows.length} holdings</div>
         </div>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
-          <div className="eyebrow">Real cost basis</div>
+          <div className="eyebrow">Purchase prices on file</div>
           <div style={{ fontSize: "1.4rem", fontWeight: 750, marginTop: "0.25rem", fontVariantNumeric: "tabular-nums" }}>{totals.realPct}%</div>
-          <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>
-            of value has a true purchase cost — the rest is measured since first import (≈)
+          <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.15rem" }}>
+            of value has a true purchase cost — the rest (marked ≈) is counted from first import
           </div>
         </div>
       </div>
@@ -130,8 +130,8 @@ export function Performance() {
       <div className="card">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.6rem", marginBottom: "0.6rem" }}>
           <div>
-            <div className="eyebrow">Unrealized gains</div>
-            <h2 style={{ fontSize: "1.15rem", marginTop: "0.15rem" }}>Every holding, winners to losers</h2>
+            <div className="eyebrow">Profit &amp; loss by holding</div>
+            <h2 style={{ fontSize: "1.3rem", marginTop: "0.15rem" }}>Every holding, winners to losers</h2>
           </div>
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
             {SORTS.map((s) => (

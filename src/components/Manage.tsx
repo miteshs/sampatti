@@ -64,10 +64,10 @@ export function Manage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
           <div>
             <div className="eyebrow">Accounts</div>
-            <h2 style={{ fontSize: "1.05rem", marginTop: "0.15rem" }}>Edit, include &amp; remove accounts</h2>
+            <h2 style={{ fontSize: "1.3rem", marginTop: "0.15rem" }}>Edit, include &amp; remove accounts</h2>
           </div>
-          <span className="muted" style={{ fontSize: "0.78rem", maxWidth: 300, textAlign: "right" }}>
-            Unchecked accounts are left out of net worth, allocations &amp; AI analysis. Use ✎ to fix any field.
+          <span className="muted" style={{ fontSize: "0.8rem", maxWidth: 320, textAlign: "right" }}>
+            Untick an account to leave it out of totals &amp; the AI review. <strong>Edit</strong> fixes any field.
           </span>
         </div>
         <div style={{ marginTop: "0.5rem" }}>
@@ -77,22 +77,26 @@ export function Manage() {
             return (
               <div key={a.id}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
-                  <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })} style={{ flexShrink: 0, cursor: "pointer" }} />
+                  <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })}
+                    aria-label={`Include ${a.name} in totals and analysis`} title="Include in totals & analysis"
+                    style={{ flexShrink: 0, cursor: "pointer" }} />
                   <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
                     <span style={{ fontWeight: 600 }}>{a.name}</span>
                     {editedAccountIds.has(a.id) && <span className="badge badge-amber" style={{ marginLeft: "0.4rem", fontSize: "0.66rem" }} title="Has manual edits">✎ edited</span>}
                     <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
                   </div>
                   <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
-                  <button className={`btn btn-ghost ${editing ? "active" : ""}`} style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Edit account & holdings"
-                    onClick={() => setEditingId(editing ? null : a.id)}>✎</button>
+                  <button className={`btn btn-ghost ${editing ? "active" : ""}`} style={{ padding: "0.2rem 0.6rem", flexShrink: 0 }} title="Edit account & holdings"
+                    onClick={() => setEditingId(editing ? null : a.id)}>✎ Edit</button>
                   {confirmRemove === a.id ? (
-                    <span style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
-                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
+                    <span style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>
+                      <span className="muted" style={{ fontSize: "0.78rem" }}>Remove this account?</span>
+                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Yes, remove</button>
                       <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
                     </span>
                   ) : (
-                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem", flexShrink: 0 }} title="Remove account" onClick={() => setConfirmRemove(a.id)}>✕</button>
+                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem", flexShrink: 0, color: "var(--ink-3)" }}
+                      title="Remove this account from Sampatti" aria-label={`Remove ${a.name}`} onClick={() => setConfirmRemove(a.id)}>✕</button>
                   )}
                 </div>
                 {editing && <AccountEditor accountId={a.id} onClose={() => setEditingId(null)} />}

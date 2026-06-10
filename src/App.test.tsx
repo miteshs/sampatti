@@ -29,8 +29,8 @@ describe("App integration (demo flow)", () => {
     // The allocation donut legend should include real Indian asset classes.
     expect(screen.getAllByText(/Indian Equity/i).length).toBeGreaterThan(0);
 
-    // Switching the allocation dimension to "Tax class" re-groups without error.
-    fireEvent.click(screen.getByRole("button", { name: "Tax class" }));
+    // Switching the allocation dimension to the tax view re-groups without error.
+    fireEvent.click(screen.getByRole("button", { name: "How it's taxed" }));
     expect(screen.getAllByText(/Tax-free \(EEE\)/i).length).toBeGreaterThan(0);
   });
 

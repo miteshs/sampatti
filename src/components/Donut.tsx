@@ -14,6 +14,8 @@ export function Donut({ segments, total, onSelect }: {
   const circ = 2 * Math.PI * ((R + r) / 2);
   const width = R - r;
   let offset = 0;
+  // Semantic colors when the segments carry them (bucket view); palette rotation otherwise.
+  const colorFor = (i: number) => segments[i].color ?? color(i);
 
   return (
     <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
@@ -28,7 +30,7 @@ export function Donut({ segments, total, onSelect }: {
                 key={s.key}
                 cx={C} cy={C} r={(R + r) / 2}
                 fill="none"
-                stroke={color(i)}
+                stroke={colorFor(i)}
                 strokeWidth={hover === i ? width + 6 : width}
                 strokeDasharray={dash}
                 strokeDashoffset={-offset}
@@ -42,14 +44,14 @@ export function Donut({ segments, total, onSelect }: {
             return el;
           })}
         </g>
-        <text x={C} y={C - 6} textAnchor="middle" fontSize="13" fill="#8a93a8" fontWeight={600}>
+        <text x={C} y={C - 6} textAnchor="middle" fontSize="13" fill="var(--ink-3)" fontWeight={600}>
           {hover != null ? segments[hover].label : "Total"}
         </text>
-        <text x={C} y={C + 18} textAnchor="middle" fontSize="20" fill="#0f1729" fontWeight={800}>
+        <text x={C} y={C + 18} textAnchor="middle" fontSize="20" fill="var(--ink)" fontWeight={800}>
           {hover != null ? inr(segments[hover].value) : inr(total)}
         </text>
         {hover != null && (
-          <text x={C} y={C + 38} textAnchor="middle" fontSize="12" fill="#8a93a8">
+          <text x={C} y={C + 38} textAnchor="middle" fontSize="12" fill="var(--ink-3)">
             {pct(segments[hover].value, total)}%
           </text>
         )}
@@ -68,7 +70,7 @@ export function Donut({ segments, total, onSelect }: {
               background: hover === i ? "var(--line-2)" : "transparent",
             }}
           >
-            <span style={{ width: 10, height: 10, borderRadius: 3, background: color(i), flexShrink: 0 }} />
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: colorFor(i), flexShrink: 0 }} />
             <span style={{ fontSize: "0.85rem", color: "var(--ink)", flex: 1 }}>{s.label}</span>
             <span style={{ fontSize: "0.85rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
               {inr(s.value)}

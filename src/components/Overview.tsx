@@ -1,25 +1,63 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { buildSegments, keyFor, DIMENSIONS, type Dimension } from "../domain/group";
 import { holdingBase, inr, pct } from "../domain/format";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
+import { bucketSegments } from "../domain/buckets";
+import { concentrationVerdict, equityVerdict, liquidityVerdict, type Verdict } from "../domain/verdicts";
+import { snapshotSeries } from "../domain/snapshots";
 import { visiblePortfolio, type Account, type AssetClass, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
 import { NetWorthTrend } from "./NetWorthTrend";
 
-function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
+// Sweep the hero figure up to its value once on load — a quiet moment of reward, skipped
+// entirely for reduced-motion users and in environments without rAF (tests).
+function useCountUp(target: number, ms = 700): number {
+  const [val, setVal] = useState(target);
+  const fromRef = useRef<number | null>(null);
+  useEffect(() => {
+    const still =
+      typeof requestAnimationFrame === "undefined" ||
+      (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+    const from = fromRef.current ?? (still ? target : 0);
+    fromRef.current = target;
+    if (still || from === target) { setVal(target); return; }
+    let raf = 0;
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / ms);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(from + (target - from) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return val;
+}
+
+function StatCard({ label, value, sub, verdict }: { label: string; value: string; sub?: string; verdict?: Verdict }) {
   return (
     <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
       <div className="eyebrow">{label}</div>
       <div style={{
-        fontSize: accent ? "1.95rem" : "1.4rem", fontWeight: 750, marginTop: "0.25rem",
+        fontSize: "1.5rem", fontWeight: 750, marginTop: "0.25rem",
         letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums",
       }}>{value}</div>
-      {sub && <div className="muted" style={{ fontSize: "0.74rem", marginTop: "0.15rem" }}>{sub}</div>}
+      {sub && <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.15rem" }}>{sub}</div>}
+      {verdict && (
+        <div className={`verdict ${verdict.tone}`}>
+          <span className="dot" />
+          <span>{verdict.text}</span>
+        </div>
+      )}
     </div>
   );
 }
+
+const fmtDay = (t: number) =>
+  new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
 export function Overview() {
   const portfolio = useStore((s) => s.portfolio);
@@ -37,10 +75,14 @@ export function Overview() {
     [view, by, usdInr],
   );
 
+  // The donut's first read: six plain-language buckets with semantic colors. The detail
+  // table below stays full-granularity; clicking a bucket expands its classes there.
+  const buckets = useMemo(() => bucketSegments(view.holdings, usdInr), [view.holdings, usdInr]);
+
   const acctById = useMemo(() => new Map(view.accounts.map((a) => [a.id, a])), [view.accounts]);
 
-  // Holdings grouped by the active dimension (same keys the donut uses), so each segment
-  // row can expand to reveal the holdings inside it.
+  // Holdings grouped by the active dimension (same keys the detail table uses), so each
+  // segment row can expand to reveal the holdings inside it.
   const grouped = useMemo(() => {
     const m = new Map<string, { h: Holding; a?: Account; base: number }[]>();
     for (const h of view.holdings) {
@@ -63,6 +105,18 @@ export function Overview() {
       return next;
     });
 
+  // A donut click in bucket view opens (or closes) every class inside that bucket.
+  const toggleBucket = (bucketKey: string) => {
+    const b = buckets.segments.find((s) => s.key === bucketKey);
+    if (!b) return;
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      const allOpen = b.classes.every((c) => next.has(c));
+      for (const c of b.classes) allOpen ? next.delete(c) : next.add(c);
+      return next;
+    });
+  };
+
   // Headline metrics. Equity exposure = all public-equity classes as a share of assets (the
   // growth/risk dial); top-10 concentration = your 10 biggest positions as a share of assets.
   const EQUITY = new Set<AssetClass>(["indian_equity", "equity_mf", "index_etf", "elss", "us_equity"]);
@@ -71,6 +125,16 @@ export function Overview() {
   const top10Value = brief.concentration.topHoldings.reduce((s, h) => s + h.value, 0);
   const top10Pct = pct(top10Value, brief.totalAssets);
   const top10Count = brief.concentration.topHoldings.length;
+
+  // Yesterday-vs-today (recorded snapshots of the visible accounts) for the hero delta.
+  const delta = useMemo(() => {
+    const pts = snapshotSeries(portfolio.snapshots ?? [], new Set(view.accounts.map((a) => a.id)));
+    if (pts.length < 2) return null;
+    const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+    return { abs: last.netWorth - prev.netWorth, since: fmtDay(prev.t) };
+  }, [portfolio.snapshots, view.accounts]);
+
+  const animatedNetWorth = useCountUp(brief.netWorth);
 
   if (portfolio.accounts.length === 0) {
     return (
@@ -85,15 +149,36 @@ export function Overview() {
   }
 
   return (
-    <div className="grid" style={{ gap: "1.25rem" }}>
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        <StatCard label="Net worth" value={inr(brief.netWorth)} sub={`${inr(brief.totalAssets)} assets · ${inr(brief.totalLiabilities)} debt`} accent />
-        <StatCard label="Equity exposure" value={`${equityPct}%`} sub={`${inr(equityBase)} in equities`} />
-        <StatCard label="Liquid assets" value={inr(brief.liquidAssets)} sub={`${brief.liquidPct}% of assets`} />
-        <StatCard label="Top 10 holdings" value={`${top10Pct}%`} sub={`of assets · ${top10Count} position${top10Count === 1 ? "" : "s"}`} />
+    <div className="grid stagger" style={{ gap: "1.25rem" }}>
+      {/* The one number they open the app for — given a real moment. */}
+      <div className="card card-pad-lg">
+        <div className="eyebrow">Net worth</div>
+        <div className="hero-figure">{inr(Math.round(animatedNetWorth))}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", flexWrap: "wrap", marginTop: "0.55rem" }}>
+          {delta ? (
+            <span className={`delta-chip ${delta.abs > 0 ? "up" : delta.abs < 0 ? "down" : "flat"}`}>
+              {delta.abs > 0 ? "▲" : delta.abs < 0 ? "▼" : "•"}{" "}
+              {`${delta.abs >= 0 ? "+" : "−"}${inr(Math.abs(delta.abs))}`} since {delta.since}
+            </span>
+          ) : (
+            <span className="delta-chip flat">Day one on record — your history starts now</span>
+          )}
+          <span className="muted" style={{ fontSize: "0.84rem" }}>
+            {inr(brief.totalAssets)} you own · {inr(brief.totalLiabilities)} in loans
+          </span>
+        </div>
       </div>
 
-      {/* Net worth over time — reconstructed from market history, honors the account selection (Manage tab) */}
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <StatCard label="In the stock market" value={`${equityPct}%`}
+          sub={`${inr(equityBase)} in shares & equity funds`} verdict={equityVerdict(equityPct)} />
+        <StatCard label="Easy to reach (liquid)" value={inr(brief.liquidAssets)}
+          sub={`${brief.liquidPct}% of what you own`} verdict={liquidityVerdict(brief.liquidPct)} />
+        <StatCard label="Concentration" value={`${top10Pct}%`}
+          sub={`in your top ${top10Count} holding${top10Count === 1 ? "" : "s"}`} verdict={concentrationVerdict(top10Pct)} />
+      </div>
+
+      {/* Net worth over time — recorded history, honors the account selection (Manage tab) */}
       <NetWorthTrend />
 
       {view.holdings.length === 0 ? (
@@ -105,7 +190,12 @@ export function Overview() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.6rem", marginBottom: "1rem" }}>
           <div>
             <div className="eyebrow">Allocation</div>
-            <h2 style={{ fontSize: "1.15rem", marginTop: "0.15rem" }}>Where your money sits</h2>
+            <h2 style={{ fontSize: "1.3rem", marginTop: "0.15rem" }}>Where your money sits</h2>
+            {by === "asset_class" && (
+              <p className="muted" style={{ fontSize: "0.78rem", margin: "0.25rem 0 0" }}>
+                Six broad groups — the table below breaks out every category.
+              </p>
+            )}
           </div>
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
             {DIMENSIONS.map((d) => (
@@ -116,19 +206,23 @@ export function Overview() {
             ))}
           </div>
         </div>
-        <Donut segments={segments} total={total} onSelect={(k) => { if (k) toggleGroup(k); }} />
+        {by === "asset_class" ? (
+          <Donut segments={buckets.segments} total={buckets.total} onSelect={(k) => { if (k) toggleBucket(k); }} />
+        ) : (
+          <Donut segments={segments} total={total} onSelect={(k) => { if (k) toggleGroup(k); }} />
+        )}
       </div>
 
       <div className="card">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.4rem" }}>
-          <h2 style={{ fontSize: "1.05rem" }}>By {dimLabel.toLowerCase()}</h2>
+          <h2 style={{ fontSize: "1.15rem" }}>By {dimLabel.toLowerCase()}</h2>
           <button className="btn btn-ghost" style={{ fontSize: "0.78rem" }}
             onClick={() => setExpanded(allExpanded ? new Set() : new Set(segments.map((s) => s.key)))}>
             {allExpanded ? "Collapse all" : "Expand all"}
           </button>
         </div>
-        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.5rem" }}>
-          Click a row (or a donut slice) to expand its holdings.
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.5rem" }}>
+          Click a row (or a slice of the chart above) to see the holdings inside it.
         </p>
         <div style={{ overflowX: "auto" }}>
           <table>
@@ -178,16 +272,16 @@ export function Overview() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
           <div>
             <div className="eyebrow">Concentration</div>
-            <h2 style={{ fontSize: "1.15rem", marginTop: "0.15rem" }}>Top {top10Count} holding{top10Count === 1 ? "" : "s"}</h2>
+            <h2 style={{ fontSize: "1.3rem", marginTop: "0.15rem" }}>Your {top10Count} biggest holding{top10Count === 1 ? "" : "s"}</h2>
           </div>
-          <span className="muted" style={{ fontSize: "0.8rem" }}>{top10Pct}% of assets</span>
+          <span className="muted" style={{ fontSize: "0.8rem" }}>{top10Pct}% of everything you own</span>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead>
               <tr>
                 <th style={{ width: "1.5rem" }}>#</th>
-                <th>Holding</th><th>Class</th><th>Account</th>
+                <th>Holding</th><th>Type</th><th>Account</th>
                 <th className="num">Value</th><th className="num">% assets</th>
               </tr>
             </thead>

@@ -212,8 +212,8 @@ function Flow({ icon, title, body }: { icon: string; title: string; body: ReactN
     <div style={{ display: "flex", gap: "0.9rem", padding: "0.7rem 0", borderTop: "1px solid var(--line-2)" }}>
       <span style={{ fontSize: "1.3rem" }}>{icon}</span>
       <div>
-        <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>{title}</div>
-        <div className="muted" style={{ fontSize: "0.84rem", lineHeight: 1.55, marginTop: "0.15rem" }}>{body}</div>
+        <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{title}</div>
+        <div className="muted" style={{ fontSize: "0.88rem", lineHeight: 1.6, marginTop: "0.15rem" }}>{body}</div>
       </div>
     </div>
   );

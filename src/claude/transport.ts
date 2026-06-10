@@ -9,11 +9,12 @@ import { useStore } from "../storage/store";
 export const EXTRACT_MODEL = "claude-sonnet-4-6";
 
 // User-selectable analysis model (cost vs. quality). Approx cost is for one analysis;
-// output tokens dominate, so the model choice is the real cost lever.
+// output tokens dominate, so the model choice is the real cost lever. Labels speak to a
+// non-technical user; the hint carries the model name for those who care.
 export const ANALYSIS_MODELS = [
-  { id: "claude-opus-4-8", label: "Opus 4.8", hint: "Best quality (esp. India tax) · ~$0.10/analysis" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6", hint: "Balanced — recommended · ~$0.06" },
-  { id: "claude-haiku-4-5", label: "Haiku 4.5", hint: "Cheapest, lighter reasoning · ~$0.02" },
+  { id: "claude-opus-4-8", label: "Most thorough", hint: "Opus · strongest on India tax nuance · ~$0.10/analysis" },
+  { id: "claude-sonnet-4-6", label: "Balanced — recommended", hint: "Sonnet · great quality at a fair price · ~$0.06" },
+  { id: "claude-haiku-4-5", label: "Quickest", hint: "Haiku · lighter reasoning, lowest cost · ~$0.02" },
 ] as const;
 
 export type Block =

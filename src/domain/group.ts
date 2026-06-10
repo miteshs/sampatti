@@ -9,9 +9,9 @@ export type Dimension =
   | "asset_class" | "account" | "region" | "tax" | "account_type" | "institution";
 
 export const DIMENSIONS: { key: Dimension; label: string }[] = [
-  { key: "asset_class", label: "Asset class" },
+  { key: "asset_class", label: "Type" },
   { key: "account", label: "Account" },
-  { key: "tax", label: "Tax class" },
+  { key: "tax", label: "How it's taxed" },
   { key: "region", label: "Region" },
   { key: "account_type", label: "Account type" },
   { key: "institution", label: "Institution" },
@@ -22,6 +22,7 @@ export interface Segment {
   label: string;
   value: number; // base currency
   percent: number;
+  color?: string; // semantic color (bucket views); falls back to the rotating palette
 }
 
 const pretty = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
