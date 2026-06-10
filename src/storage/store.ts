@@ -11,7 +11,7 @@ import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/clas
 import { snapshotOf, todayLocal, upsertSnapshot } from "../domain/snapshots";
 import { decomposeReplace } from "../domain/flows";
 import { holdingBase } from "../domain/format";
-import { clearLocalCaches, clearPortfolioRaw, readPortfolioRaw, writePortfolioRaw } from "../platform";
+import { clearLocalCaches, clearPortfolioRaw, isTauri, readPortfolioRaw, writePortfolioRaw } from "../platform";
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
@@ -335,13 +335,29 @@ export const useStore = create<State>((set, get) => ({
   },
 }));
 
-// Download a copy of everything (the Privacy screen's "Export all").
-export function exportPortfolio(p: Portfolio) {
-  const blob = new Blob([JSON.stringify(p, null, 2)], { type: "application/json" });
+// Save a copy of everything (the Privacy screen's "Export all").
+// Desktop: native Save dialog + fs write — blob-anchor downloads are unreliable inside
+// webviews (found broken in WebView2 on Windows). The dialog plugin auto-allows the chosen
+// path in the fs scope, so no extra capability is needed. Web preview keeps the browser
+// download. Returns the written path (or the download name), null if the user cancelled.
+export async function exportPortfolio(p: Portfolio): Promise<string | null> {
+  const json = JSON.stringify(p, null, 2);
+  const name = `sampatti-portfolio-${new Date().toISOString().slice(0, 10)}.json`;
+  if (isTauri()) {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const path = await save({ defaultPath: name, filters: [{ name: "JSON", extensions: ["json"] }] });
+    if (!path) return null;
+    const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+    await writeTextFile(path, json);
+    return path;
+  }
+  const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `sampatti-portfolio-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = name;
   a.click();
-  URL.revokeObjectURL(url);
+  // Revoking synchronously can race the engine's download start; defer it.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return name;
 }

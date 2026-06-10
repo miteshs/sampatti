@@ -13,6 +13,16 @@ export function Privacy() {
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [fxBusy, setFxBusy] = useState(false);
   const [fxNote, setFxNote] = useState<string | null>(null);
+  const [exportNote, setExportNote] = useState<string | null>(null);
+
+  const doExport = async () => {
+    try {
+      const dest = await exportPortfolio(portfolio);
+      if (dest) setExportNote(`Saved to ${dest}`);
+    } catch (e) {
+      setExportNote(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
 
   const refreshRate = async () => {
     setFxBusy(true);
@@ -166,7 +176,7 @@ export function Privacy() {
       <div className="card">
         <h3 style={{ fontSize: "1.05rem", marginBottom: "0.5rem" }}>Your data, your control</h3>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button className="btn" onClick={() => exportPortfolio(portfolio)}>⬇ Export everything (JSON)</button>
+          <button className="btn" onClick={() => void doExport()}>⬇ Export everything (JSON)</button>
           {confirmWipe ? (
             <>
               <button className="btn btn-danger" onClick={() => { void wipe(); setConfirmWipe(false); }}>Yes, erase all data</button>
@@ -176,6 +186,9 @@ export function Privacy() {
             <button className="btn btn-danger" onClick={() => setConfirmWipe(true)}>🗑 Erase all data</button>
           )}
         </div>
+        {exportNote && (
+          <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>{exportNote}</p>
+        )}
         <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem", maxWidth: 560 }}>
           Erases your entire portfolio (accounts, holdings, income, edit history) and every local cache,
           including the net-worth price history — nothing is left on this device. Sampatti keeps no server
