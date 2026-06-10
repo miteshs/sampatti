@@ -35,6 +35,28 @@ fn clear_api_key() -> Result<(), String> {
     }
 }
 
+// Truncate to at most `n` CHARS on a boundary — byte-slicing a String can panic mid-UTF-8
+// (error bodies are attacker/upstream-controlled text, so this must never be able to panic).
+fn truncate_chars(s: &str, n: usize) -> &str {
+    match s.char_indices().nth(n) {
+        Some((i, _)) => &s[..i],
+        None => s,
+    }
+}
+
+// The brief (and the app token, when present) travel to the relay URL, which is a user
+// setting — require https so a tampered/social-engineered setting can't downgrade the
+// transport to plaintext. Loopback http stays allowed for local relay development.
+fn allowed_relay_url(u: &str) -> Result<reqwest::Url, String> {
+    let parsed = reqwest::Url::parse(u).map_err(|_| format!("Relay URL is not a valid URL: {u}"))?;
+    let loopback = matches!(parsed.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
+    match parsed.scheme() {
+        "https" => Ok(parsed),
+        "http" if loopback => Ok(parsed),
+        s => Err(format!("Relay URL must be https (got {s}://) — refusing to send the brief over plaintext.")),
+    }
+}
+
 // Stream a Claude completion. `mode` is "relay" | "byo"; for "byo" we read the keychain.
 #[tauri::command]
 async fn claude_stream(
@@ -58,7 +80,8 @@ async fn claude_stream(
     } else {
         // Relay mode: include the shared app token when configured so the worker
         // (if it has APP_TOKEN set) accepts the request.
-        let mut b = client.post(&relay_url).header("content-type", "application/json");
+        let url = allowed_relay_url(&relay_url)?;
+        let mut b = client.post(url).header("content-type", "application/json");
         if let Some(token) = app_token.as_deref().filter(|t| !t.is_empty()) {
             b = b.header("x-app-token", token);
         }
@@ -69,7 +92,7 @@ async fn claude_stream(
     if !resp.status().is_success() {
         let code = resp.status();
         let text = resp.text().await.unwrap_or_default();
-        return Err(format!("Claude request failed ({code}). {}", &text[..text.len().min(300)]));
+        return Err(format!("Claude request failed ({code}). {}", truncate_chars(&text, 300)));
     }
 
     // Parse the SSE stream incrementally, emitting text_delta content.
@@ -173,6 +196,34 @@ mod tests {
         for h in MARKET_HOSTS {
             assert!(allowed_market_url(&url(&format!("https://{h}/any/path?q=1"))), "{h} should pass");
             assert!(!allowed_market_url(&url(&format!("http://{h}/any/path"))), "plain http must fail for {h}");
+        }
+    }
+
+    // The exact bug this guards: error bodies are arbitrary UTF-8, and a multibyte char
+    // straddling the old byte-300 cut made the command panic instead of reporting.
+    #[test]
+    fn truncate_chars_never_splits_a_codepoint() {
+        let s = "₹".repeat(150); // 150 chars, 450 bytes — byte-300 lands mid-rupee
+        assert_eq!(truncate_chars(&s, 300), s); // shorter than the cap → untouched
+        let long = "₹".repeat(400);
+        assert_eq!(truncate_chars(&long, 300).chars().count(), 300);
+        assert_eq!(truncate_chars("plain ascii", 300), "plain ascii");
+        assert_eq!(truncate_chars("", 300), "");
+    }
+
+    #[test]
+    fn relay_url_requires_https_except_loopback() {
+        assert!(allowed_relay_url("https://sampatti-relay.sampatti.workers.dev").is_ok());
+        assert!(allowed_relay_url("https://my-own-relay.example.workers.dev/path").is_ok());
+        assert!(allowed_relay_url("http://localhost:8787").is_ok()); // wrangler dev
+        assert!(allowed_relay_url("http://127.0.0.1:8787").is_ok());
+        for bad in [
+            "http://evil.example/collect",       // plaintext to a remote host
+            "ftp://relay.example",               // non-http scheme
+            "file:///etc/passwd",                // local scheme
+            "not a url",
+        ] {
+            assert!(allowed_relay_url(bad).is_err(), "{bad} must be rejected");
         }
     }
 

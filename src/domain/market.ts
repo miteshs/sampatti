@@ -99,7 +99,7 @@ export async function yahooHistory(symbol: string, range = "1y"): Promise<Series
   return parseYahoo(await marketJson(`${YH}${encodeURIComponent(symbol)}?range=${range}&interval=1d`));
 }
 export async function mfHistory(code: string): Promise<Series> {
-  return parseMfapi(await marketJson(`${MFAPI}${code}`));
+  return parseMfapi(await marketJson(`${MFAPI}${encodeURIComponent(code)}`));
 }
 
 // Cache the (large) AMFI map for the session so we download it at most once.

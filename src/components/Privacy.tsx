@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
+import { DEFAULT_RELAY_URL } from "../domain/types";
 import { clearByoKey, diskEncryption, hasByoKey, keyStoreName, setByoKey, storageLocation, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
 import { fetchUsdInr } from "../domain/fx";
@@ -102,6 +103,12 @@ export function Privacy() {
               {!s.relayUrl && <> <strong>No relay is set yet</strong> — deploy <code>relay/</code> (see its
                 README) and paste the URL here, or switch to <em>your own key</em> for the most private setup.</>}
             </p>
+            {s.relayUrl && s.relayUrl !== DEFAULT_RELAY_URL && (
+              <p style={{ fontSize: "0.76rem", marginTop: "0.3rem", color: "var(--warn, #9a6a00)" }}>
+                ⚠ <strong>Custom relay</strong> — your portfolio brief and questions will be sent to this
+                address. Only use a relay you run or fully trust; https is required.
+              </p>
+            )}
           </div>
         ) : (
           <div>

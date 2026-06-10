@@ -165,6 +165,10 @@ export interface Portfolio {
 
 export const CURRENT_VERSION = 1;
 
+// The hosted relay every build points at by default. Exported so the UI can tell when the
+// user has switched to a CUSTOM relay (the brief goes wherever this points — warn them).
+export const DEFAULT_RELAY_URL = "https://sampatti-relay.sampatti.workers.dev";
+
 export function emptyPortfolio(): Portfolio {
   return {
     version: CURRENT_VERSION,
@@ -178,7 +182,7 @@ export function emptyPortfolio(): Portfolio {
       country: "India",
       baseCurrency: "INR",
       claudeMode: "relay",
-      relayUrl: "https://sampatti-relay.sampatti.workers.dev", // hosted relay; override or switch to your own key on Privacy
+      relayUrl: DEFAULT_RELAY_URL, // hosted relay; override or switch to your own key on Privacy
       usdInr: 95, // fallback; refresh to a live rate on the Privacy screen
       byoKeySet: false,
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku on Privacy

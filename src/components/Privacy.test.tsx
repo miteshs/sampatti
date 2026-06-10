@@ -73,3 +73,30 @@ describe("Privacy screen names the right OS facilities", () => {
     expect(screen.queryByText(/Stored in the macOS Keychain/)).toBeNull();
   });
 });
+
+describe("custom-relay warning (the brief goes wherever relayUrl points)", () => {
+  function renderRelayPrivacy(relayUrl: string) {
+    const p = emptyPortfolio();
+    p.settings.claudeMode = "relay";
+    p.settings.relayUrl = relayUrl;
+    useStore.setState({ portfolio: p, loaded: true });
+    return render(<Privacy />);
+  }
+
+  it("no warning on the official default relay", () => {
+    renderRelayPrivacy(emptyPortfolio().settings.relayUrl);
+    expect(screen.queryByText(/Custom relay/)).toBeNull();
+  });
+
+  it("warns when the relay URL is changed to anything else", () => {
+    renderRelayPrivacy("https://totally-legit-relay.example.workers.dev");
+    expect(screen.getByText(/Custom relay/)).toBeTruthy();
+    expect(screen.getByText(/Only use a relay you run or fully trust/)).toBeTruthy();
+  });
+
+  it("no warning when the URL is empty (the not-configured note shows instead)", () => {
+    renderRelayPrivacy("");
+    expect(screen.queryByText(/Custom relay/)).toBeNull();
+    expect(screen.getByText(/No relay is set yet/)).toBeTruthy();
+  });
+});
