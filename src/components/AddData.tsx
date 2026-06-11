@@ -23,11 +23,16 @@ const REGIONS: Region[] = ["India", "US", "Other"];
 const INCOME_KINDS: IncomeKind[] = ["salary", "rent", "business", "dividend", "interest", "other"];
 const isGold = (c: AssetClass) => c === "gold_sgb" || c === "gold_other";
 
-const CSV_TEMPLATE =
-  "account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of\n" +
+const CSV_HEADER =
+  "account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of\n";
+const CSV_TEMPLATE_IN = CSV_HEADER +
   "Zerodha Demat,Zerodha,demat,taxable,India,INR,RELIANCE,Reliance Industries,indian_equity,1180,3500000,2100000,2019-07-12,2026-05-31\n" +
   "Equity MF,CAMS,mutual_fund,taxable,India,INR,,Parag Parikh Flexi Cap,equity_mf,,5500000,3000000,2019-04-01,2026-05-31\n" +
   "PPF,SBI,epf_ppf,eee_exempt,India,INR,,PPF account,epf_ppf,,2800000,,,2026-03-31\n";
+const CSV_TEMPLATE_US = CSV_HEADER +
+  "Schwab Brokerage,Charles Schwab,demat,taxable,US,USD,AAPL,Apple Inc,us_equity,120,30000,16000,2020-03-20,2026-05-31\n" +
+  "Fidelity 401(k),Fidelity,mutual_fund,us_pretax,US,USD,FXAIX,Fidelity 500 Index Fund,equity_mf,,185000,120000,2018-06-01,2026-05-31\n" +
+  "Roth IRA,Vanguard,mutual_fund,us_roth,US,USD,VTI,Vanguard Total Stock Market ETF,index_etf,150,46000,29000,2019-04-01,2026-05-31\n";
 
 // A pending draft carries a STABLE key so React preserves each review card's own state
 // (its "Apply to" target, edited fields) when other drafts are committed/removed. Keying by
@@ -212,7 +217,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
   };
 
   const downloadTemplate = () => {
-    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv" });
+    const blob = new Blob([currentProfile().region === "US" ? CSV_TEMPLATE_US : CSV_TEMPLATE_IN], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "sampatti-template.csv";
@@ -770,11 +775,12 @@ function ManualAccount({ onAdd, usdInr }: {
 }) {
   const [a, setA] = useState<ImportDraft["account"]>({
     name: "", institution: "", accountType: "demat", taxTreatment: "taxable",
-    region: "India", currency: "INR", asOf: new Date().toISOString().slice(0, 10),
+    region: currentProfile().region === "US" ? "US" : "India",
+    currency: currentProfile().baseCurrency, asOf: new Date().toISOString().slice(0, 10),
   });
   const [money, setMoney] = useState<FlowKind>("tracking"); // pre-owned by default — see DraftReview
   const [hName, setHName] = useState("");
-  const [hClass, setHClass] = useState<AssetClass>("indian_equity");
+  const [hClass, setHClass] = useState<AssetClass>(currentProfile().region === "US" ? "us_equity" : "indian_equity");
   const [hValue, setHValue] = useState("");
   const [hBasis, setHBasis] = useState(""); // optional purchase cost
   const [hGrams, setHGrams] = useState("");

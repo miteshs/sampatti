@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { liveRevalue, type Revaluation } from "../domain/market";
 import { holdingBase } from "../domain/format";
-import { fmtMoney } from "../regions/profile";
+import { currentProfile, fmtMoney } from "../regions/profile";
 
 export function RefreshPrices() {
   const portfolio = useStore((s) => s.portfolio);
@@ -68,9 +68,11 @@ export function RefreshPrices() {
 
       {status === "idle" && (
         <p className="muted" style={{ fontSize: "0.78rem", marginTop: "0.5rem", maxWidth: 560 }}>
-          Revalues holdings that have a quantity and a recognizable symbol — listed equities/ETFs (NSE & US),
-          Indian mutual funds (by ISIN), and gold by weight — using today's price. You'll preview the changes
-          before anything is saved. Only tickers/ISINs are sent; never your holdings.
+          Revalues holdings that have a quantity and a recognizable symbol — {currentProfile().region === "US"
+            ? "US-listed stocks & ETFs (by ticker) and crypto"
+            : "listed equities/ETFs (NSE & US), Indian mutual funds (by ISIN), and gold by weight"} — using
+          today's price. You'll preview the changes before anything is saved. Only tickers/ISINs are
+          sent; never your holdings.
         </p>
       )}
 

@@ -7,7 +7,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { holdingBase, holdingGain, pct, type HoldingGain } from "../domain/format";
-import { fmtMoney } from "../regions/profile";
+import { currentProfile, fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { AccountStack } from "./AccountStack";
 
@@ -235,7 +235,7 @@ export function Performance() {
           Only holdings with a real purchase cost are listed — nothing here is estimated.
           {unmeasured.count > 0 && <> {unmeasured.count} holding{unmeasured.count === 1 ? "" : "s"} without
           one {unmeasured.count === 1 ? "is" : "are"} left out; add costs in <strong>Manage → ✎</strong> to include them.</>}{" "}
-          USD positions convert at today's ₹{usdInr}/$ for both cost and value, so their P&amp;L is price
+          {currentProfile().region === "US" ? "Non-USD" : "USD"} positions convert at today's ₹{usdInr}/$ for both cost and value, so their P&amp;L is price
           movement only (no FX effect).
         </p>
       </div>

@@ -1,3 +1,4 @@
+import { currentProfile } from "./regions/profile";
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "./storage/store";
 import { fetchUsdInr } from "./domain/fx";
@@ -54,7 +55,7 @@ export default function App() {
           <div className="logo">सं</div>
           <div>
             <div className="name">Sampatti</div>
-            <div className="tag">Private portfolio analysis · India</div>
+            <div className="tag">Private portfolio analysis · {currentProfile().label}</div>
           </div>
         </div>
         <nav className="nav">

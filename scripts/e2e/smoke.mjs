@@ -272,9 +272,12 @@ try {
     if (!(await bodyHas(page, "$410.0K in loans"))) throw new Error("loans line disagrees (the mangled-mortgage regression)");
     if (await bodyHas(page, "₹")) throw new Error("rupee symbol leaked into US mode's Overview");
     await auditA11y(page, "Overview-US");
+    if (!(await bodyHas(page, "Private portfolio analysis · United States"))) throw new Error("header tag still says India");
     await clickText(page, "AI Analysis");
     await waitFor(page, () => bodyHas(page, "Tax-advantaged (401k/Roth/HSA)"), "US wrappers fact");
     if (!(await bodyHas(page, "$2.28M"))) throw new Error("facts panel disagrees with the hero");
+    if (!(await bodyHas(page, "A top US financial analyst"))) throw new Error("analyst pitch still Indian");
+    if (await bodyHas(page, "SEBI")) throw new Error("SEBI caveat leaked into US mode");
     // The user-reported repro: with US data loaded, Add data must offer the US demo.
     await clickText(page, "Add data");
     await waitFor(page, () => bodyHas(page, "Load demo portfolio ($2.3M)"), "US demo re-load button");

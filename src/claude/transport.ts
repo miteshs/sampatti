@@ -12,7 +12,7 @@ export const EXTRACT_MODEL = "claude-sonnet-4-6";
 // output tokens dominate, so the model choice is the real cost lever. Labels speak to a
 // non-technical user; the hint carries the model name for those who care.
 export const ANALYSIS_MODELS = [
-  { id: "claude-opus-4-8", label: "Most thorough", hint: "Opus · strongest on India tax nuance · ~$0.10/analysis" },
+  { id: "claude-opus-4-8", label: "Most thorough", hint: "Opus · strongest on tax nuance · ~$0.10/analysis" },
   { id: "claude-sonnet-4-6", label: "Balanced — recommended", hint: "Sonnet · great quality at a fair price · ~$0.06" },
   { id: "claude-haiku-4-5", label: "Quickest", hint: "Haiku · lighter reasoning, lowest cost · ~$0.02" },
 ] as const;

@@ -98,11 +98,14 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
           <div className="card card-pad-lg" style={{ textAlign: "center", padding: "2.5rem" }}>
             <div className="eyebrow">AI portfolio review</div>
             <h2 style={{ fontSize: "1.4rem", margin: "0.4rem 0 0.6rem" }}>
-              A top Indian financial analyst, on your portfolio
+              {profileFor(portfolio.settings).region === "US"
+                ? "A top US financial analyst, on your portfolio"
+                : "A top Indian financial analyst, on your portfolio"}
             </h2>
             <p className="muted" style={{ maxWidth: 460, margin: "0 auto 1.25rem" }}>
-              Concentration, diversification, India-specific tax planning, liquidity, and a
-              retirement & income read — grounded in your actual numbers. Then ask anything.
+              Concentration, diversification, {profileFor(portfolio.settings).region === "US" ? "US" : "India-specific"} tax
+              planning, liquidity, and a retirement & income read — grounded in your actual
+              numbers. Then ask anything.
             </p>
             {ready ? (
               <>
@@ -169,8 +172,8 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
               </button>
             </div>
             <p className="muted" style={{ fontSize: "0.72rem", padding: "0 0.3rem" }}>
-              Educational only — not a substitute for a SEBI-registered investment adviser. Verify
-              tax specifics for your situation and assessment year.
+              Educational only — not a substitute for a personal {profileFor(portfolio.settings).adviserNoun}. Verify
+              tax specifics for your situation and tax year.
             </p>
           </>
         )}
