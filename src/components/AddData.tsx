@@ -6,7 +6,7 @@ import { classifyFile, ingestFile, ingestPdf, ingestWithClaude, isImportable, Ne
 import { filesForClaude, planBatch } from "../ingest/consent";
 import { findCrossAccountDuplicates } from "../ingest/reconcile";
 import { engineFor, localModelStatus, withExtractionEngine } from "../ai/engine";
-import { fmtMoney } from "../regions/profile";
+import { currentProfile, fmtMoney } from "../regions/profile";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
 } from "../domain/classify";
@@ -244,9 +244,11 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
           />
         </div>
         <p className="muted" style={{ fontSize: "0.78rem", marginTop: "0.7rem" }}>
-          Pick several files or a whole folder of statements at once. CSV, Excel and{" "}
+          Pick several files or a whole folder of statements at once. {currentProfile().region === "US"
+            ? <>CSV and Excel files are parsed entirely on this device;{" "}</>
+            : <>CSV, Excel and{" "}
           <strong>CAS PDFs (CAMS/KFintech &amp; NSDL/CDSL)</strong> — password and all — are parsed entirely on this
-          device;{" "}
+          device;{" "}</>}
           {extractionEngine === "local" && localReady
             ? <>other PDFs are read by the <strong>on-device model</strong>, so they never leave this
               computer either. Screenshots still use Claude (you'll confirm those first).</>
@@ -441,8 +443,10 @@ function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => voi
       <div className="eyebrow">Welcome</div>
       <h1 style={{ fontSize: "1.9rem", margin: "0.35rem 0 0.5rem" }}>All your money, in one private picture</h1>
       <p className="muted" style={{ maxWidth: 520, margin: "0 auto 1.5rem", fontSize: "0.95rem", lineHeight: 1.6 }}>
-        Stocks, mutual funds, PF, FDs, property, gold — added up, explained in plain words, and
-        reviewed by AI when you ask. Everything stays on this computer; nothing is uploaded.
+        {currentProfile().region === "US"
+          ? "Stocks, funds, 401(k)s, property — added up, explained in plain words, and reviewed by AI when you ask."
+          : "Stocks, mutual funds, PF, FDs, property, gold — added up, explained in plain words, and reviewed by AI when you ask."}{" "}
+        Everything stays on this computer; nothing is uploaded.
       </p>
       <div style={{ display: "flex", gap: "0.7rem", justifyContent: "center", flexWrap: "wrap" }}>
         <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onDemo}>
@@ -487,9 +491,15 @@ function GettingStarted() {
       </summary>
       <div className="grid" style={{ gap: "0.65rem", marginTop: "0.9rem" }}>
         <Step n={1} title="Collect a statement from each place your money lives.">
-          <strong>Fastest start:</strong> your monthly <strong>NSDL/CDSL CAS email</strong> has every demat stock AND fund; for purchase costs request the detailed CAS at camsonline.com (Statements → CAS). Both are read entirely on this computer.
-          For everything else, download the holdings statement — Excel or CSV is best (also read
-          on this computer), and PDFs or screenshots work too. Put them all in one folder.
+          {currentProfile().region === "US" ? (
+            <><strong>Fastest start:</strong> download the positions CSV from each brokerage
+            (Schwab, Fidelity, Vanguard…) — read entirely on this computer. PDFs and screenshots
+            work too. Put them all in one folder.</>
+          ) : (
+            <><strong>Fastest start:</strong> your monthly <strong>NSDL/CDSL CAS email</strong> has every demat stock AND fund; for purchase costs request the detailed CAS at camsonline.com (Statements → CAS). Both are read entirely on this computer.
+            For everything else, download the holdings statement — Excel or CSV is best (also read
+            on this computer), and PDFs or screenshots work too. Put them all in one folder.</>
+          )}
         </Step>
         <Step n={2} title="Import that folder here.">
           Every statement becomes a card for you to check — the account name, the amounts,
@@ -497,8 +507,10 @@ function GettingStarted() {
           statement next month and it updates that account instead of duplicating it.
         </Step>
         <Step n={3} title="Add the rest by hand.">
-          Your house, PF, FDs, insurance, gold — and any loans, so the total is honest. There's
-          a simple form below; everything can be edited later on the Manage tab.
+          {currentProfile().region === "US"
+            ? "Your house, 401(k)/IRA balances, CDs, insurance — and any loans, so the total is honest."
+            : "Your house, PF, FDs, insurance, gold — and any loans, so the total is honest."}{" "}
+          There's a simple form below; everything can be edited later on the Manage tab.
         </Step>
         <Step n={4} title="Bring values up to today.">
           Manage → Refresh live prices. The app also quietly records your net worth every day
@@ -674,7 +686,7 @@ function DraftReview({ draft, accounts, existingHoldings, onCurrency, onHolding,
                 </td>
                 <td>
                   <select value={h.assetClass} onChange={(e) => onHolding(i, { assetClass: e.target.value as AssetClass })}>
-                    {ASSET_CLASSES.map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
+                    {ASSET_CLASSES.filter((c) => currentProfile().inManualEntry(c) || c === h.assetClass).map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
                   </select>
                 </td>
                 <td className="num" style={{ maxWidth: 150 }}>
@@ -761,18 +773,19 @@ function ManualAccount({ onAdd, usdInr }: {
   // For gold, value comes from weight × the live ₹/gram rate, fetched when a gold class is
   // picked (and editable afterwards — e.g. for 22K or a dealer quote).
   useEffect(() => {
-    if (!isGold(hClass)) return;
+    if (!isGold(hClass) || !currentProfile().goldByWeight) return;
     setGoldBusy(true);
     void fetchGoldPerGramInr(usdInr).then((p) => { setGoldPrice((prev) => p ?? prev); setGoldBusy(false); });
   }, [hClass, usdInr]);
 
-  const goldValue = isGold(hClass) && goldPrice ? Math.round((Number(hGrams.replace(/[,\s]/g, "")) || 0) * goldPrice) : 0;
+  const goldWeighed = isGold(hClass) && currentProfile().goldByWeight;
+  const goldValue = goldWeighed && goldPrice ? Math.round((Number(hGrams.replace(/[,\s]/g, "")) || 0) * goldPrice) : 0;
 
   // A holding typed into the item fields but not yet added with "+ Add item".
   const pendingHolding = (): ImportDraft["holdings"][number] | null => {
     if (!hName.trim()) return null;
     const basis = Number(hBasis.replace(/[₹,\s]/g, "")) || undefined; // optional
-    if (isGold(hClass)) {
+    if (goldWeighed) {
       const g = Number(hGrams.replace(/[,\s]/g, ""));
       if (!g || !goldPrice) return null;
       return { name: hName.trim(), assetClass: hClass, marketValue: Math.round(g * goldPrice), units: g, costBasis: basis, currency: a.currency };
@@ -830,10 +843,10 @@ function ManualAccount({ onAdd, usdInr }: {
         <div style={{ flex: "2 1 180px" }}><label>Holding / item name</label><input value={hName} onChange={(e) => setHName(e.target.value)} placeholder="e.g. Flat market value" /></div>
         <div style={{ flex: "1 1 140px" }}><label>Class</label>
           <select value={hClass} onChange={(e) => setHClass(e.target.value as AssetClass)}>
-            {ASSET_CLASSES.map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
+            {ASSET_CLASSES.filter((c) => currentProfile().inManualEntry(c) || c === hClass).map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
           </select>
         </div>
-        {isGold(hClass) ? (
+        {goldWeighed ? (
           <>
             <div style={{ flex: "1 1 100px" }}><label>Weight (grams)</label><input value={hGrams} onChange={(e) => setHGrams(e.target.value)} placeholder="50" inputMode="decimal" /></div>
             <div style={{ flex: "1 1 130px" }}><label>₹/gram (24K, live)</label>
@@ -848,7 +861,7 @@ function ManualAccount({ onAdd, usdInr }: {
         )}
         <button className="btn" onClick={addH}>+ Add item</button>
       </div>
-      {isGold(hClass) && (
+      {goldWeighed && (
         <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
           {goldBusy && goldPrice == null ? "Fetching the live gold price…" : goldPrice ? (
             <>Live 24K gold ≈ <strong>₹{goldPrice.toLocaleString("en-IN")}/g</strong>

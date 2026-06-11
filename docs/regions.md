@@ -60,8 +60,13 @@ Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tes
       into the affordance-gating pass below)
 - [ ] Tax wrappers per region: brief's taxable/exemptEEE/nps → US: taxable/traditional/
       roth/hsa (classify from account names: 401k, IRA, Roth, HSA)
-- [ ] Asset-class & affordance gating: hide IN-only surfaces in US mode (CAS import card,
-      gold-by-weight ₹/g, SGB/ELSS/EPF-PPF chips in manual entry); US demat = brokerage
+- [x] Asset-class & affordance gating: US pickers drop elss/nps/epf_ppf/gold_sgb/pms
+      (existing holdings still render — only pickers filter; indian_equity KEPT — NRI
+      portfolios are a real US case); gold-by-weight (₹/gram) gates to IN, US enters gold
+      by value; welcome/guide/file-pick copy per region (US: brokerage-CSV fastest start,
+      401(k)/IRA wording); Privacy FX label via profile.fxLabel. CAS PARSING deliberately
+      stays available in every region — it's content-triggered, and a US-resident NRI
+      importing an Indian CAS is legitimate; only the proactive CAS copy gates to IN
 - [ ] US demo portfolio (the demo IS the first-run experience; an India demo for a US
       user undermines the pitch) — same synthesized-history machinery, US archetypes
 - [ ] Verdicts/buckets copy pass (lay-bucket names read naturally in both markets)

@@ -19,6 +19,12 @@ export interface RegionProfile {
   formatMoney(value: number, opts?: { compact?: boolean }): string;
   /** Who the analysis persona is, for UI copy ("not a substitute for…"). */
   adviserNoun: string;
+  /** Manual-entry pickers hide market-foreign classes; existing holdings still render. */
+  inManualEntry(assetClass: string): boolean;
+  /** The FX control's label — the stored pair is always ₹ per $, whichever side is home. */
+  fxLabel: string;
+  /** Gold entered by weight at the live ₹/gram rate is an India affordance. */
+  goldByWeight: boolean;
 }
 
 // $ with K/M/B compaction, mirroring inr()'s shape: sign out front, two decimals when
@@ -50,6 +56,9 @@ export const PROFILES: Record<Region, RegionProfile> = {
     symbol: "₹",
     formatMoney: (v, opts) => inr(v, opts),
     adviserNoun: "SEBI-registered adviser",
+    inManualEntry: () => true,
+    fxLabel: "USD → INR rate (for US holdings)",
+    goldByWeight: true,
   },
   US: {
     region: "US",
@@ -59,6 +68,12 @@ export const PROFILES: Record<Region, RegionProfile> = {
     symbol: "$",
     formatMoney: usd,
     adviserNoun: "fiduciary adviser (RIA/CFP)",
+    // India-specific wrappers/instruments stay out of US pickers (existing holdings of
+    // these classes still render fine — only the picker filters). indian_equity stays:
+    // NRI-style mixed portfolios are a real US-resident case.
+    inManualEntry: (c) => !["elss", "nps", "epf_ppf", "gold_sgb", "pms"].includes(c),
+    fxLabel: "INR → USD rate (₹ per $, for Indian holdings)",
+    goldByWeight: false,
   },
 };
 
@@ -78,6 +93,9 @@ export const profileFor = (settings: { country: string }): RegionProfile =>
 // snapshots/flows and every computation stay in it, so switching region never rewrites
 // data. Conversion to the region's display currency happens here, at the display edge,
 // and in buildBrief for the outbound brief — nowhere else.
+// Store-backed profile lookup for components (same re-render caveat as fmtMoney).
+export const currentProfile = (): RegionProfile => profileFor(useStore.getState().portfolio.settings);
+
 export const fmtMoney = (value: number, opts?: { compact?: boolean }): string => {
   const s = useStore.getState().portfolio.settings;
   const p = profileFor(s);

@@ -67,3 +67,16 @@ describe("fmtMoney — the display edge of the INR unit rule", () => {
     expect(fmtMoney(95_00_000)).toBe("$100.0K"); // ₹95L @ ₹95/$ = $100,000
   });
 });
+
+describe("US affordance gating", () => {
+  it("US pickers exclude India-wrapper classes but keep NRI-real ones", () => {
+    for (const c of ["elss", "nps", "epf_ppf", "gold_sgb", "pms"]) expect(PROFILES.US.inManualEntry(c)).toBe(false);
+    for (const c of ["indian_equity", "us_equity", "real_estate", "fd_rd", "crypto"]) expect(PROFILES.US.inManualEntry(c)).toBe(true);
+    expect(PROFILES.IN.inManualEntry("elss")).toBe(true);
+  });
+
+  it("gold-by-weight (live ₹/gram) is an India affordance", () => {
+    expect(PROFILES.IN.goldByWeight).toBe(true);
+    expect(PROFILES.US.goldByWeight).toBe(false);
+  });
+});

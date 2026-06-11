@@ -6,6 +6,7 @@ import { ANALYSIS_MODELS } from "../claude/transport";
 import { localModelDownload, localModelRemove, localModelStatus, type LocalModelStatus } from "../ai/engine";
 import type { AiEngine } from "../domain/types";
 import { fetchUsdInr } from "../domain/fx";
+import { profileFor } from "../regions/profile";
 
 export function Privacy() {
   const { portfolio, updateSettings, wipe } = useStore();
@@ -266,7 +267,7 @@ export function Privacy() {
         </div>
 
         <div style={{ maxWidth: 320 }}>
-          <label>USD → INR rate (for US holdings)</label>
+          <label>{profileFor(s).fxLabel}</label>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
             <input type="number" aria-label="USD to INR rate" style={{ maxWidth: 130 }} value={s.usdInr}
               onChange={(e) => updateSettings({ usdInr: Number(e.target.value) || s.usdInr })} />
