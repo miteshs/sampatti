@@ -222,11 +222,17 @@ export function buildBrief(p: Portfolio): Brief {
     notes,
   };
 
-  // The brief is OUTBOUND — the model must speak the user's currency (a $ persona reading
-  // INR figures would mislead). All computation above stays in the internal INR unit
-  // (docs/regions.md); for a USD base every monetary field converts here, once, at the
-  // edge. Percentages, counts, HHI and years are unitless and pass through.
-  return baseCurrency === "USD" ? briefInUsd(brief, usdInr || 1) : brief;
+  return brief;
+}
+
+// The MODEL-EDGE brief: the persona must speak the user's currency (a $ persona reading
+// INR figures would mislead), so for a USD base every monetary field converts here, once.
+// buildBrief itself stays in the internal INR unit (docs/regions.md) — in-app consumers
+// (Overview hero, the facts panel) format through fmtMoney, which already converts at
+// display; feeding them a pre-converted brief double-divides (the $24K-net-worth bug).
+export function briefForModel(p: Portfolio): Brief {
+  const b = buildBrief(p);
+  return p.settings.baseCurrency === "USD" ? briefInUsd(b, p.settings.usdInr || 1) : b;
 }
 
 function briefInUsd(b: Brief, rate: number): Brief {

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useStore } from "../storage/store";
-import { buildBrief } from "../domain/brief";
-import { profileFor } from "../regions/profile";
+import { buildBrief, briefForModel } from "../domain/brief";
+import { fmtMoney, profileFor } from "../regions/profile";
 import { analysisReady, visiblePortfolio } from "../domain/types";
 import { type Msg } from "../claude/transport";
 import { engineFor, streamAnalysis } from "../ai/engine";
@@ -12,10 +12,9 @@ interface Turn { role: "assistant" | "user"; text: string }
 
 export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const portfolio = useStore((s) => s.portfolio);
-  // Brief values arrive ALREADY in the region's currency (buildBrief converts at the
-  // edge) — format raw, or USD briefs would convert twice through fmtMoney.
-  const fmtBrief = profileFor(portfolio.settings).formatMoney;
   const brief = useMemo(() => buildBrief(visiblePortfolio(portfolio)), [portfolio]);
+  // What actually leaves the device: converted to the region's currency at the model edge.
+  const outbound = useMemo(() => briefForModel(visiblePortfolio(portfolio)), [portfolio]);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [started, setStarted] = useState(false);
@@ -50,14 +49,14 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
     }
   };
 
-  const start = () => { setStarted(true); void run(initialMessages(brief), []); };
+  const start = () => { setStarted(true); void run(initialMessages(outbound), []); };
 
   const askText = (q: string) => {
     if (!q || streaming) return;
     setQuestion("");
     const history: Msg[] = turns.map((t) => ({ role: t.role, content: t.text }));
     const seed: Turn[] = [...turns, { role: "user", text: q }];
-    void run(chatMessages(brief, history, q), seed);
+    void run(chatMessages(outbound, history, q), seed);
   };
   const ask = () => askText(question.trim());
 
@@ -181,15 +180,15 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
       <div className="card" style={{ position: "sticky", top: "1rem" }}>
         <div className="eyebrow">Computed on your device</div>
         <h3 style={{ fontSize: "1rem", margin: "0.2rem 0 0.8rem" }}>The brief sent to Claude</h3>
-        <Fact label="Net worth" value={fmtBrief(brief.netWorth)} />
-        <Fact label="Easy to reach" value={`${fmtBrief(brief.liquidAssets)} · ${brief.liquidPct}%`} />
+        <Fact label="Net worth" value={fmtMoney(brief.netWorth)} />
+        <Fact label="Easy to reach" value={`${fmtMoney(brief.liquidAssets)} · ${brief.liquidPct}%`} />
         <Fact label="Biggest single stock" value={`${c.largestPctOfLiquid}% of liquid money`} />
         <Fact label="Top 5 stocks" value={`${c.top5PctOfLiquid}% of liquid money`} />
         <Fact label="Concentration score" value={String(c.hhi)} />
         {profileFor(portfolio.settings).region === "US" ? (
-          <Fact label="Tax-advantaged (401k/Roth/HSA)" value={fmtBrief(brief.taxWrappers.usPretax + brief.taxWrappers.usRoth + brief.taxWrappers.usHsa)} />
+          <Fact label="Tax-advantaged (401k/Roth/HSA)" value={fmtMoney(brief.taxWrappers.usPretax + brief.taxWrappers.usRoth + brief.taxWrappers.usHsa)} />
         ) : (
-          <Fact label="Tax-free savings (PF/PPF…)" value={fmtBrief(brief.taxWrappers.exemptEEE)} />
+          <Fact label="Tax-free savings (PF/PPF…)" value={fmtMoney(brief.taxWrappers.exemptEEE)} />
         )}
         <div style={{ marginTop: "0.8rem" }}>
           <div className="muted" style={{ fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem" }}>Top asset classes</div>
@@ -212,7 +211,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
             fontSize: "0.66rem", lineHeight: 1.45, padding: "0.65rem", borderRadius: 8,
             whiteSpace: "pre-wrap", wordBreak: "break-word",
           }}>
-            {JSON.stringify(brief, null, 2)}
+            {JSON.stringify(outbound, null, 2)}
           </pre>
         )}
       </div>

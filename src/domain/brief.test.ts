@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { demoPortfolio } from "../demo";
-import { buildBrief } from "./brief";
+import { buildBrief, briefForModel } from "./brief";
 
 describe("buildBrief on the demo HNI portfolio", () => {
   const b = buildBrief(demoPortfolio());
@@ -112,8 +112,11 @@ describe("USD-base brief — outbound conversion at the edge (docs/regions.md un
     const rate = usdP.settings.usdInr;
 
     const a = buildBrief(inrP);
-    const b = buildBrief(usdP);
+    const b = briefForModel(usdP);
 
+    // buildBrief itself stays internal-INR even for a USD base — in-app consumers format
+    // through fmtMoney, and a pre-converted brief would double-divide (the $24K hero bug).
+    expect(buildBrief(usdP).netWorth).toBe(a.netWorth);
     expect(b.baseCurrency).toBe("USD");
     // Rounded division, not a re-computation — the internal INR math is shared.
     expect(b.netWorth).toBe(Math.round(a.netWorth / rate));
@@ -132,7 +135,7 @@ describe("USD-base brief — outbound conversion at the edge (docs/regions.md un
     const usdP = demoPortfolio();
     usdP.settings.country = "US";
     usdP.settings.baseCurrency = "USD";
-    const note = buildBrief(usdP).notes.find((n) => n.includes("converted"));
+    const note = briefForModel(usdP).notes.find((n) => n.includes("converted"));
     expect(note).toContain("Non-USD holdings converted");
   });
 });
