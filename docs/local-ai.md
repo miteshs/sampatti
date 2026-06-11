@@ -47,7 +47,7 @@ Phase 1 — extraction on-device
 - [x] Privacy "AI engines" card: pickers + model manager UI (progress, remove, size/license shown)
 - [x] Consent-card flow: local+ready → text PDFs/unrecognized sheets parse locally with no "sent to Claude" warning; local+absent → offer download or Claude (one-shot `withExtractionEngine` override, setting untouched); images → Claude consent as today — pure `planBatch` matrix + component tests
 - [x] Contract tests: no-network routing test + local_llm source-scan + settings migration
-- [ ] e2e: Privacy shows AI engines card; engine toggle persists (no model download in CI)
+- [x] e2e: Privacy shows AI engines card; local chips gated off in web/CI; engine toggle persists across reload (smoke step; no model download in CI)
 - [x] Docs: PRIVACY.md + testing.md + README note
 
 Phase 2 — evaluation & confidence

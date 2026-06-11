@@ -55,6 +55,21 @@ const clickText = (page, text) =>
   }, text);
 const store = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("sampatti.portfolio") ?? "null"));
 
+// Find an engine chip on the Privacy "AI engines" card by its row label + chip label.
+// Rows are <div><span>{row label}</span><button/><button/></div>; two rows share chip text,
+// so plain clickText would always hit the extraction row.
+const engineChip = (page, rowText, chipText, click = false) =>
+  page.evaluate(({ rowText, chipText, click }) => {
+    const row = [...document.querySelectorAll("div")].find((d) => {
+      const f = d.firstElementChild;
+      return f?.tagName === "SPAN" && f.textContent?.includes(rowText);
+    });
+    const btn = row && [...row.querySelectorAll("button")].find((b) => b.textContent?.includes(chipText));
+    if (!btn) return null;
+    if (click) btn.click();
+    return { active: btn.className.includes("active"), disabled: btn.disabled };
+  }, { rowText, chipText, click });
+
 // Accessibility audit (axe-core, WCAG 2.0/2.1 A+AA). Serious/critical violations FAIL the
 // smoke — this audience (45–65, non-technical) is exactly who a11y regressions hurt.
 const AXE_SRC = join(ROOT, "node_modules", "axe-core", "axe.min.js");
@@ -164,6 +179,36 @@ try {
     await clickText(page, "Export everything");
     await waitFor(page, () => bodyHas(page, "Saved to sampatti-portfolio"), "export confirmation note");
     await auditA11y(page, "Privacy");
+  });
+
+  await step("AI engines card: local gated off in the web preview; engine toggle persists", async () => {
+    // Seed the persisted store as if a desktop user had chosen the on-device engine for
+    // analysis — proves load()'s settings.ai migration/merge surfaces on the UI.
+    await page.evaluate(() => {
+      const p = JSON.parse(localStorage.getItem("sampatti.portfolio"));
+      p.settings.ai = { extraction: "claude", analysis: "local" };
+      localStorage.setItem("sampatti.portfolio", JSON.stringify(p));
+    });
+    await page.reload({ waitUntil: "networkidle2" });
+    await clickText(page, "Privacy");
+    await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card");
+    if (!(await bodyHas(page, "available in the desktop app"))) throw new Error("web-preview model note missing");
+
+    const local = await engineChip(page, "Portfolio analysis", "On this device");
+    if (!local?.active) throw new Error("persisted local engine not reflected on the analysis chip");
+    const extLocal = await engineChip(page, "Statement extraction", "On this device");
+    if (extLocal?.disabled !== true) throw new Error("local chip should be disabled with no model (web/CI — nothing downloads here)");
+
+    // Flip analysis back to Claude through the real chip and prove it persists.
+    if (!(await engineChip(page, "Portfolio analysis", "Claude", true))) throw new Error("claude chip not found");
+    await sleep(500); // persist debounce
+    const p = await store(page);
+    if (p.settings.ai?.analysis !== "claude") throw new Error(`toggle didn't persist: ${JSON.stringify(p.settings.ai)}`);
+    await page.reload({ waitUntil: "networkidle2" });
+    await clickText(page, "Privacy");
+    await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card after reload");
+    const after = await engineChip(page, "Portfolio analysis", "Claude");
+    if (!after?.active) throw new Error("claude chip not active after reload");
   });
 
   await step("erase wipes the store completely", async () => {
