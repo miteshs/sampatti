@@ -8,7 +8,7 @@
 // Only `account`, `name`, and `market_value` are required. We also recognize common US
 // brokerage exports (Fidelity/Schwab "Portfolio Positions": Current Value, Description, …).
 
-import { normAccountType, normAssetClass, normRegion, normTaxTreatment } from "../domain/classify";
+import { normAccountType, normAssetClass, normRegion, normTaxTreatment, usTaxFromName } from "../domain/classify";
 import type { AssetClass, ImportDraft } from "../domain/types";
 
 export type Row = Record<string, unknown>;
@@ -159,7 +159,9 @@ export function rowsToDrafts(rawRows: Row[], source: string): ImportDraft[] {
           name: accountName,
           institution: r.institution || (isUsd ? "US Broker" : "Manual"),
           accountType: r.account_type ? normAccountType(r.account_type)[0] : isUsd ? "foreign_broker" : "demat",
-          taxTreatment: normTaxTreatment(r.tax_treatment ?? r.tax_status)[0],
+          taxTreatment: (r.tax_treatment ?? r.tax_status)
+            ? normTaxTreatment(r.tax_treatment ?? r.tax_status)[0]
+            : usTaxFromName(accountName) ?? "taxable",
           region: r.region ? normRegion(r.region)[0] : isUsd ? "US" : "India",
           currency: rowCcy || (isUsd ? "USD" : "INR"),
           asOf: r.as_of || undefined,

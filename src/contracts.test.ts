@@ -27,7 +27,7 @@ const ALLOWED_KEYS = new Set([
   "concentration", "topHoldings", "name", "assetClass", "pctOfAssets", "account", "gainPct",
   "largestPctOfAssets", "largestPctOfLiquid", "top5PctOfLiquid", "hhi",
   "holdingPeriods", "equityShortTerm", "equityLongTerm", "withBuyDate",
-  "taxWrappers", "taxable", "exemptEEE", "nps",
+  "taxWrappers", "taxable", "exemptEEE", "nps", "usPretax", "usRoth", "usHsa",
   "gains", "totalCostBasis", "unrealizedGain", "unrealizedPct", "realBasisPct",
   "income", "annualTotal", "byKind", "netWorthYears",
   "staleness", "freshAccounts", "agingAccounts", "staleAccounts",

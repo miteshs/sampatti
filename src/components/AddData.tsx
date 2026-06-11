@@ -827,7 +827,7 @@ function ManualAccount({ onAdd, usdInr }: {
         </div>
         <div><label>Tax</label>
           <select value={a.taxTreatment} onChange={(e) => setA({ ...a, taxTreatment: e.target.value as TaxTreatment })}>
-            {TAX_TYPES.map((t) => <option key={t} value={t}>{TAX_LABEL[t]}</option>)}
+            {TAX_TYPES.filter((t) => currentProfile().taxTreatments.includes(t) || t === a.taxTreatment).map((t) => <option key={t} value={t}>{TAX_LABEL[t]}</option>)}
           </select>
         </div>
         <div><label>Region</label>

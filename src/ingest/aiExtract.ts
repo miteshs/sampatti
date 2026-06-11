@@ -3,7 +3,7 @@
 // statements (CAS/NSDL/CDSL demat, CAMS/KFintech MF, PMS, lakh/crore, ₹). The result is
 // ALWAYS shown to the user for review before it touches the portfolio.
 
-import { normAccountType, normAssetClass, normRegion, normTaxTreatment } from "../domain/classify";
+import { normAccountType, normAssetClass, normRegion, normTaxTreatment, usTaxFromName } from "../domain/classify";
 import type { ImportDraft } from "../domain/types";
 import { callClaude, EXTRACT_MODEL, type Block } from "../claude/transport";
 import { generateForExtraction } from "../ai/engine";
@@ -16,7 +16,7 @@ Return ONE JSON object of the form { "accounts": [ ... ] }, where each entry is 
   "name": "account name (e.g. 'Zerodha Demat', 'HDFC MF Folio', 'Marcellus PMS')",
   "institution": "institution / AMC / broker name",
   "account_type": one of ["demat","mutual_fund","nps","epf_ppf","bank","pms_aif","foreign_broker","real_estate","liability","other"],
-  "tax_treatment": one of ["taxable","eee_exempt","nps","na"],   // eee_exempt = PPF/EPF/SSY; nps = NPS; else taxable
+  "tax_treatment": one of ["taxable","eee_exempt","nps","us_pretax","us_roth","us_hsa","na"],   // eee_exempt = PPF/EPF/SSY; us_pretax = 401k/IRA; else taxable
   "region": "India" or "US" or country,
   "currency": "the statement's 3-letter currency code — 'USD' for US/dollar statements, 'INR' for Indian, etc.",
   "as_of": "YYYY-MM-DD" (the statement / valuation date),
@@ -95,7 +95,9 @@ export function validateDraft(raw: unknown, source: string): ImportDraft {
   const currency = String(acct.currency || "INR").toUpperCase();
 
   const [accountType, okType] = normAccountType(acct.account_type, "demat");
-  const [tax, okTax] = normTaxTreatment(acct.tax_treatment ?? acct.tax_status, "taxable");
+  let [tax, okTax] = normTaxTreatment(acct.tax_treatment ?? acct.tax_status, "taxable");
+  // No usable tax column/field → US wrappers announce themselves in the account name.
+  if (!okTax) tax = usTaxFromName(String(acct.name ?? "")) ?? tax;
   if (!okType && acct.account_type) warnings.push(`account_type '${acct.account_type}' → 'demat'`);
   if (!okTax && acct.tax_treatment) warnings.push(`tax_treatment '${acct.tax_treatment}' → 'taxable'`);
 

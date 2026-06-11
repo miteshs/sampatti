@@ -103,6 +103,10 @@ account_type took two iterations — whack-a-mole that only full-suite re-runs c
 PMS/AIF example to the same rule fixed that — the table is now ✓ across the board.
 The floor: a weak parse surfaces in the review card as an odd account_type chip — never
 a wrong number.
+(2026-06-11, third instance: lengthening the tax_treatment enum COMMENT — not the enum
+itself — deterministically tipped bank-fd.pdf into emitting a single token then EOG.
+Compacting the comment restored 4/4. Lesson stands: ANY prompt-byte change ⇒ full-suite
+re-run before commit.)
 
 Phase 3 — more local-AI use cases (cheap wins on the same engine)
 - [ ] CSV header-mapping suggester: unrecognized columns → proposed mapping (text-only, tiny

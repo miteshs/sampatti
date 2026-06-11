@@ -25,6 +25,8 @@ export interface RegionProfile {
   fxLabel: string;
   /** Gold entered by weight at the live ₹/gram rate is an India affordance. */
   goldByWeight: boolean;
+  /** Tax-treatment picker order for this market (existing values still render via TAX_LABEL). */
+  taxTreatments: string[];
 }
 
 // $ with K/M/B compaction, mirroring inr()'s shape: sign out front, two decimals when
@@ -59,6 +61,7 @@ export const PROFILES: Record<Region, RegionProfile> = {
     inManualEntry: () => true,
     fxLabel: "USD → INR rate (for US holdings)",
     goldByWeight: true,
+    taxTreatments: ["taxable", "eee_exempt", "nps", "na"],
   },
   US: {
     region: "US",
@@ -74,6 +77,7 @@ export const PROFILES: Record<Region, RegionProfile> = {
     inManualEntry: (c) => !["elss", "nps", "epf_ppf", "gold_sgb", "pms"].includes(c),
     fxLabel: "INR → USD rate (₹ per $, for Indian holdings)",
     goldByWeight: false,
+    taxTreatments: ["taxable", "us_pretax", "us_roth", "us_hsa", "na"],
   },
 };
 

@@ -58,8 +58,16 @@ Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tes
       anything else double-divides). A pure-USD portfolio round-trips exactly (×rate then
       ÷rate). Still pending from the old item: Privacy FX-card copy per region (folded
       into the affordance-gating pass below)
-- [ ] Tax wrappers per region: brief's taxable/exemptEEE/nps → US: taxable/traditional/
-      roth/hsa (classify from account names: 401k, IRA, Roth, HSA)
+- [x] Tax wrappers per region: TaxTreatment grew us_pretax/us_roth/us_hsa (one union — an
+      NRI portfolio legitimately holds both kinds, so wrappers COEXIST rather than fork);
+      brief's taxWrappers is the fixed six-key superset (zeros are harmless to the model);
+      ingest infers from account NAMES ("Fidelity 401(k)", "Roth IRA", "HSA Bank" — name-
+      keyed so safe in every region; Roth beats the 401k match) on both the row path and
+      the AI path, plus explicit aliases (401k/roth_ira/hsa…); extraction prompt's enum
+      widened — NB the enum COMMENT had to stay terse: a longer wording deterministically
+      tipped bank-fd.pdf into emitting one token then EOG (caught by the full-suite re-run
+      protocol, fixed by compaction); pickers per region via profile.taxTreatments;
+      AnalysisChat fact shows EEE for IN, 401k/Roth/HSA sum for US
 - [x] Asset-class & affordance gating: US pickers drop elss/nps/epf_ppf/gold_sgb/pms
       (existing holdings still render — only pickers filter; indian_equity KEPT — NRI
       portfolios are a real US case); gold-by-weight (₹/gram) gates to IN, US enters gold
@@ -70,6 +78,11 @@ Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tes
 - [ ] US demo portfolio (the demo IS the first-run experience; an India demo for a US
       user undermines the pitch) — same synthesized-history machinery, US archetypes
 - [ ] Verdicts/buckets copy pass (lay-bucket names read naturally in both markets)
+- [x] AI analysis prompts adapt per region (user-flagged 2026-06-11): persona was wired in
+      R1 (`systemPrompt(settings.country)` — US gets the fiduciary CFP/RIA persona; the
+      local quick-take inherits the same system prompt), the brief speaks the region's
+      currency (unit rule) and carries US wrappers; example-question chips now also
+      region-aware (the LIC question is meaningless in the US)
 
 Phase R3 — exposure
 - [ ] Welcome region step (one question, two flags) + Privacy "Region" control with a

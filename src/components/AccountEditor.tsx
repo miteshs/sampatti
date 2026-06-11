@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
-import { fmtMoney } from "../regions/profile";
+import { currentProfile, fmtMoney } from "../regions/profile";
 import type { AccountType, AssetClass, Region, TaxTreatment } from "../domain/types";
 
 const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
@@ -95,7 +95,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
         </div>
         <div><label>Tax treatment</label>
           <select value={account.taxTreatment} onChange={(e) => set({ taxTreatment: e.target.value as TaxTreatment })}>
-            {TAX_TYPES.map((t) => <option key={t} value={t}>{TAX_LABEL[t]}</option>)}
+            {TAX_TYPES.filter((t) => currentProfile().taxTreatments.includes(t) || t === account.taxTreatment).map((t) => <option key={t} value={t}>{TAX_LABEL[t]}</option>)}
           </select>
         </div>
         <div><label>Region / geo</label>

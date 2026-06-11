@@ -13,8 +13,8 @@
     "units": "8/8",
     "cost": "8/8",
     "repaired": false,
-    "secs": 60.728,
-    "tokPerS": "12.6"
+    "secs": 53.708,
+    "tokPerS": "14.3"
   },
   {
     "id": "bank-fd.csv",
@@ -30,8 +30,8 @@
     "units": "—",
     "cost": "—",
     "repaired": false,
-    "secs": 35.341,
-    "tokPerS": "13.2"
+    "secs": 31.64,
+    "tokPerS": "14.4"
   },
   {
     "id": "mf-statement.xlsx",
@@ -47,8 +47,8 @@
     "units": "6/6",
     "cost": "6/6",
     "repaired": false,
-    "secs": 58.886,
-    "tokPerS": "10.4"
+    "secs": 66.383,
+    "tokPerS": "11.1"
   },
   {
     "id": "us-broker.xlsx",
@@ -64,8 +64,8 @@
     "units": "5/5",
     "cost": "5/5",
     "repaired": false,
-    "secs": 64.658,
-    "tokPerS": "7.9"
+    "secs": 111.284,
+    "tokPerS": "4.5"
   },
   {
     "id": "mf-statement.pdf",
@@ -81,8 +81,8 @@
     "units": "6/6",
     "cost": "6/6",
     "repaired": false,
-    "secs": 85.505,
-    "tokPerS": "8.7"
+    "secs": 118.81,
+    "tokPerS": "6.3"
   },
   {
     "id": "bank-fd.pdf",
@@ -98,8 +98,8 @@
     "units": "—",
     "cost": "—",
     "repaired": false,
-    "secs": 40.694,
-    "tokPerS": "10.7"
+    "secs": 71.314,
+    "tokPerS": "6.4"
   },
   {
     "id": "pms-letter.pdf",
@@ -115,8 +115,8 @@
     "units": "—",
     "cost": "1/1",
     "repaired": false,
-    "secs": 21.94,
-    "tokPerS": "8.2"
+    "secs": 30.745,
+    "tokPerS": "5.9"
   },
   {
     "id": "nps-statement.pdf",
@@ -132,7 +132,7 @@
     "units": "3/3",
     "cost": "—",
     "repaired": false,
-    "secs": 38.656,
-    "tokPerS": "10.0"
+    "secs": 50.193,
+    "tokPerS": "7.8"
   }
 ]

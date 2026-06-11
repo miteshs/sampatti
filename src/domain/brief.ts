@@ -43,7 +43,7 @@ export interface Brief {
     equityLongTerm: number; // equity-type taxable held >= 1y
     withBuyDate: number; // how much equity value actually had a buy date
   };
-  taxWrappers: { taxable: number; exemptEEE: number; nps: number };
+  taxWrappers: { taxable: number; exemptEEE: number; nps: number; usPretax: number; usRoth: number; usHsa: number };
   gains: {
     totalCostBasis: number; // INR; includes since-import anchors
     unrealizedGain: number;
@@ -78,7 +78,7 @@ export function buildBrief(p: Portfolio): Brief {
   const byName = new Map<string, number>(); // individual equity names → value (for HHI/top)
   const topRows: BriefHolding[] = [];
   let eqShort = 0, eqLong = 0, eqWithDate = 0;
-  const wrappers = { taxable: 0, exemptEEE: 0, nps: 0 };
+  const wrappers = { taxable: 0, exemptEEE: 0, nps: 0, usPretax: 0, usRoth: 0, usHsa: 0 };
   let basisTotal = 0, gainTotal = 0, realBasisValue = 0;
 
   for (const h of p.holdings) {
@@ -117,6 +117,9 @@ export function buildBrief(p: Portfolio): Brief {
     const tax = a?.taxTreatment ?? "taxable";
     if (tax === "eee_exempt") wrappers.exemptEEE += v;
     else if (tax === "nps") wrappers.nps += v;
+    else if (tax === "us_pretax") wrappers.usPretax += v;
+    else if (tax === "us_roth") wrappers.usRoth += v;
+    else if (tax === "us_hsa") wrappers.usHsa += v;
     else wrappers.taxable += v;
   }
 
@@ -200,6 +203,9 @@ export function buildBrief(p: Portfolio): Brief {
       taxable: Math.round(wrappers.taxable),
       exemptEEE: Math.round(wrappers.exemptEEE),
       nps: Math.round(wrappers.nps),
+      usPretax: Math.round(wrappers.usPretax),
+      usRoth: Math.round(wrappers.usRoth),
+      usHsa: Math.round(wrappers.usHsa),
     },
     gains: {
       totalCostBasis: Math.round(basisTotal),
@@ -250,6 +256,9 @@ function briefInUsd(b: Brief, rate: number): Brief {
       taxable: c(b.taxWrappers.taxable),
       exemptEEE: c(b.taxWrappers.exemptEEE),
       nps: c(b.taxWrappers.nps),
+      usPretax: c(b.taxWrappers.usPretax),
+      usRoth: c(b.taxWrappers.usRoth),
+      usHsa: c(b.taxWrappers.usHsa),
     },
     gains: { ...b.gains, totalCostBasis: c(b.gains.totalCostBasis), unrealizedGain: c(b.gains.unrealizedGain) },
     income: {

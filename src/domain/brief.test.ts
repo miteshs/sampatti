@@ -136,3 +136,20 @@ describe("USD-base brief — outbound conversion at the edge (docs/regions.md un
     expect(note).toContain("Non-USD holdings converted");
   });
 });
+
+describe("US tax wrappers in the brief", () => {
+  it("routes us_pretax/us_roth/us_hsa values into their own buckets", () => {
+    const p = demoPortfolio();
+    // Re-wrap three existing accounts as US wrappers and check the buckets move.
+    const [a1, a2, a3] = p.accounts.filter((a) => a.taxTreatment === "taxable").slice(0, 3);
+    a1.taxTreatment = "us_pretax";
+    a2.taxTreatment = "us_roth";
+    a3.taxTreatment = "us_hsa";
+    const sum = (id: string) => p.holdings.filter((h) => h.accountId === id)
+      .reduce((s, h) => s + (h.currency === "INR" ? h.marketValue : h.marketValue * p.settings.usdInr), 0);
+    const b = buildBrief(p);
+    expect(b.taxWrappers.usPretax).toBe(Math.round(sum(a1.id)));
+    expect(b.taxWrappers.usRoth).toBe(Math.round(sum(a2.id)));
+    expect(b.taxWrappers.usHsa).toBe(Math.round(sum(a3.id)));
+  });
+});

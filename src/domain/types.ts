@@ -40,11 +40,15 @@ export type AccountType =
   | "liability" // home loan, other loans — subtracted from net worth
   | "other";
 
-// How gains/income from the account are taxed in India — drives the AI's tax reasoning.
+// How gains/income from the account are taxed — drives the AI's tax reasoning. IN and US
+// wrappers coexist in one union (an NRI portfolio legitimately holds both kinds).
 export type TaxTreatment =
   | "taxable" // normal taxable holdings (equity LTCG/STCG, etc.)
   | "eee_exempt" // PPF/EPF/SSY-style exempt-exempt-exempt
   | "nps" // NPS — partly exempt, annuity taxed (its own regime)
+  | "us_pretax" // 401(k)/403(b)/Traditional IRA — deductible in, taxed on withdrawal
+  | "us_roth" // Roth — taxed in, growth and qualified withdrawals tax-free
+  | "us_hsa" // HSA — triple-advantaged
   | "na";
 
 export type Region = "India" | "US" | "Other";

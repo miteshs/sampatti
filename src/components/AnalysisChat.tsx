@@ -62,11 +62,19 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const ask = () => askText(question.trim());
 
   // The real superpower for a non-technical user is asking in their own words — show them.
-  const EXAMPLES = [
-    "Am I too dependent on one stock?",
-    "Should I continue my LIC / endowment policies?",
-    "How can I pay less tax on my gains this year?",
-  ];
+  // Example questions speak the market's language (the LIC question means nothing in the
+  // US; wrapper-placement means nothing in India).
+  const EXAMPLES = profileFor(portfolio.settings).region === "US"
+    ? [
+        "Am I too dependent on one stock?",
+        "Should I prioritize my 401(k), Roth, or taxable account?",
+        "How can I pay less tax on my gains this year?",
+      ]
+    : [
+        "Am I too dependent on one stock?",
+        "Should I continue my LIC / endowment policies?",
+        "How can I pay less tax on my gains this year?",
+      ];
 
   const c = brief.concentration;
 
@@ -178,7 +186,11 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
         <Fact label="Biggest single stock" value={`${c.largestPctOfLiquid}% of liquid money`} />
         <Fact label="Top 5 stocks" value={`${c.top5PctOfLiquid}% of liquid money`} />
         <Fact label="Concentration score" value={String(c.hhi)} />
-        <Fact label="Tax-free savings (PF/PPF…)" value={fmtBrief(brief.taxWrappers.exemptEEE)} />
+        {profileFor(portfolio.settings).region === "US" ? (
+          <Fact label="Tax-advantaged (401k/Roth/HSA)" value={fmtBrief(brief.taxWrappers.usPretax + brief.taxWrappers.usRoth + brief.taxWrappers.usHsa)} />
+        ) : (
+          <Fact label="Tax-free savings (PF/PPF…)" value={fmtBrief(brief.taxWrappers.exemptEEE)} />
+        )}
         <div style={{ marginTop: "0.8rem" }}>
           <div className="muted" style={{ fontSize: "0.72rem", fontWeight: 600, marginBottom: "0.3rem" }}>Top asset classes</div>
           {brief.allocationByClass.slice(0, 5).map((a) => (

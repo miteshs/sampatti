@@ -16,7 +16,7 @@ const ACCOUNT_TYPES: AccountType[] = [
   "real_estate", "income", "liability", "other",
 ];
 
-const TAX_TREATMENTS: TaxTreatment[] = ["taxable", "eee_exempt", "nps", "na"];
+const TAX_TREATMENTS: TaxTreatment[] = ["taxable", "eee_exempt", "nps", "us_pretax", "us_roth", "us_hsa", "na"];
 
 // Free-text → AssetClass. Keys are already key-normalized (lowercase, _ for spaces).
 const CLASS_ALIAS: Record<string, AssetClass> = {
@@ -71,6 +71,10 @@ const TAX_ALIAS: Record<string, TaxTreatment> = {
   taxable: "taxable", normal: "taxable", non_qualified: "taxable",
   exempt: "eee_exempt", eee: "eee_exempt", tax_free: "eee_exempt", tax_exempt: "eee_exempt",
   national_pension: "nps",
+  "401k": "us_pretax", "401(k)": "us_pretax", "403b": "us_pretax", "403(b)": "us_pretax",
+  traditional_ira: "us_pretax", ira: "us_pretax", pretax: "us_pretax", pre_tax: "us_pretax",
+  roth: "us_roth", roth_ira: "us_roth", roth_401k: "us_roth",
+  hsa: "us_hsa", health_savings: "us_hsa",
   none: "na", n_a: "na",
 };
 
@@ -100,6 +104,17 @@ export const normAccountType = (v: unknown, def: AccountType = "demat") =>
   norm(v, ACCOUNT_TYPES, ATYPE_ALIAS, def);
 export const normTaxTreatment = (v: unknown, def: TaxTreatment = "taxable") =>
   norm(v, TAX_TREATMENTS, TAX_ALIAS, def);
+// US wrappers announce themselves in account names ("Fidelity 401(k)", "Roth IRA",
+// "HSA Bank") — statements rarely carry a tax column. Name-keyed, so safe in every
+// region: Indian statements never say 401k. Roth wins over the IRA/401k match
+// ("Roth 401(k)" is Roth money).
+export function usTaxFromName(name: string): TaxTreatment | null {
+  if (/\broth\b/i.test(name)) return "us_roth";
+  if (/\bhsa\b|health savings/i.test(name)) return "us_hsa";
+  if (/40[13]\s*\(?[kb]\)?|\bira\b/i.test(name)) return "us_pretax";
+  return null;
+}
+
 export const normRegion = (v: unknown, def: Region = "India"): [Region, boolean] =>
   norm(v, ["India", "US", "Other"], REGION_ALIAS, def);
 
@@ -126,7 +141,8 @@ export const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
 };
 
 export const TAX_LABEL: Record<TaxTreatment, string> = {
-  taxable: "Taxable", eee_exempt: "Tax-free (EEE)", nps: "NPS", na: "—",
+  taxable: "Taxable", eee_exempt: "Tax-free (EEE)", nps: "NPS",
+  us_pretax: "Pre-tax (401k/IRA)", us_roth: "Roth", us_hsa: "HSA", na: "—",
 };
 
 // Liquid = can be sold/redeemed in days at a known price.
