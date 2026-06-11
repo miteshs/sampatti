@@ -3,6 +3,7 @@
 // simulation was removed as confusing; the per-account view lives in AccountStack).
 
 import type { NetWorthPoint } from "../domain/history";
+import { TimeAxis } from "./timeAxis";
 
 export function TrendChart({ points }: { points: NetWorthPoint[] }) {
   const W = 720, H = 180, PAD = 6;
@@ -20,16 +21,19 @@ export function TrendChart({ points }: { points: NetWorthPoint[] }) {
   const stroke = up ? "#1a9e6b" : "#d6455d";
   const last = points[points.length - 1];
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="trendfill-rec" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
-          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#trendfill-rec)" />
-      <path d={line} fill="none" stroke={stroke} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
-      {last && <circle cx={x(last.t)} cy={y(last.netWorth)} r="3.2" fill={stroke} />}
-    </svg>
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="trendfill-rec" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#trendfill-rec)" />
+        <path d={line} fill="none" stroke={stroke} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
+        {last && <circle cx={x(last.t)} cy={y(last.netWorth)} r="3.2" fill={stroke} />}
+      </svg>
+      <TimeAxis minT={minX} maxT={maxX} pad={PAD} width={W} />
+    </div>
   );
 }

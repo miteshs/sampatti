@@ -10,6 +10,7 @@ import { PERIODS, periodStart, type Period } from "../domain/history";
 import { perAccountSeries } from "../domain/snapshots";
 import { inr } from "../domain/format";
 import { color } from "./ui";
+import { TimeAxis } from "./timeAxis";
 
 const MAX_BANDS = 8; // beyond this, small accounts roll into "Other accounts"
 
@@ -133,14 +134,17 @@ function StackSvg({ times, bands, hover }: {
   });
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} preserveAspectRatio="none">
-      {areas.map((a) => (
-        <path
-          key={a.key} d={a.d} fill={a.color} stroke="#ffffff" strokeWidth="0.6"
-          fillOpacity={hover == null ? 0.82 : hover === a.key ? 0.95 : 0.25}
-          style={{ transition: "fill-opacity 0.15s ease" }}
-        />
-      ))}
-    </svg>
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} preserveAspectRatio="none">
+        {areas.map((a) => (
+          <path
+            key={a.key} d={a.d} fill={a.color} stroke="#ffffff" strokeWidth="0.6"
+            fillOpacity={hover == null ? 0.82 : hover === a.key ? 0.95 : 0.25}
+            style={{ transition: "fill-opacity 0.15s ease" }}
+          />
+        ))}
+      </svg>
+      <TimeAxis minT={times[0]} maxT={times[n - 1]} pad={PAD} width={W} />
+    </div>
   );
 }

@@ -30,15 +30,29 @@ interface AcctSpec extends Omit<Account, "id"> {
   items?: [name: string, cls: Holding["assetClass"], value: number, opts?: Partial<Holding>][];
 }
 
-// ---- one month of recorded history, synthesized -----------------------------
-// The trend chart should DEMO well: ~30 days of believable daily movement ending at
-// exactly today's authored values, plus two mid-month events (an account funded with new
-// money, an asset newly tracked) whose snapshot steps match the flows ledger to the rupee —
-// so the growth/added/tracking split sums precisely to the recorded change.
+// ---- 18 months of recorded history, synthesized ------------------------------
+// The charts should DEMO well across every period chip: ~18 months of believable daily
+// movement ending at exactly today's authored values, with accounts JOINING the record
+// along the way (PMS funded a year ago, Schwab nine months back, crypto later, a plot and
+// a new MF folio just weeks ago). Every entry has a matching flows-ledger event, so each
+// step in the stack is classified and the growth/added/tracking split sums to the rupee.
 
-export const DEMO_HISTORY_DAYS = 30;
+export const DEMO_HISTORY_DAYS = 550;
 export const DEMO_MF_DAYS_AGO = 20; // Groww folio — new money (`flow`)
 export const DEMO_PLOT_DAYS_AGO = 15; // Alibaug plot — started tracking (`tracking`)
+
+// When each late-joining account enters the record (everything else is there from day one).
+export const DEMO_ENTERS: Record<string, { daysAgo: number; kind: FlowEvent["kind"]; label: string }> = {
+  "Morgan Stanley (RSU/ESPP)": { daysAgo: 420, kind: "tracking", label: "Started tracking RSU/ESPP account" },
+  "Marcellus PMS": { daysAgo: 365, kind: "flow", label: "Funded the PMS mandate" },
+  "Schwab Brokerage": { daysAgo: 300, kind: "tracking", label: "Started tracking Schwab brokerage" },
+  "NPS Tier-1": { daysAgo: 270, kind: "tracking", label: "Started tracking NPS" },
+  "Edelweiss AIF": { daysAgo: 240, kind: "flow", label: "AIF capital call" },
+  "Private Markets": { daysAgo: 200, kind: "flow", label: "PE & private-credit commitments" },
+  "Crypto Wallet": { daysAgo: 150, kind: "tracking", label: "Started tracking the crypto wallet" },
+  "Groww Mutual Funds": { daysAgo: DEMO_MF_DAYS_AGO, kind: "flow", label: "Opened Groww folio with new savings" },
+  "Plot — Alibaug": { daysAgo: DEMO_PLOT_DAYS_AGO, kind: "tracking", label: "Started tracking — plot, Alibaug" },
+};
 
 // Deterministic PRNG (mulberry32) — the demo must be identical on every load so tests and
 // screenshots are stable; the seed is arbitrary but fixed.
@@ -53,19 +67,19 @@ function rng(seed: number): () => number {
 }
 
 // Daily-movement profile per account, keyed by demo account NAME (everything else is flat:
-// EPF/FDs/insurance/property/PMS/AIF statements don't tick daily — exactly the user's ask).
-// vol = daily σ, drift = expected move over the whole month.
+// EPF/FDs/insurance/property statements don't tick daily — exactly the user's ask).
+// vol = daily σ, drift = expected ANNUAL move (converted to per-trading-day in the walk).
 const MOVERS: Record<string, { vol: number; drift: number; weekends?: boolean }> = {
-  "Zerodha Demat": { vol: 0.009, drift: 0.025 },
-  "Equity Mutual Funds": { vol: 0.007, drift: 0.02 },
-  "Groww Mutual Funds": { vol: 0.007, drift: 0.02 },
-  "Debt Funds": { vol: 0.0006, drift: 0.0055 },
-  "NPS Tier-1": { vol: 0.004, drift: 0.015 },
-  "Gold": { vol: 0.005, drift: 0.015, weekends: true },
-  "Morgan Stanley (RSU/ESPP)": { vol: 0.011, drift: 0.02 },
-  "Schwab Brokerage": { vol: 0.002, drift: 0.004 },
-  "Crypto Wallet": { vol: 0.025, drift: 0.05, weekends: true },
-  "HUF Demat": { vol: 0.009, drift: 0.02 },
+  "Zerodha Demat": { vol: 0.009, drift: 0.13 },
+  "Equity Mutual Funds": { vol: 0.007, drift: 0.12 },
+  "Groww Mutual Funds": { vol: 0.007, drift: 0.12 },
+  "Debt Funds": { vol: 0.0006, drift: 0.067 },
+  "NPS Tier-1": { vol: 0.004, drift: 0.095 },
+  "Gold": { vol: 0.005, drift: 0.1, weekends: true },
+  "Morgan Stanley (RSU/ESPP)": { vol: 0.011, drift: 0.11 },
+  "Schwab Brokerage": { vol: 0.002, drift: 0.05 },
+  "Crypto Wallet": { vol: 0.025, drift: 0.35, weekends: true },
+  "HUF Demat": { vol: 0.009, drift: 0.12 },
 };
 
 const isWeekend = (date: string): boolean => {
@@ -79,8 +93,7 @@ const isWeekend = (date: string): boolean => {
 function synthesizeHistory(accounts: Account[], todayByAccount: Record<string, number>):
   { snapshots: DailySnapshot[]; flows: FlowEvent[] } {
   const nameById = new Map(accounts.map((a) => [a.id, a.name]));
-  const firstDayFor = (name: string): number =>
-    name === "Groww Mutual Funds" ? DEMO_MF_DAYS_AGO : name === "Plot — Alibaug" ? DEMO_PLOT_DAYS_AGO : DEMO_HISTORY_DAYS;
+  const firstDayFor = (name: string): number => DEMO_ENTERS[name]?.daysAgo ?? DEMO_HISTORY_DAYS;
 
   // Per-account daily values, walked back from today. valuesByAccount[id][daysAgo].
   const valuesByAccount = new Map<string, Map<number, number>>();
@@ -96,7 +109,7 @@ function synthesizeHistory(accounts: Account[], todayByAccount: Record<string, n
         const tradingDay = mover.weekends || !isWeekend(dayStr(daysAgo - 1));
         if (tradingDay) {
           const noise = (rand() + rand() - 1) * mover.vol; // ~triangular, mean 0
-          const r = mover.drift / (DEMO_HISTORY_DAYS * 0.72) + noise; // ÷ trading days
+          const r = mover.drift / (mover.weekends ? 365 : 252) + noise; // annual → per moving day
           v = v / (1 + r);
         }
       }
@@ -116,21 +129,18 @@ function synthesizeHistory(accounts: Account[], todayByAccount: Record<string, n
     snapshots.push(day);
   }
 
-  const idOf = (name: string) => accounts.find((a) => a.name === name)!.id;
-  const growwId = idOf("Groww Mutual Funds");
-  const plotId = idOf("Plot — Alibaug");
-  const flows: FlowEvent[] = [
-    {
-      id: id(), date: dayStr(DEMO_MF_DAYS_AGO), accountId: growwId,
-      amount: valuesByAccount.get(growwId)!.get(DEMO_MF_DAYS_AGO)!,
-      kind: "flow", source: "account_added", label: "Opened Groww folio with new savings",
-    },
-    {
-      id: id(), date: dayStr(DEMO_PLOT_DAYS_AGO), accountId: plotId,
-      amount: valuesByAccount.get(plotId)!.get(DEMO_PLOT_DAYS_AGO)!,
-      kind: "tracking", source: "account_added", label: "Started tracking — plot, Alibaug",
-    },
-  ];
+  // One ledger event per late-joining account, valued at its entry-day level — the step in
+  // the recorded curve and the flows entry agree to the rupee by construction.
+  const flows: FlowEvent[] = accounts
+    .filter((a) => DEMO_ENTERS[a.name])
+    .map((a) => {
+      const e = DEMO_ENTERS[a.name];
+      return {
+        id: id(), date: dayStr(e.daysAgo), accountId: a.id,
+        amount: valuesByAccount.get(a.id)!.get(e.daysAgo)!,
+        kind: e.kind, source: "account_added" as const, label: e.label,
+      };
+    });
 
   return { snapshots, flows };
 }
