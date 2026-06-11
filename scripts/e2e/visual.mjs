@@ -44,8 +44,11 @@ const clickText = (page, text) =>
   }, text);
 
 if (!existsSync(join(ROOT, "dist", "index.html"))) execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
-const server = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort"], { cwd: ROOT, stdio: "pipe" });
-process.on("exit", () => server.kill());
+// detached + group-kill: killing only the npx wrapper orphans the vite server on linux,
+// whose inherited pipe FDs keep this process alive forever (see smoke.mjs — CI hung there).
+const server = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort"], { cwd: ROOT, stdio: "pipe", detached: true });
+const stopServer = () => { try { process.kill(-server.pid, "SIGTERM"); } catch { server.kill(); } };
+process.on("exit", stopServer);
 
 const browser = await puppeteer.launch({ executablePath: chromePath(), headless: "new", args: ["--no-sandbox", "--force-device-scale-factor=1"] });
 let failures = 0;
@@ -126,10 +129,11 @@ try {
   }
 } finally {
   await browser.close();
-  server.kill();
+  stopServer();
 }
 if (failures > 0) {
   console.error(`\nVisual: ${failures} screen(s) changed. Intentional? → npm run e2e:visual -- --update`);
   process.exit(1);
 }
 console.log("\nVisual: all screens match.");
+process.exit(0); // stray handles must never outlive the verdict

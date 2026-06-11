@@ -108,8 +108,12 @@ if (!existsSync(join(ROOT, "dist", "index.html"))) {
   console.log("dist/ missing — building…");
   execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
 }
-const server = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort"], { cwd: ROOT, stdio: "pipe" });
-process.on("exit", () => server.kill());
+// detached → vite gets its own process group we can kill whole. Killing only the npx
+// wrapper orphans the vite server underneath on linux, and its inherited pipe FDs keep
+// this process's event loop alive forever — every quick-gates e2e job hung exactly there.
+const server = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort"], { cwd: ROOT, stdio: "pipe", detached: true });
+const stopServer = () => { try { process.kill(-server.pid, "SIGTERM"); } catch { server.kill(); } };
+process.on("exit", stopServer);
 
 const browser = await puppeteer.launch({ executablePath: chromePath(), headless: "new", args: ["--no-sandbox"] });
 try {
@@ -239,5 +243,6 @@ try {
   console.log(`\nSmoke: ${passed} steps passed.`);
 } finally {
   await browser.close();
-  server.kill();
+  stopServer();
 }
+process.exit(process.exitCode ?? 0); // stray handles must never outlive the verdict
