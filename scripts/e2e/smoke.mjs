@@ -55,6 +55,26 @@ const clickText = (page, text) =>
   }, text);
 const store = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("sampatti.portfolio") ?? "null"));
 
+// Accessibility audit (axe-core, WCAG 2.0/2.1 A+AA). Serious/critical violations FAIL the
+// smoke — this audience (45–65, non-technical) is exactly who a11y regressions hurt.
+const AXE_SRC = join(ROOT, "node_modules", "axe-core", "axe.min.js");
+const a11yIssues = [];
+async function auditA11y(page, screenName) {
+  // Let the view fade/stagger animations finish — axe computes contrast THROUGH the
+  // mid-animation opacity and would flag the entire tab otherwise.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
+  await sleep(120);
+  await page.addScriptTag({ path: AXE_SRC });
+  const result = await page.evaluate(async () => {
+    const r = await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] } });
+    return r.violations.map((v) => ({
+      id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.length,
+      samples: v.nodes.slice(0, 3).map((n) => n.html.slice(0, 120)),
+    }));
+  });
+  for (const v of result) a11yIssues.push({ screen: screenName, ...v });
+}
+
 let passed = 0;
 async function step(name, fn) {
   try {
@@ -117,6 +137,7 @@ try {
     await waitFor(page, () => bodyHas(page, "Net worth"), "hero");
     if (!(await bodyHas(page, "Cr"))) throw new Error("crore-scale figure missing");
     if (!(await bodyHas(page, "you own"))) throw new Error("assets/loans line missing");
+    await auditA11y(page, "Overview");
   });
 
   await step("Performance: stack, Measured card, By-account grouping", async () => {
@@ -125,6 +146,7 @@ try {
     if (!(await bodyHas(page, "Measured"))) throw new Error("coverage card missing");
     await clickText(page, "By account");
     await waitFor(page, () => page.evaluate(() => /·\s*\d+ holdings?/.test(document.body.innerText)), "account subtotal header");
+    await auditA11y(page, "Performance");
   });
 
   await step("Manage and AI Analysis render their key affordances", async () => {
@@ -133,6 +155,7 @@ try {
     await clickText(page, "AI Analysis");
     await waitFor(page, () => bodyHas(page, "Analyze my portfolio"), "analyze CTA");
     if (!(await bodyHas(page, "Am I too dependent on one stock?"))) throw new Error("example questions missing");
+    await auditA11y(page, "Manage+Analysis");
   });
 
   await step("Privacy: export gives visible feedback (the silent-export regression)", async () => {
@@ -140,6 +163,7 @@ try {
     await waitFor(page, () => bodyHas(page, "Where your data lives"), "privacy header");
     await clickText(page, "Export everything");
     await waitFor(page, () => bodyHas(page, "Saved to sampatti-portfolio"), "export confirmation note");
+    await auditA11y(page, "Privacy");
   });
 
   await step("erase wipes the store completely", async () => {
@@ -151,6 +175,16 @@ try {
     if (p !== null && (p.accounts?.length || p.holdings?.length)) throw new Error("data survived the wipe");
     const caches = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("sampatti.")));
     if (caches.length > 0) throw new Error(`caches survived: ${caches.join(", ")}`);
+  });
+
+  await step("accessibility: no serious/critical WCAG A/AA violations", async () => {
+    const bad = a11yIssues.filter((v) => v.impact === "serious" || v.impact === "critical");
+    const minor = a11yIssues.filter((v) => v.impact !== "serious" && v.impact !== "critical");
+    if (minor.length) console.log(`    (a11y notes, non-blocking: ${minor.map((v) => `${v.screen}:${v.id}×${v.nodes}`).join(", ")})`);
+    if (bad.length) {
+      for (const v of bad) console.error(`    ${v.screen} ${v.id} samples:\n      ${v.samples.join("\n      ")}`);
+      throw new Error(bad.map((v) => `${v.screen}: [${v.impact}] ${v.id} — ${v.help} (${v.nodes} nodes)`).join(" | "));
+    }
   });
 
   await step("no uncaught page exceptions anywhere in the journey", async () => {

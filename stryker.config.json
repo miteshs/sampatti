@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/api/schema/stryker-core.json",
+  "_comment": "One-off diagnostic, not a CI gate: measures whether the domain tests actually assert. Run: npm run mutate (scoped to the money-math modules to keep runtime sane).",
+  "testRunner": "vitest",
+  "mutate": [
+    "src/domain/verdicts.ts",
+    "src/domain/buckets.ts",
+    "src/domain/snapshots.ts",
+    "src/domain/flows.ts",
+    "src/domain/basisHistory.ts"
+  ],
+  "vitest": { "configFile": "vite.config.ts" },
+  "reporters": ["clear-text", "progress"],
+  "thresholds": { "high": 85, "low": 70, "break": null },
+  "tempDirName": ".stryker-tmp",
+  "incremental": false
+}

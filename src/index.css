@@ -23,8 +23,10 @@
   --amber-soft: #fbf1e2;
   --rose: #e5485f;
   --rose-soft: #fdecef;
-  --up: #1a9e6b;
+  --up: #1a9e6b; /* charts/fills (graphics need 3:1) */
   --down: #d6455d;
+  --up-ink: #137a52; /* TEXT-grade variants: ≥4.5:1 on white/paper */
+  --down-ink: #c22f4c;
   --shadow: 0 1px 2px rgba(26, 31, 23, 0.05);
   --shadow-lg: 0 2px 6px rgba(26, 31, 23, 0.05), 0 16px 40px rgba(26, 31, 23, 0.09);
   --radius: 14px;
@@ -142,7 +144,7 @@ button { font-family: inherit; }
 .btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
 .btn-ghost:hover { background: var(--line-2); border-color: transparent; color: var(--ink); }
-.btn-danger { color: var(--rose); border-color: var(--rose-soft); background: var(--rose-soft); }
+.btn-danger { color: #b3263f; border-color: var(--rose-soft); background: var(--rose-soft); }
 .btn-danger:hover { border-color: var(--rose); background: var(--rose-soft); }
 
 :is(.btn, .chip, .nav button):focus-visible {
@@ -164,8 +166,8 @@ button { font-family: inherit; }
   font-size: 0.7rem; font-weight: 650; letter-spacing: 0.01em;
 }
 .badge-green { background: var(--emerald-soft); color: var(--emerald); }
-.badge-amber { background: #fbf1e2; color: #b06a14; }
-.badge-rose { background: var(--rose-soft); color: var(--rose); }
+.badge-amber { background: #fbf1e2; color: #8a5210; }
+.badge-rose { background: var(--rose-soft); color: #b3263f; }
 .badge-gray { background: var(--line-2); color: var(--ink-3); }
 
 /* ---- inputs ---- */
@@ -231,8 +233,8 @@ tr:last-child td { border-bottom: none; }
   display: inline-flex; align-items: center; gap: 0.3rem;
   padding: 0.22rem 0.6rem; border-radius: 999px; font-size: 0.82rem; font-weight: 650;
 }
-.delta-chip.up { background: var(--emerald-soft); color: #19724f; }
-.delta-chip.down { background: var(--rose-soft); color: var(--down); }
+.delta-chip.up { background: var(--emerald-soft); color: #155f43; }
+.delta-chip.down { background: var(--rose-soft); color: #ad2742; }
 .delta-chip.flat { background: var(--line-2); color: var(--ink-2); }
 
 /* ---- staggered reveal for the Overview load (one orchestrated moment) ---- */

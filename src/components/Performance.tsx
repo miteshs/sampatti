@@ -10,7 +10,7 @@ import { holdingBase, holdingGain, inr, pct, type HoldingGain } from "../domain/
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { AccountStack } from "./AccountStack";
 
-const GREEN = "#1a9e6b", RED = "#d6455d";
+const GREEN = "#137a52", RED = "#c22f4c"; // text-grade (≥4.5:1)
 const signColor = (n: number) => (n >= 0 ? GREEN : RED);
 const signed = (n: number) => `${n >= 0 ? "+" : "−"}${inr(Math.abs(n))}`;
 const signedPct = (n: number) => `${n >= 0 ? "+" : ""}${n}%`;

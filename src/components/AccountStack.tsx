@@ -161,7 +161,7 @@ export function AccountStack() {
                   {joined ? (
                     <span className="muted" style={{ fontSize: "0.74rem" }}>from {joined.replace(" ", " ’")}</span>
                   ) : delta !== 0 ? (
-                    <span style={{ fontSize: "0.74rem", fontVariantNumeric: "tabular-nums", color: delta > 0 ? "#19724f" : "var(--down)" }}>
+                    <span style={{ fontSize: "0.74rem", fontVariantNumeric: "tabular-nums", color: delta > 0 ? "var(--up-ink)" : "var(--down-ink)" }}>
                       {delta > 0 ? "+" : "−"}{inr(Math.abs(delta))}
                     </span>
                   ) : null}

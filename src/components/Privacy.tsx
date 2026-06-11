@@ -98,7 +98,7 @@ export function Privacy() {
         {s.claudeMode === "relay" ? (
           <div>
             <label>Relay URL</label>
-            <input placeholder="https://your-relay.workers.dev" value={s.relayUrl} onChange={(e) => updateSettings({ relayUrl: e.target.value })} />
+            <input aria-label="Relay URL" placeholder="https://your-relay.workers.dev" value={s.relayUrl} onChange={(e) => updateSettings({ relayUrl: e.target.value })} />
             <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
               The relay holds the Anthropic key server-side and forwards your brief without storing it.
               {!s.relayUrl && <> <strong>No relay is set yet</strong> — deploy <code>relay/</code> (see its
@@ -121,7 +121,7 @@ export function Privacy() {
               </div>
             ) : (
               <div style={{ display: "flex", gap: "0.5rem" }}>
-                <input type="password" placeholder="sk-ant-…" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} />
+                <input type="password" aria-label="Anthropic API key" placeholder="sk-ant-…" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} />
                 <button className="btn btn-primary" onClick={saveKey}>Save key</button>
               </div>
             )}
@@ -169,7 +169,7 @@ export function Privacy() {
         <div style={{ maxWidth: 320 }}>
           <label>USD → INR rate (for US holdings)</label>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <input type="number" style={{ maxWidth: 130 }} value={s.usdInr}
+            <input type="number" aria-label="USD to INR rate" style={{ maxWidth: 130 }} value={s.usdInr}
               onChange={(e) => updateSettings({ usdInr: Number(e.target.value) || s.usdInr })} />
             <button className="btn btn-ghost" onClick={refreshRate} disabled={fxBusy}>
               {fxBusy ? <span className="spinner" /> : "↻ Fetch live"}

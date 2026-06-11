@@ -16,6 +16,17 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+# MUTUAL EXCLUSION: a concurrent `npm run tauri build` (personal, token-ful) once rewrote
+# dist/ mid-release and contaminated the public bundle — caught by the token grep below,
+# but don't even allow the race. (A binary-level grep is NOT used: Tauri brotli-compresses
+# embedded assets, so `strings` can't see the token; the dist grep after a solo build is
+# the sound check.)
+LOCK="/tmp/sampatti-release.lock.d"
+if ! mkdir "$LOCK" 2>/dev/null; then
+  echo "✗ Another build appears to be running ($LOCK held) — finish it first."; exit 1
+fi
+trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+
 RELEASES_REPO="miteshs/sampatti-releases"
 GH_RELEASE=0
 TAP_DIR=""
@@ -67,6 +78,10 @@ if [ "$SIGNED" = "1" ]; then
   echo "✓ Signed, notarized & stapled (spctl accepted)"
   echo "  → once this release ships, DELETE the postflight block from the cask."
 fi
+
+# Artifact sanity: the bundled app must carry exactly the version being released.
+PLIST_V=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Contents/Info.plist" 2>/dev/null || echo "?")
+[ "$PLIST_V" = "$VERSION" ] || { echo "✗ Bundled app version $PLIST_V != $VERSION — not releasing."; exit 1; }
 
 SHA=$(shasum -a 256 "$DMG" | awk '{print $1}')
 SIZE=$(du -h "$DMG" | awk '{print $1}')

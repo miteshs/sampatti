@@ -13,7 +13,7 @@ import { flowsInWindow, incomeOverWindow } from "../domain/flows";
 import { inr } from "../domain/format";
 import { TrendChart } from "./TrendChart";
 
-const GREEN = "#1a9e6b", RED = "#d6455d";
+const GREEN = "#137a52", RED = "#c22f4c"; // text-grade (≥4.5:1)
 const signedInr = (n: number) => `${n >= 0 ? "+" : "−"}${inr(Math.abs(n))}`;
 
 export function NetWorthTrend() {
@@ -89,7 +89,7 @@ export function NetWorthTrend() {
         <div style={{ marginTop: "0.8rem" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: "0.8rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
             <div style={{ fontSize: "1.5rem", fontWeight: 750, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{inr(points[points.length - 1].netWorth)}</div>
-            <div style={{ fontWeight: 700, color: change.abs >= 0 ? "#1a9e6b" : "#d6455d" }}>
+            <div style={{ fontWeight: 700, color: change.abs >= 0 ? GREEN : RED }}>
               {change.abs >= 0 ? "▲" : "▼"} {inr(Math.abs(change.abs))}{change.pct != null ? ` · ${change.pct >= 0 ? "+" : ""}${change.pct}%` : ""}
               <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> over {zoom ? "the selected range" : period}</span>
             </div>
