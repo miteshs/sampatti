@@ -79,7 +79,7 @@ export default function App() {
             {view === "analysis" && (hasData
               ? <AnalysisChat onConfigure={() => setView("privacy")} />
               : <Empty onAdd={() => setView("add")} />)}
-            {view === "add" && <AddData />}
+            {view === "add" && <AddData onConfigure={() => setView("privacy")} />}
             {view === "privacy" && <Privacy />}
           </ErrorBoundary>
         </main>

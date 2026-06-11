@@ -31,7 +31,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { useStore } from "../storage/store";
 import { emptyPortfolio } from "../domain/types";
-import { generateForExtraction, streamAnalysis } from "./engine";
+import { engineFor, generateForExtraction, streamAnalysis, withExtractionEngine } from "./engine";
 
 const fetchSpy = vi.fn(async () => { throw new Error("network touched"); });
 
@@ -81,6 +81,28 @@ describe("local engine = zero network (the promise)", () => {
       { model: "claude-sonnet-4-6", max_tokens: 100, messages: [{ role: "user", content: "hi" }] },
     );
     expect(invokeLog.map((c) => c.cmd)).toEqual(["claude_stream"]);
+    expect(invokeLog.some((c) => c.cmd === "local_generate")).toBe(false);
+  });
+});
+
+describe("withExtractionEngine — the 'use Claude this time' batch override", () => {
+  it("forces extraction (only) for the scope of the batch, restores after — even on throw", async () => {
+    setEngines("local", "local");
+    expect(engineFor("extraction")).toBe("local");
+    await withExtractionEngine("claude", async () => {
+      expect(engineFor("extraction")).toBe("claude");
+      expect(engineFor("analysis")).toBe("local"); // analysis routing untouched
+    });
+    expect(engineFor("extraction")).toBe("local");
+    await expect(withExtractionEngine("claude", async () => { throw new Error("boom"); })).rejects.toThrow("boom");
+    expect(engineFor("extraction")).toBe("local"); // restored on failure too
+  });
+
+  it("a forced-claude batch never touches the local engine", async () => {
+    setEngines("local", "local");
+    // The claude transport may fail in this mocked env — irrelevant; the assertion is the
+    // negative: with the override active, extraction must not invoke local_generate.
+    await withExtractionEngine("claude", () => generateForExtraction("text")).catch(() => {});
     expect(invokeLog.some((c) => c.cmd === "local_generate")).toBe(false);
   });
 });

@@ -3,8 +3,9 @@ import { useStore } from "../storage/store";
 import { keyStoreName } from "../platform";
 import { demoPortfolio } from "../demo";
 import { classifyFile, ingestFile, ingestPdf, ingestWithClaude, isImportable, NeedsClaudeError, PdfPasswordError } from "../ingest";
+import { filesForClaude, planBatch } from "../ingest/consent";
 import { findCrossAccountDuplicates } from "../ingest/reconcile";
-import { engineFor } from "../ai/engine";
+import { engineFor, localModelStatus, withExtractionEngine } from "../ai/engine";
 import { inr } from "../domain/format";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
@@ -12,7 +13,7 @@ import {
 import { findMatchingAccount } from "../domain/types";
 import { fetchGoldPerGramInr } from "../domain/gold";
 import type {
-  Account, AccountType, AssetClass, FlowKind, Holding, ImportDraft, IncomeKind, Region, TaxTreatment,
+  Account, AccountType, AiEngine, AssetClass, FlowKind, Holding, ImportDraft, IncomeKind, Region, TaxTreatment,
 } from "../domain/types";
 
 const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
@@ -36,23 +37,40 @@ type Pending = { key: string; draft: ImportDraft };
 let draftSeq = 0;
 const wrapDrafts = (ds: ImportDraft[]): Pending[] => ds.map((draft) => ({ key: `d${draftSeq++}`, draft }));
 
-export function AddData() {
+export function AddData({ onConfigure }: { onConfigure?: () => void }) {
   const { replaceAll, addDraft, mergeDraftInto, addAccount, addHolding, addIncome, wipe, portfolio } = useStore();
   const [drafts, setDrafts] = useState<Pending[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [pendingBatch, setPendingBatch] = useState<File[] | null>(null);
+  // A gated batch remembers which engine the user consented to — "use Claude this time"
+  // must not silently route to the (absent) local model, and vice versa.
+  const [pendingBatch, setPendingBatch] = useState<{ files: File[]; engine: AiEngine } | null>(null);
+  // Local engine chosen but the model isn't on disk: these files wait for download-or-Claude.
+  const [modelGate, setModelGate] = useState<File[] | null>(null);
   const [skipped, setSkipped] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
   const [needsClaude, setNeedsClaude] = useState<{ file: File; reason: string }[]>([]);
   // Password-protected PDFs (a CAS, usually) waiting for their password — decrypted and
-  // parsed on this device when provided.
-  const [lockedPdfs, setLockedPdfs] = useState<{ file: File; error?: string }[]>([]);
+  // parsed on this device when provided. Each carries its batch's consented engine.
+  const [lockedPdfs, setLockedPdfs] = useState<{ file: File; engine: AiEngine; error?: string }[]>([]);
   const [pdfPassword, setPdfPassword] = useState("");
   const [unlockBusy, setUnlockBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
+
+  // Render-time engine state for copy and buttons. The authoritative model check for
+  // gating happens at pick time (gateBatch); this one just keeps the cards honest.
+  const extractionEngine = engineFor("extraction");
+  const [localReady, setLocalReady] = useState(false);
+  useEffect(() => {
+    if (extractionEngine !== "local") return;
+    let on = true;
+    localModelStatus()
+      .then((s) => { if (on) setLocalReady(s.state === "ready"); })
+      .catch(() => { if (on) setLocalReady(false); });
+    return () => { on = false; };
+  }, [extractionEngine]);
 
   const hasData = portfolio.holdings.length > 0 || portfolio.accounts.length > 0;
 
@@ -105,45 +123,64 @@ export function AddData() {
       setErrors(["No importable files found — supported types are CSV, Excel, PDF, and images."]);
       return;
     }
-    // If anything needs Claude, confirm the whole batch first; otherwise just parse.
-    if (importable.some((f) => classifyFile(f) !== "local")) setPendingBatch(importable);
-    else void runBatch(importable);
+    void gateBatch(importable);
+  };
+
+  // Engine-aware consent gate. Nothing that stays on this device needs a warning; anything
+  // bound for Claude needs the consent card; the local engine without its model on disk
+  // gets a download-or-Claude choice instead of a silent failure.
+  const gateBatch = async (files: File[]) => {
+    const engine = engineFor("extraction");
+    const classes = files.map(classifyFile);
+    const ready = engine === "local" && classes.some((c) => c === "ai-text")
+      ? await localModelStatus().then((s) => s.state === "ready").catch(() => false)
+      : false;
+    const plan = planBatch(classes, engine, ready);
+    if (plan === "run") void runBatch(files, engine);
+    else if (plan === "confirm") setPendingBatch({ files, engine });
+    else setModelGate(files);
   };
 
   // Process a batch sequentially so progress is visible, cost is predictable, and one bad
-  // file never aborts the rest — failures are collected and shown at the end.
-  const runBatch = async (files: File[]) => {
+  // file never aborts the rest — failures are collected and shown at the end. The whole
+  // batch runs under the engine the user consented to (a "use Claude this time" override
+  // never touches the saved setting).
+  const runBatch = async (files: File[], engine: AiEngine = engineFor("extraction")) => {
     setPendingBatch(null);
+    setModelGate(null);
     const errs: string[] = [];
     let done = 0;
-    for (const f of files) {
-      setBusy(`Processing ${++done} of ${files.length}: ${f.name}…`);
-      try {
-        const result = await ingestFile(f);
-        setDrafts((d) => [...d, ...wrapDrafts(result)]);
-      } catch (e) {
-        // Unrecognized CSV/Excel → offer Claude rather than just failing.
-        if (e instanceof NeedsClaudeError) {
-          setNeedsClaude((n) => [...n, { file: e.file, reason: e.message }]);
-        } else if (e instanceof PdfPasswordError) {
-          // Locked PDF (usually a CAS) → ask for the password, decrypt locally, retry.
-          setLockedPdfs((l) => [...l, { file: e.file }]);
-        } else {
-          errs.push(`${f.name}: ${e instanceof Error ? e.message : String(e)}`);
+    await withExtractionEngine(engine, async () => {
+      for (const f of files) {
+        setBusy(`Processing ${++done} of ${files.length}: ${f.name}…`);
+        try {
+          const result = await ingestFile(f);
+          setDrafts((d) => [...d, ...wrapDrafts(result)]);
+        } catch (e) {
+          // Unrecognized CSV/Excel → offer the AI fallback rather than just failing.
+          if (e instanceof NeedsClaudeError) {
+            setNeedsClaude((n) => [...n, { file: e.file, reason: e.message }]);
+          } else if (e instanceof PdfPasswordError) {
+            // Locked PDF (usually a CAS) → ask for the password, decrypt locally, retry.
+            setLockedPdfs((l) => [...l, { file: e.file, engine }]);
+          } else {
+            errs.push(`${f.name}: ${e instanceof Error ? e.message : String(e)}`);
+          }
         }
       }
-    }
+    });
     setBusy(null);
     setErrors(errs);
   };
 
-  // Retry a locked PDF with the supplied password — everything stays on this device.
-  const unlockPdf = async (file: File) => {
+  // Retry a locked PDF with the supplied password — decryption stays on this device. A CAS
+  // then parses fully locally; a non-CAS PDF continues under its batch's consented engine.
+  const unlockPdf = async (file: File, engine: AiEngine) => {
     const pw = pdfPassword.trim();
     if (!pw) return;
     setUnlockBusy(true);
     try {
-      const result = await ingestPdf(file, pw);
+      const result = await withExtractionEngine(engine, () => ingestPdf(file, pw));
       setDrafts((d) => [...d, ...wrapDrafts(result)]);
       setLockedPdfs((l) => l.filter((x) => x.file !== file));
       setPdfPassword("");
@@ -159,15 +196,16 @@ export function AddData() {
     }
   };
 
-  // Opt-in fallback for a file local parsing couldn't read — sends it to Claude.
-  const parseWithClaude = async (file: File) => {
+  // Opt-in AI fallback for a file local parsing couldn't read — routed to the chosen
+  // engine, or forced to Claude when the local model isn't downloaded.
+  const parseWithAi = async (file: File, engine: AiEngine = engineFor("extraction")) => {
     setAiBusy(file.name);
     try {
-      const result = await ingestWithClaude(file);
+      const result = await withExtractionEngine(engine, () => ingestWithClaude(file));
       setDrafts((d) => [...d, ...wrapDrafts(result)]);
       setNeedsClaude((n) => n.filter((x) => x.file !== file));
     } catch (e) {
-      setErrors((er) => [...er, `${file.name} (Claude): ${e instanceof Error ? e.message : String(e)}`]);
+      setErrors((er) => [...er, `${file.name} (${engine === "local" ? "on-device AI" : "Claude"}): ${e instanceof Error ? e.message : String(e)}`]);
     } finally {
       setAiBusy(null);
     }
@@ -208,12 +246,16 @@ export function AddData() {
         <p className="muted" style={{ fontSize: "0.78rem", marginTop: "0.7rem" }}>
           Pick several files or a whole folder of statements at once. CSV, Excel and{" "}
           <strong>CAS PDFs (CAMS/KFintech &amp; NSDL/CDSL)</strong> — password and all — are parsed entirely on this
-          device; other PDFs and screenshots are read with Claude (you'll confirm the batch
-          first). If a layout can't be read automatically, you'll be offered the option to parse
-          it with Claude. Unsupported files are skipped.
+          device;{" "}
+          {extractionEngine === "local" && localReady
+            ? <>other PDFs are read by the <strong>on-device model</strong>, so they never leave this
+              computer either. Screenshots still use Claude (you'll confirm those first).</>
+            : <>other PDFs and screenshots are read with Claude (you'll confirm the batch first).</>}{" "}
+          If a layout can't be read automatically, you'll be offered an AI option. Unsupported
+          files are skipped.
         </p>
         {busy && <div style={{ marginTop: "0.7rem" }}><span className="spinner" /> <span className="muted">{busy}</span></div>}
-        {!busy && skipped > 0 && !pendingBatch && (
+        {!busy && skipped > 0 && !pendingBatch && !modelGate && (
           <div className="muted" style={{ marginTop: "0.7rem", fontSize: "0.78rem" }}>
             {skipped} unsupported file{skipped > 1 ? "s" : ""} skipped.
           </div>
@@ -239,7 +281,7 @@ export function AddData() {
       </div>
 
       {/* Password-protected PDFs (usually a CAS) — unlock & parse on this device */}
-      {lockedPdfs.map(({ file, error }, i) => (
+      {lockedPdfs.map(({ file, engine, error }, i) => (
         <div key={`lock-${i}`} className="card" style={{ borderLeft: "3px solid var(--primary)", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
           <h3 style={{ fontSize: "0.98rem" }}>🔒 {file.name} is password-protected</h3>
           <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem", maxWidth: 560 }}>
@@ -251,9 +293,9 @@ export function AddData() {
             <input
               type="password" placeholder="PDF password" value={pdfPassword}
               onChange={(e) => setPdfPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && void unlockPdf(file)}
+              onKeyDown={(e) => e.key === "Enter" && void unlockPdf(file, engine)}
             />
-            <button className="btn btn-primary" disabled={unlockBusy || !pdfPassword.trim()} onClick={() => void unlockPdf(file)}>
+            <button className="btn btn-primary" disabled={unlockBusy || !pdfPassword.trim()} onClick={() => void unlockPdf(file, engine)}>
               {unlockBusy ? <span className="spinner" /> : "Unlock & import"}
             </button>
             <button className="btn btn-ghost" onClick={() => setLockedPdfs((l) => l.filter((x) => x.file !== file))}>Skip</button>
@@ -262,61 +304,100 @@ export function AddData() {
         </div>
       ))}
 
-      {/* Files local parsing couldn't read — offer Claude, per file */}
-      {needsClaude.map(({ file, reason }, i) => (
-        <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "linear-gradient(135deg,#fff8ec,#fff)" }}>
-          <h3 style={{ fontSize: "0.98rem" }}>Couldn't auto-read {file.name}</h3>
-          <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
-            {reason}{" "}
-            {engineFor("extraction") === "local"
-              ? "Parse it with the on-device model — nothing leaves this device — or skip it. You'll review the result before saving."
-              : `Send it to Claude ${portfolio.settings.claudeMode === "byo" ? "with your own key" : "via the relay"} to extract the holdings — you'll review the result before saving — or skip it.`}
-          </p>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <button className="btn btn-primary" disabled={aiBusy === file.name} onClick={() => void parseWithClaude(file)}>
-              {aiBusy === file.name ? <span className="spinner" /> : engineFor("extraction") === "local" ? "🔒 Parse on this device" : "✨ Parse with Claude"}
-            </button>
-            <button className="btn btn-ghost" onClick={() => setNeedsClaude((n) => n.filter((x) => x.file !== file))}>Skip</button>
+      {/* Files local parsing couldn't read — offer the AI fallback, per file */}
+      {needsClaude.map(({ file, reason }, i) => {
+        const localBlocked = extractionEngine === "local" && !localReady;
+        return (
+          <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "linear-gradient(135deg,#fff8ec,#fff)" }}>
+            <h3 style={{ fontSize: "0.98rem" }}>Couldn't auto-read {file.name}</h3>
+            <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
+              {reason}{" "}
+              {extractionEngine === "local"
+                ? (localBlocked
+                  ? "Your import engine is set to on-device AI, but the model isn't downloaded yet (Privacy → AI engines). Send just this file to Claude instead, or skip it."
+                  : "Parse it with the on-device model — nothing leaves this device — or skip it. You'll review the result before saving.")
+                : `Send it to Claude ${portfolio.settings.claudeMode === "byo" ? "with your own key" : "via the relay"} to extract the holdings — you'll review the result before saving — or skip it.`}
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <button className="btn btn-primary" disabled={aiBusy === file.name} onClick={() => void parseWithAi(file, localBlocked ? "claude" : undefined)}>
+                {aiBusy === file.name
+                  ? <span className="spinner" />
+                  : localBlocked ? "✨ Parse with Claude instead" : extractionEngine === "local" ? "🔒 Parse on this device" : "✨ Parse with Claude"}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setNeedsClaude((n) => n.filter((x) => x.file !== file))}>Skip</button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
-      {/* Confirm the batch before any document is sent to Claude */}
+      {/* Confirm the batch before any document is sent to Claude. Only files that actually
+          LEAVE the device are listed as going to Claude — under the local engine that is
+          just the images; text files stay here and never gate. */}
       {pendingBatch && (() => {
-        const aiFiles = pendingBatch.filter((f) => classifyFile(f) !== "local");
-        const localCount = pendingBatch.length - aiFiles.length;
-        const n = pendingBatch.length;
+        const { files, engine } = pendingBatch;
+        const claudeFiles = filesForClaude(files, classifyFile, engine);
+        const localCount = files.length - claudeFiles.length;
+        const n = files.length;
         return (
           <div className="card" style={{ borderColor: "#e0e0ff", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
             <h3 style={{ fontSize: "1rem" }}>Import {n} file{n > 1 ? "s" : ""}?</h3>
             <ul className="muted" style={{ fontSize: "0.84rem", margin: "0.4rem 0 0.8rem", paddingLeft: "1.1rem", lineHeight: 1.7 }}>
               {localCount > 0 && (
-                <li><strong>{localCount}</strong> parsed on this device (CSV/Excel) — never sent anywhere.</li>
-              )}
-              {aiFiles.length > 0 && (
                 <li>
-                  <strong>{aiFiles.length}</strong>{" "}
-                  {engineFor("extraction") === "local"
-                    ? "parsed by the on-device model (text files; nothing leaves this device — images/scans still use Claude)"
-                    : `sent to Claude ${portfolio.settings.claudeMode === "byo" ? "with your own API key" : "via the relay"}`}{" "}
+                  <strong>{localCount}</strong> parsed on this device{engine === "local" ? " (spreadsheets, CAS & text PDFs)" : " (CSV/Excel)"} — never sent anywhere.
+                </li>
+              )}
+              {claudeFiles.length > 0 && (
+                <li>
+                  <strong>{claudeFiles.length}</strong>{" "}
+                  {engine === "local" ? "images/scans " : ""}sent to Claude{" "}
+                  {portfolio.settings.claudeMode === "byo" ? "with your own API key" : "via the relay"}
+                  {engine === "local" ? " — the on-device model reads text only —" : ""}{" "}
                   to extract holdings — not stored. You'll review each before saving.
                 </li>
               )}
               {skipped > 0 && <li>{skipped} unsupported file{skipped > 1 ? "s" : ""} skipped.</li>}
             </ul>
-            {aiFiles.length > 0 && (
+            {claudeFiles.length > 0 && (
               <details style={{ marginBottom: "0.7rem" }}>
                 <summary className="muted" style={{ fontSize: "0.78rem", cursor: "pointer" }}>
-                  Show the {aiFiles.length} file{aiFiles.length > 1 ? "s" : ""} going to Claude
+                  Show the {claudeFiles.length} file{claudeFiles.length > 1 ? "s" : ""} going to Claude
                 </summary>
                 <div className="muted" style={{ fontSize: "0.76rem", marginTop: "0.3rem", maxHeight: 140, overflow: "auto" }}>
-                  {aiFiles.map((f, i) => <div key={i}>• {f.name}</div>)}
+                  {claudeFiles.map((f, i) => <div key={i}>• {f.name}</div>)}
                 </div>
               </details>
             )}
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="btn btn-primary" onClick={() => void runBatch(pendingBatch)}>Import {n} file{n > 1 ? "s" : ""}</button>
+              <button className="btn btn-primary" onClick={() => void runBatch(files, engine)}>Import {n} file{n > 1 ? "s" : ""}</button>
               <button className="btn btn-ghost" onClick={() => { setPendingBatch(null); setSkipped(0); }}>Cancel</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Local engine selected but the model isn't on disk — choose: download it (Privacy)
+          or send this batch to Claude just this once. Nothing runs until they choose. */}
+      {modelGate && (() => {
+        const aiCount = modelGate.filter((f) => classifyFile(f) !== "local").length;
+        return (
+          <div className="card" style={{ borderLeft: "3px solid var(--primary)", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
+            <h3 style={{ fontSize: "1rem" }}>🔒 On-device AI is selected — but the model isn't downloaded</h3>
+            <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.8rem", maxWidth: 600 }}>
+              {aiCount} of these {modelGate.length} file{modelGate.length > 1 ? "s" : ""} need{aiCount === 1 ? "s" : ""} AI
+              to read, and your import engine is set to the on-device model (Privacy → AI engines) —
+              but the model isn't on this computer yet. Download it once and imports stay fully
+              private, or send {aiCount === 1 ? "this file" : "these files"} to Claude just this time.
+              Your saved setting doesn't change either way.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {onConfigure && (
+                <button className="btn btn-primary" onClick={() => onConfigure()}>⬇ Download the model (Privacy)</button>
+              )}
+              <button className="btn" onClick={() => { const files = modelGate; setModelGate(null); setPendingBatch({ files, engine: "claude" }); }}>
+                ✨ Use Claude this time
+              </button>
+              <button className="btn btn-ghost" onClick={() => { setModelGate(null); setSkipped(0); }}>Cancel</button>
             </div>
           </div>
         );

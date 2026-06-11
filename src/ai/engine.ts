@@ -12,11 +12,27 @@ import type { AiEngine } from "../domain/types";
 
 export type AiTask = "extraction" | "analysis";
 
+// One-shot batch override — "use Claude just this once" when the local model isn't
+// downloaded (the saved setting is never touched). Scoped: set for the duration of one
+// batch's promise chain, always restored, even when the batch throws.
+let extractionOverride: AiEngine | null = null;
+
+export async function withExtractionEngine<T>(engine: AiEngine, fn: () => Promise<T>): Promise<T> {
+  const prev = extractionOverride;
+  extractionOverride = engine;
+  try {
+    return await fn();
+  } finally {
+    extractionOverride = prev;
+  }
+}
+
 export function engineFor(task: AiTask): AiEngine {
-  const ai = useStore.getState().portfolio.settings.ai;
-  const chosen = task === "extraction" ? ai.extraction : ai.analysis;
   // The embedded model only exists inside the desktop shell; the web preview always Claude.
-  return isTauri() ? chosen : "claude";
+  if (!isTauri()) return "claude";
+  if (task === "extraction" && extractionOverride) return extractionOverride;
+  const ai = useStore.getState().portfolio.settings.ai;
+  return task === "extraction" ? ai.extraction : ai.analysis;
 }
 
 // ---- local model lifecycle (thin wrappers over the Rust commands) ------------

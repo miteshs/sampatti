@@ -45,7 +45,7 @@ Phase 1 — extraction on-device
 - [x] Rust `local_generate`: llama-cpp-2 inference, JSON-grammar (GBNF) constrained, token streaming over Channel
 - [x] `src/ai/engine.ts`: task routing; aiExtract goes through it; transport untouched for Claude path
 - [x] Privacy "AI engines" card: pickers + model manager UI (progress, remove, size/license shown)
-- [ ] Consent-card flow: local+ready → text PDFs/unrecognized sheets parse locally with no "sent to Claude" warning; local+absent → offer download or Claude; images → Claude consent as today
+- [x] Consent-card flow: local+ready → text PDFs/unrecognized sheets parse locally with no "sent to Claude" warning; local+absent → offer download or Claude (one-shot `withExtractionEngine` override, setting untouched); images → Claude consent as today — pure `planBatch` matrix + component tests
 - [x] Contract tests: no-network routing test + local_llm source-scan + settings migration
 - [ ] e2e: Privacy shows AI engines card; engine toggle persists (no model download in CI)
 - [x] Docs: PRIVACY.md + testing.md + README note

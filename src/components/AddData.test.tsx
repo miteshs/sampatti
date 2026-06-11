@@ -1,20 +1,31 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useStore } from "../storage/store";
 import { emptyPortfolio, type ImportDraft } from "../domain/types";
 
 // Mock the ingest layer so we can feed AddData a controlled set of multi-account drafts
-// without real files/parsing.
-const { ingestFileMock } = vi.hoisted(() => ({ ingestFileMock: vi.fn() }));
+// without real files/parsing. classifyFile is steerable so the consent-gate tests can
+// present text-PDF and image batches.
+const { ingestFileMock, classifyMock, aiMock } = vi.hoisted(() => ({
+  ingestFileMock: vi.fn(),
+  classifyMock: vi.fn((_f: File): string => "local"),
+  // Steerable engine state for the consent-gate tests (claude by default, like the app).
+  aiMock: { engine: "claude" as "claude" | "local", ready: false },
+}));
 vi.mock("../ingest", () => ({
-  classifyFile: () => "local",
-  isImportable: (f: File) => f.name.endsWith(".csv"),
+  classifyFile: classifyMock,
+  isImportable: (f: File) => /\.(csv|pdf|png)$/i.test(f.name),
   ingestFile: ingestFileMock,
   ingestPdf: vi.fn(),
   ingestWithClaude: vi.fn(),
   NeedsClaudeError: class NeedsClaudeError extends Error {},
   PdfPasswordError: class PdfPasswordError extends Error {},
+}));
+vi.mock("../ai/engine", () => ({
+  engineFor: () => aiMock.engine,
+  localModelStatus: async () => ({ state: aiMock.ready ? "ready" : "absent", size_bytes: 0, expected_bytes: 1, license: "" }),
+  withExtractionEngine: async (_e: string, fn: () => Promise<unknown>) => fn(),
 }));
 
 import { AddData } from "./AddData";
@@ -24,6 +35,10 @@ afterEach(() => {
   localStorage.clear();
   useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
   ingestFileMock.mockReset();
+  classifyMock.mockReset();
+  classifyMock.mockImplementation(() => "local");
+  aiMock.engine = "claude";
+  aiMock.ready = false;
 });
 
 const draft = (name: string, holdings: [string, number][]): ImportDraft => ({
@@ -64,6 +79,66 @@ describe("re-import keeps accounts straight (stable draft keys)", () => {
     // Each account updated to its OWN new statement value (not cross-merged).
     expect(p.holdings.filter((h) => h.accountId === a.id).map((h) => h.marketValue)).toEqual([111]);
     expect(p.holdings.filter((h) => h.accountId === b.id).map((h) => h.marketValue)).toEqual([222]);
+  });
+});
+
+// ---- the engine-aware consent gate (docs/local-ai.md: consent-card flow) ----
+// classify by extension: .pdf = AI-needed text, .png = image, else local.
+const classifyByExt = (f: File) => (f.name.endsWith(".png") ? "ai-image" : f.name.endsWith(".pdf") ? "ai-text" : "local");
+
+function pickFiles(...names: string[]) {
+  const input = document.querySelector('input[type="file"][accept]') as HTMLInputElement;
+  fireEvent.change(input, { target: { files: names.map((n) => new File(["x"], n)) } });
+}
+
+describe("engine-aware consent gate", () => {
+  it("claude engine: a text PDF still gates on the consent card (nothing runs unconfirmed)", async () => {
+    classifyMock.mockImplementation(classifyByExt);
+    render(<AddData />);
+    pickFiles("stmt.pdf");
+    expect(await screen.findByText(/Import 1 file\?/i)).toBeTruthy();
+    expect(ingestFileMock).not.toHaveBeenCalled();
+  });
+
+  it("local engine + model ready: text PDFs parse immediately with NO 'sent to Claude' card", async () => {
+    classifyMock.mockImplementation(classifyByExt);
+    aiMock.engine = "local";
+    aiMock.ready = true;
+    ingestFileMock.mockResolvedValueOnce([draft("PMS Statement", [["Alpha PMS", 100]])]);
+    render(<AddData />);
+    pickFiles("stmt.pdf");
+    await screen.findByText(/Review draft/i); // went straight to the review card
+    expect(screen.queryByText(/Import 1 file\?/i)).toBeNull();
+    expect(screen.queryByText(/going to Claude/i)).toBeNull();
+    expect(ingestFileMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("local engine + model ready: images still gate, listed as going to Claude", async () => {
+    classifyMock.mockImplementation(classifyByExt);
+    aiMock.engine = "local";
+    aiMock.ready = true;
+    render(<AddData />);
+    pickFiles("scan.png", "holdings.csv");
+    expect(await screen.findByText(/Import 2 files\?/i)).toBeTruthy();
+    expect(screen.getByText(/the on-device model reads text only/i)).toBeTruthy();
+    expect(ingestFileMock).not.toHaveBeenCalled();
+  });
+
+  it("local engine without the model: offers download-or-Claude, then full consent before sending", async () => {
+    classifyMock.mockImplementation(classifyByExt);
+    aiMock.engine = "local";
+    aiMock.ready = false;
+    ingestFileMock.mockResolvedValue([]);
+    render(<AddData />);
+    pickFiles("stmt.pdf");
+    expect(await screen.findByText(/model isn't downloaded/i)).toBeTruthy();
+    expect(ingestFileMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /Use Claude this time/i }));
+    // Choosing Claude still walks through the regular consent card — no silent send.
+    expect(await screen.findByText(/Import 1 file\?/i)).toBeTruthy();
+    expect(ingestFileMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /^Import 1 file/i }));
+    await waitFor(() => expect(ingestFileMock).toHaveBeenCalledTimes(1));
   });
 });
 

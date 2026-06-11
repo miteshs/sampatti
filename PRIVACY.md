@@ -18,7 +18,10 @@ no cloud database**. Nothing is uploaded for storage. Back it up or wipe it your
    never sent — and so are your **CAS PDFs** (the CAMS/KFintech mutual-fund CAS and the NSDL/CDSL depository CAS), including their password handling
    (decryption happens locally; the password is never stored). Other **PDFs or screenshots**
    can't be parsed reliably without AI, so — only after you click confirm — that one document
-   is sent to Claude to pull out the holdings, which you then review before saving.
+   is sent to Claude to pull out the holdings, which you then review before saving. (With the
+   on-device engine selected and its model downloaded, text PDFs skip this entirely — they are
+   parsed locally with no confirmation needed, because nothing leaves the device; images still
+   go to Claude with the usual confirm.)
 3. **Anonymous price lookups.** Refreshing live prices sends only tickers / scheme codes to
    public market-data services, and the USD→INR rate (fetched automatically when the app
    opens) asks for nothing but the public rate. Neither carries your holdings, amounts, or
