@@ -8,9 +8,14 @@
 //
 // Sync strategy: narration is generated FIRST; each scene's video runs exactly as long as
 // its audio (plus a breath), holding the last frame — so A/V sync is exact by construction.
+// Narration is synthesized sentence-by-sentence and stitched with real silence: Siri-quality
+// voices (Aman) ignore both `-r` and `[[slnc]]`, so pace and pauses must be edited in, not
+// asked for. No atempo speed-up — viewers flagged the old 172wpm-normalized track as rushed.
 // Frames come from CDP Page.startScreencast (jpeg, ack'd per frame) and are assembled with
 // ffmpeg's concat demuxer using real frame timestamps. Output: out/sampatti-demo-<region>.mp4
 // (1920×1200 H.264 + AAC). Outputs are artifacts (gitignored); the scripts are the source.
+//
+//   node scripts/demo-video/record.mjs --pron-test   # audition brand-name pronunciations
 
 import { spawn, execFileSync, execSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
@@ -41,7 +46,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const SCRIPTS = {
   IN: {
     voice: "Aman",
-    rate: 178,
+    rate: null, // Siri-quality voice: -r is ignored; its native pace is already conversational
+    pronounce: "Sampatti", // en-IN phonology reads the 'a's as schwas — correct as written
     label: "india",
     regionChip: "India",
     scenes: {
@@ -56,7 +62,10 @@ const SCRIPTS = {
   },
   US: {
     voice: "Samantha",
-    rate: 178,
+    rate: 150, // narration pace, not announcer pace
+    // en-US reads "Sampatti" as "sam-PAT-ee" (cat-vowels). सम्पत्ति is "sum-PUTT-ee";
+    // "Sumputty" gets Samantha there. Spoken text only — on-screen spelling is untouched.
+    pronounce: "Sumputty",
     label: "us",
     regionChip: "United States",
     scenes: {
@@ -71,19 +80,35 @@ const SCRIPTS = {
   },
 };
 
+const SENTENCE_GAP = 0.45; // breath between sentences, edited in as real silence
+
 function makeAudio(region, name, text) {
-  const aiff = join(OUT, `${region.label}-${name}.aiff`);
-  execFileSync("say", ["-v", region.voice, "-r", String(region.rate), "-o", aiff, text]);
-  const raw = parseFloat(execFileSync("ffprobe", [
-    "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", aiff,
+  const spoken = text.replaceAll("Sampatti", region.pronounce);
+  const sentences = spoken.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const parts = sentences.map((s, i) => {
+    const f = join(OUT, `${region.label}-${name}-s${i}.aiff`);
+    const args = ["-v", region.voice];
+    if (region.rate) args.push("-r", String(region.rate));
+    execFileSync("say", [...args, "-o", f, s]);
+    return f;
+  });
+  const wav = join(OUT, `${region.label}-${name}.wav`);
+  const n = parts.length;
+  const norm = parts.map((_, i) =>
+    `[${i}:a]aresample=48000,aformat=sample_fmts=s16:channel_layouts=mono[a${i}]`);
+  const gaps = parts.slice(1).map((_, i) =>
+    `aevalsrc=0:d=${SENTENCE_GAP}:s=48000,aformat=sample_fmts=s16:channel_layouts=mono[g${i}]`);
+  const seq = parts.map((_, i) => (i < n - 1 ? `[a${i}][g${i}]` : `[a${i}]`)).join("");
+  execFileSync("ffmpeg", [
+    "-y", "-loglevel", "error",
+    ...parts.flatMap((f) => ["-i", f]),
+    "-filter_complex", [...norm, ...gaps].join(";") + `;${seq}concat=n=${2 * n - 1}:v=0:a=1[out]`,
+    "-map", "[out]", wav,
+  ]);
+  const dur = parseFloat(execFileSync("ffprobe", [
+    "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", wav,
   ]).toString().trim());
-  // Neural voices ignore -r and can crawl through acronym-dense lines; normalize toward
-  // ~172wpm with pitch-preserving atempo (capped so it never sounds rushed).
-  const words = text.split(/\s+/).length;
-  const target = (words / 172) * 60;
-  const atempo = Math.min(1.32, Math.max(1, raw / target));
-  const dur = raw / atempo;
-  return { aiff, dur, atempo };
+  return { file: wav, dur };
 }
 
 // ---------- cursor + page helpers --------------------------------------------------------
@@ -96,7 +121,7 @@ async function installCursor(page) {
       position: "fixed", left: "640px", top: "500px", width: "22px", height: "22px",
       borderRadius: "50%", background: "rgba(30,30,30,.78)", border: "2.5px solid #fff",
       boxShadow: "0 2px 10px rgba(0,0,0,.45)", zIndex: 999999, pointerEvents: "none",
-      transition: "left .6s cubic-bezier(.3,.7,.25,1), top .6s cubic-bezier(.3,.7,.25,1), transform .18s ease",
+      transition: "left .85s cubic-bezier(.3,.7,.25,1), top .85s cubic-bezier(.3,.7,.25,1), transform .18s ease",
       transform: "translate(-50%,-50%)",
     });
     document.body.appendChild(c);
@@ -118,7 +143,7 @@ async function cursorTo(page, text, opts = {}) {
     const c = document.getElementById("demo-cursor");
     c.style.left = `${r.x}px`; c.style.top = `${r.y}px`;
   }, rect);
-  await sleep(700);
+  await sleep(950);
 }
 
 async function click(page, text, opts = {}) {
@@ -130,7 +155,7 @@ async function click(page, text, opts = {}) {
     const el = [...document.querySelectorAll(tags)].find((e) => e.textContent?.includes(text));
     el?.click();
   }, { text, tags: opts.tags ?? "button, summary, a" });
-  await sleep(450);
+  await sleep(650);
 }
 
 const park = async (page) => {
@@ -141,7 +166,7 @@ const park = async (page) => {
   await sleep(350);
 };
 
-const scroll = async (page, top, ms = 900) => {
+const scroll = async (page, top, ms = 1200) => {
   await page.evaluate((t) => window.scrollTo({ top: t, behavior: "smooth" }), top);
   await sleep(ms);
 };
@@ -191,9 +216,9 @@ function startCapture(cdp, dir) {
 }
 
 // Build one scene mp4: frames (real timestamps) + narration, video exactly audioDur+pads.
+const LEAD = 0.6, TAIL = 1.0; // settle-in / linger — scenes shouldn't slam into each other
 function buildScene(region, name, frames, t0, audio) {
-  const lead = 0.3, tail = 0.55;
-  const sceneDur = audio.dur + lead + tail;
+  const sceneDur = audio.dur + LEAD + TAIL;
   const listFile = join(OUT, `${region.label}-${name}.txt`);
   const lines = ["ffconcat version 1.0"];
   for (let i = 0; i < frames.length; i++) {
@@ -209,10 +234,10 @@ function buildScene(region, name, frames, t0, audio) {
   execFileSync("ffmpeg", [
     "-y", "-loglevel", "error",
     "-f", "concat", "-safe", "0", "-i", listFile,
-    "-i", audio.aiff,
+    "-i", audio.file,
     "-filter_complex",
     `[0:v]scale=1920:1200:flags=lanczos,format=yuv420p,fps=30[v];` +
-    `[1:a]${audio.atempo > 1.01 ? `atempo=${audio.atempo.toFixed(3)},` : ""}adelay=${Math.round(lead * 1000)}|${Math.round(lead * 1000)},apad,aresample=48000[a]`,
+    `[1:a]adelay=${Math.round(LEAD * 1000)}|${Math.round(LEAD * 1000)},apad,aresample=48000[a]`,
     "-map", "[v]", "-map", "[a]",
     "-c:v", "libx264", "-crf", "20", "-preset", "medium",
     "-c:a", "aac", "-b:a", "160k",
@@ -242,7 +267,7 @@ async function recordRegion(key, page, cdp) {
     const t0 = Date.now() / 1000;
     await cap.start();
     await sleep(350); // first frame lands
-    const budgetMs = (audio[name].dur + 0.3) * 1000;
+    const budgetMs = (audio[name].dur + LEAD) * 1000;
     const start = Date.now();
     await actions();
     const left = budgetMs - (Date.now() - start);
@@ -342,6 +367,20 @@ async function recordRegion(key, page, cdp) {
 }
 
 // ---------- main -----------------------------------------------------------------------------
+// Pronunciation can only be judged by ear: render the candidates and exit. Target is the
+// Hindi सम्पत्ति — "sum-PUTT-ee", never "sam-PAT-ee".
+if (process.argv.includes("--pron-test")) {
+  mkdirSync(OUT, { recursive: true });
+  for (const [voice, word] of [
+    ["Aman", "Sampatti"], ["Aman", "Sumputty"],
+    ["Samantha", "Sampatti"], ["Samantha", "Sumputty"], ["Samantha", "Sum putty"],
+  ]) {
+    const f = join(OUT, `pron-${voice}-${word.replaceAll(" ", "_")}.aiff`);
+    execFileSync("say", ["-v", voice, "-o", f, `${word}. Private portfolio analysis. ${word}.`]);
+    console.log(f);
+  }
+  process.exit(0);
+}
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 if (!existsSync(join(ROOT, "dist", "index.html"))) execSync("npm run build", { cwd: ROOT, stdio: "inherit" });
