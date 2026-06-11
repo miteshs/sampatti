@@ -13,8 +13,8 @@
     "units": "8/8",
     "cost": "8/8",
     "repaired": false,
-    "secs": 54.483,
-    "tokPerS": "14.1"
+    "secs": 49.731,
+    "tokPerS": "15.5"
   },
   {
     "id": "bank-fd.csv",
@@ -26,12 +26,12 @@
     "hallucinated": 0,
     "totalRelErr": 0,
     "currencyOk": true,
-    "typeOk": false,
+    "typeOk": true,
     "units": "—",
     "cost": "—",
     "repaired": false,
-    "secs": 32.321,
-    "tokPerS": "15.1"
+    "secs": 30.644,
+    "tokPerS": "15.0"
   },
   {
     "id": "mf-statement.xlsx",
@@ -47,7 +47,7 @@
     "units": "6/6",
     "cost": "6/6",
     "repaired": false,
-    "secs": 41.604,
+    "secs": 39.214,
     "tokPerS": "15.5"
   },
   {
@@ -60,12 +60,12 @@
     "hallucinated": 0,
     "totalRelErr": 0,
     "currencyOk": true,
-    "typeOk": false,
+    "typeOk": true,
     "units": "5/5",
     "cost": "5/5",
     "repaired": false,
-    "secs": 35.061,
-    "tokPerS": "14.4"
+    "secs": 32.908,
+    "tokPerS": "15.3"
   },
   {
     "id": "mf-statement.pdf",
@@ -81,8 +81,8 @@
     "units": "6/6",
     "cost": "6/6",
     "repaired": false,
-    "secs": 49.892,
-    "tokPerS": "14.8"
+    "secs": 47.845,
+    "tokPerS": "15.7"
   },
   {
     "id": "bank-fd.pdf",
@@ -94,12 +94,12 @@
     "hallucinated": 0,
     "totalRelErr": 0,
     "currencyOk": true,
-    "typeOk": false,
+    "typeOk": true,
     "units": "—",
     "cost": "—",
     "repaired": false,
-    "secs": 33.952,
-    "tokPerS": "13.9"
+    "secs": 29.592,
+    "tokPerS": "14.9"
   },
   {
     "id": "pms-letter.pdf",
@@ -115,8 +115,8 @@
     "units": "—",
     "cost": "1/1",
     "repaired": false,
-    "secs": 17.089,
-    "tokPerS": "11.1"
+    "secs": 15.681,
+    "tokPerS": "11.5"
   },
   {
     "id": "nps-statement.pdf",
@@ -132,7 +132,7 @@
     "units": "3/3",
     "cost": "—",
     "repaired": false,
-    "secs": 27.862,
-    "tokPerS": "14.1"
+    "secs": 27.171,
+    "tokPerS": "14.3"
   }
 ]
