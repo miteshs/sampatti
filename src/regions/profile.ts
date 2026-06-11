@@ -75,7 +75,7 @@ export const PROFILES: Record<Region, RegionProfile> = {
     // these classes still render fine — only the picker filters). indian_equity stays:
     // NRI-style mixed portfolios are a real US-resident case.
     inManualEntry: (c) => !["elss", "nps", "epf_ppf", "gold_sgb", "pms"].includes(c),
-    fxLabel: "INR → USD rate (₹ per $, for Indian holdings)",
+    fxLabel: "Exchange rate — ₹ per $1 (converts your Indian holdings)",
     goldByWeight: false,
     taxTreatments: ["taxable", "us_pretax", "us_roth", "us_hsa", "na"],
   },

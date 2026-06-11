@@ -284,7 +284,7 @@ export function Privacy() {
         <div style={{ maxWidth: 320 }}>
           <label>{profileFor(s).fxLabel}</label>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <input type="number" aria-label="USD to INR rate" style={{ maxWidth: 130 }} value={s.usdInr}
+            <input type="number" aria-label="Exchange rate, rupees per dollar" style={{ maxWidth: 130 }} value={s.usdInr}
               onChange={(e) => updateSettings({ usdInr: Number(e.target.value) || s.usdInr })} />
             <button className="btn btn-ghost" onClick={refreshRate} disabled={fxBusy}>
               {fxBusy ? <span className="spinner" /> : "↻ Fetch live"}
