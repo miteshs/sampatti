@@ -235,8 +235,9 @@ pub fn run_generate(
     let engine = guard.as_ref().ok_or("engine not loaded")?;
     let model = &engine.model;
 
+    const N_CTX: u32 = 8192;
     let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(std::num::NonZeroU32::new(8192));
+        .with_n_ctx(std::num::NonZeroU32::new(N_CTX));
     let mut ctx = model
         .new_context(&engine.backend, ctx_params)
         .map_err(|e| e.to_string())?;
@@ -254,14 +255,35 @@ pub fn run_generate(
         .str_to_token(&wrapped, AddBos::Always)
         .map_err(|e| e.to_string())?;
 
-    let mut batch = LlamaBatch::new(8192, 1);
-    let last_idx = (tokens.len() - 1) as i32;
-    for (i, tok) in tokens.iter().enumerate() {
-        batch
-            .add(*tok, i as i32, &[0], i as i32 == last_idx)
-            .map_err(|e| e.to_string())?;
+    // Leave room to answer: clamp generation into what's left of the window, and refuse
+    // outright (a normal Err, surfaced in the UI) when the prompt alone nearly fills it.
+    let budget = (N_CTX as usize).saturating_sub(tokens.len());
+    if budget < 64 {
+        return Err(format!(
+            "Prompt too long for the on-device model ({} tokens of a {N_CTX}-token window). \
+             Switch this task to Claude or shorten the conversation.",
+            tokens.len()
+        ));
     }
-    ctx.decode(&mut batch).map_err(|e| e.to_string())?;
+    let max_tokens = max_tokens.min(budget as u32);
+
+    // Decode the prompt in chunks no larger than n_batch (llama.cpp default 2048):
+    // llama_decode ABORTS the process on an oversized batch — the analysis prompt
+    // (persona + brief + chat) crashed the app exactly there (SIGABRT inside
+    // llama_context::decode, 2026-06-11). Only the final token requests logits.
+    const CHUNK: usize = 1024;
+    let mut batch = LlamaBatch::new(CHUNK, 1);
+    let last_idx = tokens.len() - 1;
+    for (ci, chunk) in tokens.chunks(CHUNK).enumerate() {
+        batch.clear();
+        for (j, tok) in chunk.iter().enumerate() {
+            let pos = ci * CHUNK + j;
+            batch
+                .add(*tok, pos as i32, &[0], pos == last_idx)
+                .map_err(|e| e.to_string())?;
+        }
+        ctx.decode(&mut batch).map_err(|e| e.to_string())?;
+    }
 
     let mut sampler = if json_mode {
         let grammar = LlamaSampler::grammar(model, JSON_GBNF, "root")
@@ -275,7 +297,7 @@ pub fn run_generate(
         LlamaSampler::chain_simple([LlamaSampler::temp(0.4), LlamaSampler::dist(42)])
     };
 
-    let mut n_cur = batch.n_tokens();
+    let mut n_cur = tokens.len() as i32; // next position — NOT batch.n_tokens(), which is just the final chunk
     let mut produced = 0u32;
     loop {
         // NB: llama_sampler_sample applies the chain AND accepts the token into it — a

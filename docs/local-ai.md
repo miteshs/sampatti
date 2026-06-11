@@ -83,6 +83,12 @@ Real-inference bugs the harness caught on its FIRST run (each now fixed + regres
    on `RunEvent::Exit` (the app would have shown "quit unexpectedly" after local AI use).
 3. Qwen3 thinking mode: text generation burned the whole budget on `<think>` — fixed with the
    canonical empty-think prefill (JSON mode was immune: the grammar forbids think-tokens).
+4. (Caught live in-app, 2026-06-11, NOT by the suite) `llama_decode` ABORTS the process on any
+   batch over n_batch (2048 tokens) — the analysis prompt (persona + brief + chat history)
+   crossed the line; every eval fixture happened to sit under it. Prompt now decodes in
+   1024-token chunks, generation is clamped to the remaining context budget, and an
+   over-long prompt returns a normal Err (UI message) instead of killing the app. The
+   `--analysis` run now carries a long-prompt probe so this can't regress silently.
 
 Prompt tuning from findings: holdings/values needed NONE (37/37 before any tuning).
 account_type took two iterations — whack-a-mole that only full-suite re-runs catch:

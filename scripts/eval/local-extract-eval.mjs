@@ -291,6 +291,21 @@ if (DO_ANALYSIS) {
     ].join("\n");
     console.log(`${secs.toFixed(0)}s, ${suspects.length} suspect figure(s)`);
   }
+
+  // Long-prompt regression: a prompt over n_batch (2048 tokens) used to SIGABRT the whole
+  // process inside llama_decode — the app's analysis prompt (persona + brief + chat) hit it
+  // live on 2026-06-11 while every fixture above happened to sit under the line. The engine
+  // now chunk-decodes; this probe keeps it that way.
+  const longPrompt = "Summarize this in one sentence:\n" +
+    Array.from({ length: 300 }, (_, i) => `holding${i} has market value ${i * 1234} rupees;`).join(" ");
+  const lf = join(tmp, "long.prompt.txt");
+  writeFileSync(lf, longPrompt);
+  process.stdout.write(`▶ long-prompt (>n_batch) … `);
+  const lrun = spawnSync(BIN, [MODEL, lf, "text", "50"], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  const lok = lrun.status === 0 && lrun.stdout.trim().length > 0;
+  analysisNote += `\n\nlong-prompt probe (≈3k tokens > n_batch): ${lok ? "completed — decode chunking holds" : `FAILED status=${lrun.status} ${lrun.stderr?.trim().slice(0, 160) ?? ""}`}`;
+  console.log(lok ? "ok" : `FAILED (status ${lrun.status})`);
+  if (!lok) process.exitCode = 1;
 }
 
 // ---- report -------------------------------------------------------------------------------
