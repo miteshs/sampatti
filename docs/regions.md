@@ -49,8 +49,15 @@ Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tes
       (store-backed, region-aware) instead of importing `inr()` directly; `inr` remains the
       IN implementation inside the seam. Visual suite confirmed PIXEL-IDENTICAL for India
       (no baseline change needed) — the adoption itself changed nothing
-- [ ] Base-currency generalization: `toBase` → profile-aware (US base: INR→USD divides);
-      `usdInr` setting becomes the single FX pair both ways; Privacy FX card copy per region
+- [x] Base-currency rule, DECIDED + BUILT (supersedes the "make toBase profile-aware" idea):
+      **the internal unit is ALWAYS INR** — stored snapshots/flows and all computation keep
+      it, so switching region never rewrites data and history stays coherent. Conversion
+      happens at exactly two edges: `fmtMoney` (display; divides by usdInr for a USD base)
+      and `buildBrief` (outbound; one `briefInUsd` post-pass — the model must speak the
+      user's currency). AnalysisChat formats brief values RAW (they arrive converted;
+      anything else double-divides). A pure-USD portfolio round-trips exactly (×rate then
+      ÷rate). Still pending from the old item: Privacy FX-card copy per region (folded
+      into the affordance-gating pass below)
 - [ ] Tax wrappers per region: brief's taxable/exemptEEE/nps → US: taxable/traditional/
       roth/hsa (classify from account names: 401k, IRA, Roth, HSA)
 - [ ] Asset-class & affordance gating: hide IN-only surfaces in US mode (CAS import card,

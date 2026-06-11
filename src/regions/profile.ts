@@ -73,5 +73,14 @@ export const profileFor = (settings: { country: string }): RegionProfile =>
 // Store-backed convenience for COMPONENTS: format in the current region's style. Every
 // money-rendering component subscribes to the portfolio, so a region change re-renders
 // them and this reads fresh. Pure domain modules keep taking parameters instead.
-export const fmtMoney = (value: number, opts?: { compact?: boolean }): string =>
-  profileFor(useStore.getState().portfolio.settings).formatMoney(value, opts);
+//
+// THE UNIT RULE (docs/regions.md): the app's internal unit is ALWAYS INR — stored
+// snapshots/flows and every computation stay in it, so switching region never rewrites
+// data. Conversion to the region's display currency happens here, at the display edge,
+// and in buildBrief for the outbound brief — nowhere else.
+export const fmtMoney = (value: number, opts?: { compact?: boolean }): string => {
+  const s = useStore.getState().portfolio.settings;
+  const p = profileFor(s);
+  const v = p.baseCurrency === "USD" ? value / (s.usdInr || 1) : value;
+  return p.formatMoney(v, opts);
+};

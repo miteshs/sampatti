@@ -154,7 +154,11 @@ export function buildBrief(p: Portfolio): Brief {
   }
 
   const notes: string[] = [];
-  if (p.holdings.some((h) => h.currency.toUpperCase() === "USD")) {
+  if (baseCurrency === "USD") {
+    if (p.holdings.some((h) => h.currency.toUpperCase() !== "USD")) {
+      notes.push(`Non-USD holdings converted at ₹${usdInr}/$ (manual rate).`);
+    }
+  } else if (p.holdings.some((h) => h.currency.toUpperCase() === "USD")) {
     notes.push(`USD holdings converted at ₹${usdInr}/$ (manual rate).`);
   }
   if (eqWithDate === 0 && liquid > 0) {
@@ -167,7 +171,7 @@ export function buildBrief(p: Portfolio): Brief {
     );
   }
 
-  return {
+  const brief: Brief = {
     asOf: today,
     baseCurrency,
     netWorth: Math.round(netWorth),
@@ -210,5 +214,48 @@ export function buildBrief(p: Portfolio): Brief {
     },
     staleness: { freshAccounts: fresh, agingAccounts: aging, staleAccounts: stale },
     notes,
+  };
+
+  // The brief is OUTBOUND — the model must speak the user's currency (a $ persona reading
+  // INR figures would mislead). All computation above stays in the internal INR unit
+  // (docs/regions.md); for a USD base every monetary field converts here, once, at the
+  // edge. Percentages, counts, HHI and years are unitless and pass through.
+  return baseCurrency === "USD" ? briefInUsd(brief, usdInr || 1) : brief;
+}
+
+function briefInUsd(b: Brief, rate: number): Brief {
+  const c = (v: number) => Math.round(v / rate);
+  const alloc = (rows: Brief["allocationByClass"]) => rows.map((r) => ({ ...r, value: c(r.value) }));
+  return {
+    ...b,
+    netWorth: c(b.netWorth),
+    totalAssets: c(b.totalAssets),
+    totalLiabilities: c(b.totalLiabilities),
+    liquidAssets: c(b.liquidAssets),
+    illiquidAssets: c(b.illiquidAssets),
+    allocationByClass: alloc(b.allocationByClass),
+    allocationByRegion: alloc(b.allocationByRegion),
+    allocationByTax: alloc(b.allocationByTax),
+    allocationByAccountType: alloc(b.allocationByAccountType),
+    concentration: {
+      ...b.concentration,
+      topHoldings: b.concentration.topHoldings.map((h) => ({ ...h, value: c(h.value) })),
+    },
+    holdingPeriods: {
+      equityShortTerm: c(b.holdingPeriods.equityShortTerm),
+      equityLongTerm: c(b.holdingPeriods.equityLongTerm),
+      withBuyDate: c(b.holdingPeriods.withBuyDate),
+    },
+    taxWrappers: {
+      taxable: c(b.taxWrappers.taxable),
+      exemptEEE: c(b.taxWrappers.exemptEEE),
+      nps: c(b.taxWrappers.nps),
+    },
+    gains: { ...b.gains, totalCostBasis: c(b.gains.totalCostBasis), unrealizedGain: c(b.gains.unrealizedGain) },
+    income: {
+      ...b.income,
+      annualTotal: c(b.income.annualTotal),
+      byKind: Object.fromEntries(Object.entries(b.income.byKind).map(([k, v]) => [k, c(v)])),
+    },
   };
 }

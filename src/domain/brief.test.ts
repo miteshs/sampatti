@@ -102,3 +102,37 @@ describe("brief gains block (cost basis)", () => {
     expect(flat?.gainPct).toBeUndefined(); // no basis on file
   });
 });
+
+describe("USD-base brief — outbound conversion at the edge (docs/regions.md unit rule)", () => {
+  it("divides every monetary field by the rate; percentages and counts pass through", () => {
+    const inrP = demoPortfolio();
+    const usdP = demoPortfolio();
+    usdP.settings.country = "US";
+    usdP.settings.baseCurrency = "USD";
+    const rate = usdP.settings.usdInr;
+
+    const a = buildBrief(inrP);
+    const b = buildBrief(usdP);
+
+    expect(b.baseCurrency).toBe("USD");
+    // Rounded division, not a re-computation — the internal INR math is shared.
+    expect(b.netWorth).toBe(Math.round(a.netWorth / rate));
+    expect(b.totalLiabilities).toBe(Math.round(a.totalLiabilities / rate));
+    expect(b.gains.totalCostBasis).toBe(Math.round(a.gains.totalCostBasis / rate));
+    expect(b.concentration.topHoldings[0].value).toBe(Math.round(a.concentration.topHoldings[0].value / rate));
+    expect(b.income.annualTotal).toBe(Math.round(a.income.annualTotal / rate));
+    // Unitless fields are untouched.
+    expect(b.liquidPct).toBe(a.liquidPct);
+    expect(b.concentration.hhi).toBe(a.concentration.hhi);
+    expect(b.gains.unrealizedPct).toBe(a.gains.unrealizedPct);
+    expect(b.concentration.topHoldings[0].pctOfAssets).toBe(a.concentration.topHoldings[0].pctOfAssets);
+  });
+
+  it("the FX note flips direction with the base", () => {
+    const usdP = demoPortfolio();
+    usdP.settings.country = "US";
+    usdP.settings.baseCurrency = "USD";
+    const note = buildBrief(usdP).notes.find((n) => n.includes("converted"));
+    expect(note).toContain("Non-USD holdings converted");
+  });
+});

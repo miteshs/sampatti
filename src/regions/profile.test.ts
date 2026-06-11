@@ -49,3 +49,21 @@ describe("profileFor — the one lookup components use", () => {
     expect(profileFor({ country: "US" }).baseCurrency).toBe("USD");
   });
 });
+
+describe("fmtMoney — the display edge of the INR unit rule", () => {
+  it("IN: formats the internal value untouched; US: divides by usdInr first", async () => {
+    const { useStore } = await import("../storage/store");
+    const { emptyPortfolio } = await import("../domain/types");
+    const { fmtMoney } = await import("./profile");
+
+    const p = emptyPortfolio();
+    p.settings.usdInr = 95;
+    useStore.setState({ portfolio: p, loaded: true });
+    expect(fmtMoney(95_00_000)).toBe(inr(95_00_000)); // ₹95.00 L
+
+    p.settings.country = "US";
+    p.settings.baseCurrency = "USD";
+    useStore.setState({ portfolio: { ...p } });
+    expect(fmtMoney(95_00_000)).toBe("$100.0K"); // ₹95L @ ₹95/$ = $100,000
+  });
+});
