@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+
+// App refreshes the USD→INR rate on launch — tests must never hit the real network.
+const { fxMock } = vi.hoisted(() => ({ fxMock: vi.fn(async () => null as number | null) }));
+vi.mock("./domain/fx", () => ({ fetchUsdInr: fxMock }));
+
 import App from "./App";
 import { useStore } from "./storage/store";
 import { emptyPortfolio } from "./domain/types";
@@ -9,6 +14,8 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
   useStore.setState({ portfolio: emptyPortfolio(), loaded: false });
+  fxMock.mockClear();
+  fxMock.mockImplementation(async () => null);
 });
 
 describe("App integration (demo flow)", () => {
@@ -79,5 +86,21 @@ describe("App integration (demo flow)", () => {
     const p = useStore.getState().portfolio;
     expect(p.accounts.some((a) => a.name === "Cash Reserve")).toBe(true);
     expect(p.holdings.some((h) => h.name === "Emergency fund" && h.marketValue === 750000)).toBe(true);
+  });
+});
+
+describe("launch-time FX refresh", () => {
+  it("applies the live USD→INR rate once the app has loaded", async () => {
+    fxMock.mockImplementation(async () => 88.42);
+    render(<App />);
+    await waitFor(() => expect(useStore.getState().portfolio.settings.usdInr).toBe(88.42));
+    expect(fxMock).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the stored rate when the fetch fails (offline launch)", async () => {
+    fxMock.mockImplementation(async () => null);
+    render(<App />);
+    await waitFor(() => expect(fxMock).toHaveBeenCalled());
+    expect(useStore.getState().portfolio.settings.usdInr).toBe(95); // the default, untouched
   });
 });

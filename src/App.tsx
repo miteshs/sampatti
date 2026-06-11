@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "./storage/store";
+import { fetchUsdInr } from "./domain/fx";
 import { Overview } from "./components/Overview";
 import { Performance } from "./components/Performance";
 import { Manage } from "./components/Manage";
@@ -26,6 +27,20 @@ export default function App() {
   const [view, setView] = useState<View>("overview");
 
   useEffect(() => { void load(); }, [load]);
+
+  // Refresh the USD→INR rate once per launch so US holdings are never valued on a stale
+  // rate. Silent and best-effort: offline → keep the stored rate; only a public exchange
+  // rate is requested, nothing about the user is sent.
+  const fxFetched = useRef(false);
+  useEffect(() => {
+    if (!loaded || fxFetched.current) return;
+    fxFetched.current = true;
+    void fetchUsdInr().then((rate) => {
+      if (rate && rate !== useStore.getState().portfolio.settings.usdInr) {
+        useStore.getState().updateSettings({ usdInr: rate });
+      }
+    });
+  }, [loaded]);
 
   // First run with no data → start on Add data so the demo button is front and center.
   useEffect(() => {

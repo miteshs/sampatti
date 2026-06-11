@@ -175,7 +175,7 @@ export function Privacy() {
             </button>
           </div>
           <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.35rem" }}>
-            {fxNote ?? "Defaults to ₹95/$. Fetch a live mid-market rate anytime — no data about you is sent."}
+            {fxNote ?? "Refreshed automatically each time the app opens; fetch anytime — only the public rate is requested, no data about you is sent."}
           </p>
         </div>
       </div>
