@@ -186,24 +186,112 @@ ws     ::= | " " | "\n" [ \t]{0,20}
 struct Engine {
     backend: LlamaBackend,
     model: LlamaModel,
+    path: PathBuf,
 }
 
-// One loaded model per process; loading takes seconds and ~3GB RAM, so cache it.
+// One loaded model per process; loading takes seconds and ~3GB RAM, so cache it. Keyed by
+// path so the eval harness can swap candidate models within one process.
 static ENGINE: Mutex<Option<Engine>> = Mutex::new(None);
 
-fn ensure_engine(app: &tauri::AppHandle) -> Result<(), String> {
+fn ensure_engine(path: &std::path::Path) -> Result<(), String> {
     let mut guard = ENGINE.lock().unwrap();
-    if guard.is_some() {
+    if guard.as_ref().is_some_and(|e| e.path == path) {
         return Ok(());
     }
-    let path = model_path(app)?;
     if !path.exists() {
         return Err("Local model not downloaded — get it on the Privacy screen first.".into());
     }
-    let backend = LlamaBackend::init().map_err(|e| e.to_string())?;
+    // The llama backend may only be initialized once per process — reuse it on model swap.
+    let backend = match guard.take() {
+        Some(e) => e.backend,
+        None => LlamaBackend::init().map_err(|e| e.to_string())?,
+    };
     let params = LlamaModelParams::default();
-    let model = LlamaModel::load_from_file(&backend, &path, &params).map_err(|e| e.to_string())?;
-    *guard = Some(Engine { backend, model });
+    let model = LlamaModel::load_from_file(&backend, path, &params).map_err(|e| e.to_string())?;
+    *guard = Some(Engine { backend, model, path: path.to_path_buf() });
+    Ok(())
+}
+
+// Drop the cached model/backend. Rust never drops statics, and ggml-metal's own static
+// teardown aborts if model buffers are still alive at process exit — so short-lived
+// callers (the eval binary) must unload explicitly before returning from main.
+pub fn unload_engine() {
+    *ENGINE.lock().unwrap() = None;
+}
+
+// The whole on-device generation path — shared verbatim by the `local_generate` command and
+// the eval harness (examples/local_eval.rs), so what we evaluate IS what ships. Synchronous
+// and CPU-heavy: callers run it off the async runtime. `on_piece` returns false to abort
+// (e.g. the IPC channel died). NO network I/O anywhere below.
+pub fn run_generate(
+    model_file: &std::path::Path,
+    prompt: &str,
+    json_mode: bool,
+    max_tokens: u32,
+    on_piece: &mut dyn FnMut(String) -> bool,
+) -> Result<(), String> {
+    ensure_engine(model_file)?;
+    let guard = ENGINE.lock().unwrap();
+    let engine = guard.as_ref().ok_or("engine not loaded")?;
+    let model = &engine.model;
+
+    let ctx_params = LlamaContextParams::default()
+        .with_n_ctx(std::num::NonZeroU32::new(8192));
+    let mut ctx = model
+        .new_context(&engine.backend, ctx_params)
+        .map_err(|e| e.to_string())?;
+
+    // Qwen3 chat template, minimal single-turn form.
+    let wrapped = format!(
+        "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+    );
+    let tokens = model
+        .str_to_token(&wrapped, AddBos::Always)
+        .map_err(|e| e.to_string())?;
+
+    let mut batch = LlamaBatch::new(8192, 1);
+    let last_idx = (tokens.len() - 1) as i32;
+    for (i, tok) in tokens.iter().enumerate() {
+        batch
+            .add(*tok, i as i32, &[0], i as i32 == last_idx)
+            .map_err(|e| e.to_string())?;
+    }
+    ctx.decode(&mut batch).map_err(|e| e.to_string())?;
+
+    let mut sampler = if json_mode {
+        let grammar = LlamaSampler::grammar(model, JSON_GBNF, "root")
+            .map_err(|e| format!("grammar: {e}"))?;
+        LlamaSampler::chain_simple([
+            grammar,
+            LlamaSampler::temp(0.2),
+            LlamaSampler::dist(42),
+        ])
+    } else {
+        LlamaSampler::chain_simple([LlamaSampler::temp(0.4), LlamaSampler::dist(42)])
+    };
+
+    let mut n_cur = batch.n_tokens();
+    let mut produced = 0u32;
+    loop {
+        // NB: llama_sampler_sample applies the chain AND accepts the token into it — a
+        // second accept() here double-advances the grammar and aborts the process the
+        // moment the grammar completes (caught by the Phase-2 real-model eval).
+        let token = sampler.sample(&ctx, batch.n_tokens() - 1);
+        if model.is_eog_token(token) || produced >= max_tokens {
+            break;
+        }
+        let piece = model
+            .token_to_str(token, Special::Tokenize)
+            .unwrap_or_default();
+        if !piece.is_empty() && !on_piece(piece) {
+            break; // receiver gone — stop burning CPU
+        }
+        batch.clear();
+        batch.add(token, n_cur, &[0], true).map_err(|e| e.to_string())?;
+        n_cur += 1;
+        produced += 1;
+        ctx.decode(&mut batch).map_err(|e| e.to_string())?;
+    }
     Ok(())
 }
 
@@ -217,69 +305,12 @@ pub async fn local_generate(
     max_tokens: u32,
     on_token: Channel<String>,
 ) -> Result<(), String> {
-    ensure_engine(&app)?;
+    let path = model_path(&app)?;
     // llama.cpp inference is CPU-heavy and synchronous; run it off the async runtime.
     tauri::async_runtime::spawn_blocking(move || {
-        let guard = ENGINE.lock().unwrap();
-        let engine = guard.as_ref().ok_or("engine not loaded")?;
-        let model = &engine.model;
-
-        let ctx_params = LlamaContextParams::default()
-            .with_n_ctx(std::num::NonZeroU32::new(8192));
-        let mut ctx = model
-            .new_context(&engine.backend, ctx_params)
-            .map_err(|e| e.to_string())?;
-
-        // Qwen3 chat template, minimal single-turn form.
-        let wrapped = format!(
-            "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
-        );
-        let tokens = model
-            .str_to_token(&wrapped, AddBos::Always)
-            .map_err(|e| e.to_string())?;
-
-        let mut batch = LlamaBatch::new(8192, 1);
-        let last_idx = (tokens.len() - 1) as i32;
-        for (i, tok) in tokens.iter().enumerate() {
-            batch
-                .add(*tok, i as i32, &[0], i as i32 == last_idx)
-                .map_err(|e| e.to_string())?;
-        }
-        ctx.decode(&mut batch).map_err(|e| e.to_string())?;
-
-        let mut sampler = if json_mode {
-            let grammar = LlamaSampler::grammar(model, JSON_GBNF, "root")
-                .map_err(|e| format!("grammar: {e}"))?;
-            LlamaSampler::chain_simple([
-                grammar,
-                LlamaSampler::temp(0.2),
-                LlamaSampler::dist(42),
-            ])
-        } else {
-            LlamaSampler::chain_simple([LlamaSampler::temp(0.4), LlamaSampler::dist(42)])
-        };
-
-        let mut n_cur = batch.n_tokens();
-        let mut produced = 0u32;
-        loop {
-            let token = sampler.sample(&ctx, batch.n_tokens() - 1);
-            sampler.accept(token);
-            if model.is_eog_token(token) || produced >= max_tokens {
-                break;
-            }
-            let piece = model
-                .token_to_str(token, Special::Tokenize)
-                .unwrap_or_default();
-            if !piece.is_empty() {
-                on_token.send(piece).map_err(|e| e.to_string())?;
-            }
-            batch.clear();
-            batch.add(token, n_cur, &[0], true).map_err(|e| e.to_string())?;
-            n_cur += 1;
-            produced += 1;
-            ctx.decode(&mut batch).map_err(|e| e.to_string())?;
-        }
-        Ok::<(), String>(())
+        run_generate(&path, &prompt, json_mode, max_tokens, &mut |piece| {
+            on_token.send(piece).is_ok()
+        })
     })
     .await
     .map_err(|e| e.to_string())?

@@ -1,0 +1,7 @@
+[
+  {
+    "id": "bank-fd.csv",
+    "error": "ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices\nggml_metal_library_init: using embedded metal library\nggml_metal_library_init: loaded in 8.516 sec\nggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)\nggml_metal_device_init: GPU name:   MTL0\nggml_",
+    "secs": 28.088
+  }
+]

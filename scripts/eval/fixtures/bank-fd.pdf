@@ -1,0 +1,38 @@
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [5 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj
+5 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >> endobj
+6 0 obj << /Length 1047 >>
+stream
+BT /F1 9 Tf 40 752 Td 12 TL
+(Suvarna Bank) Tj T*
+(Term Deposit Portfolio Summary as on 31-May-2026 \(synthetic eval fixture\)) Tj T*
+() Tj T*
+(Deposit Reference          Principal \(Rs\)    Rate      Maturity Date    Current Balance \(Rs\)) Tj T*
+(--------------------------------------------------------------------------------------------) Tj T*
+(Fixed Deposit SYN-71001    5,00,000.00       7.10%     12-Mar-2027      5,00,000.00) Tj T*
+(Fixed Deposit SYN-71002    3,00,000.00       7.25%     30-Sep-2026      3,00,000.00) Tj T*
+(Fixed Deposit SYN-71003    7,50,000.00       6.90%     18-Jan-2028      7,50,000.00) Tj T*
+(Tax Saver FD SYN-71004     1,50,000.00       6.75%     05-Jul-2030      1,50,000.00) Tj T*
+(--------------------------------------------------------------------------------------------) Tj T*
+(Total Deposits: Rs 17,00,000.00) Tj T*
+() Tj T*
+(Interest is compounded quarterly and paid at maturity. Premature withdrawal) Tj T*
+(attracts a penalty of 1% on the applicable rate. Deposits are insured per DICGC norms.) Tj T*
+ET
+endstream endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000185 00000 n 
+0000000260 00000 n 
+0000000396 00000 n 
+trailer << /Size 7 /Root 1 0 R >>
+startxref
+1495
+%%EOF

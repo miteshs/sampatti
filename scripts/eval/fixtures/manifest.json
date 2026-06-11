@@ -1,0 +1,462 @@
+[
+  {
+    "id": "demat-equity.csv",
+    "archetype": "demat-equity",
+    "format": "csv",
+    "file": "demat-equity.csv",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "Apex Securities Demat",
+        "institution": "Apex Securities",
+        "account_type": "demat",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Reliance Industries",
+          "value": 352800,
+          "units": 120,
+          "cost_basis": 285000
+        },
+        {
+          "name": "HDFC Bank",
+          "value": 511500,
+          "units": 300,
+          "cost_basis": 432000
+        },
+        {
+          "name": "Infosys",
+          "value": 247350,
+          "units": 150,
+          "cost_basis": 201000
+        },
+        {
+          "name": "Tata Consultancy Services",
+          "value": 219840,
+          "units": 60,
+          "cost_basis": 192000
+        },
+        {
+          "name": "ITC",
+          "value": 342400,
+          "units": 800,
+          "cost_basis": 268000
+        },
+        {
+          "name": "Larsen & Toubro",
+          "value": 308700,
+          "units": 90,
+          "cost_basis": 198000
+        },
+        {
+          "name": "Asian Paints",
+          "value": 286000,
+          "units": 110,
+          "cost_basis": 319000
+        },
+        {
+          "name": "Tata Motors",
+          "value": 198750,
+          "units": 250,
+          "cost_basis": 112500
+        }
+      ],
+      "total": 2467340
+    }
+  },
+  {
+    "id": "bank-fd.csv",
+    "archetype": "bank-fd",
+    "format": "csv",
+    "file": "bank-fd.csv",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "Suvarna Bank Deposits",
+        "institution": "Suvarna Bank",
+        "account_type": "bank",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Fixed Deposit SYN-71001",
+          "value": 500000
+        },
+        {
+          "name": "Fixed Deposit SYN-71002",
+          "value": 300000
+        },
+        {
+          "name": "Fixed Deposit SYN-71003",
+          "value": 750000
+        },
+        {
+          "name": "Tax Saver FD SYN-71004",
+          "value": 150000
+        }
+      ],
+      "total": 1700000
+    }
+  },
+  {
+    "id": "mf-statement.xlsx",
+    "archetype": "mf-statement",
+    "format": "xlsx",
+    "file": "mf-statement.xlsx",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "WealthServe MF Holdings",
+        "institution": "WealthServe",
+        "account_type": "mutual_fund",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Parag Parikh Flexi Cap Fund - Direct Growth",
+          "value": 330191.56,
+          "units": 4210.553,
+          "cost_basis": 240000
+        },
+        {
+          "name": "HDFC Mid-Cap Opportunities Fund - Direct Growth",
+          "value": 313968.46,
+          "units": 1822.114,
+          "cost_basis": 210000
+        },
+        {
+          "name": "SBI Bluechip Fund - Regular Growth",
+          "value": 280590.18,
+          "units": 3150.221,
+          "cost_basis": 235000
+        },
+        {
+          "name": "Axis ELSS Tax Saver Fund - Direct Growth",
+          "value": 230624.11,
+          "units": 2410.873,
+          "cost_basis": 180000
+        },
+        {
+          "name": "UTI Nifty 50 Index Fund - Direct Growth",
+          "value": 238195.41,
+          "units": 1505.66,
+          "cost_basis": 190000
+        },
+        {
+          "name": "ICICI Prudential Liquid Fund - Direct Growth",
+          "value": 228002.09,
+          "units": 612.004,
+          "cost_basis": 220000
+        }
+      ],
+      "total": 1621571.81
+    }
+  },
+  {
+    "id": "us-broker.xlsx",
+    "archetype": "us-broker",
+    "format": "xlsx",
+    "file": "us-broker.xlsx",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "Lakeshore Brokerage",
+        "institution": "Lakeshore Securities",
+        "account_type": "foreign_broker",
+        "currency": "USD"
+      },
+      "holdings": [
+        {
+          "name": "Apple Inc (AAPL)",
+          "value": 9252,
+          "units": 40,
+          "cost_basis": 6480
+        },
+        {
+          "name": "Microsoft Corp (MSFT)",
+          "value": 11385.5,
+          "units": 25,
+          "cost_basis": 7950
+        },
+        {
+          "name": "NVIDIA Corp (NVDA)",
+          "value": 5511,
+          "units": 30,
+          "cost_basis": 3660
+        },
+        {
+          "name": "Alphabet Inc (GOOGL)",
+          "value": 6419,
+          "units": 35,
+          "cost_basis": 4795
+        },
+        {
+          "name": "Vanguard S&P 500 ETF (VOO)",
+          "value": 9889.2,
+          "units": 18,
+          "cost_basis": 7020
+        }
+      ],
+      "total": 42456.7
+    }
+  },
+  {
+    "id": "mf-statement.pdf",
+    "archetype": "mf-statement",
+    "format": "pdf",
+    "file": "mf-statement.pdf",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "WealthServe MF Holdings",
+        "institution": "WealthServe",
+        "account_type": "mutual_fund",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Parag Parikh Flexi Cap Fund - Direct Growth",
+          "value": 330191.56,
+          "units": 4210.553,
+          "cost_basis": 240000
+        },
+        {
+          "name": "HDFC Mid-Cap Opportunities Fund - Direct Growth",
+          "value": 313968.46,
+          "units": 1822.114,
+          "cost_basis": 210000
+        },
+        {
+          "name": "SBI Bluechip Fund - Regular Growth",
+          "value": 280590.18,
+          "units": 3150.221,
+          "cost_basis": 235000
+        },
+        {
+          "name": "Axis ELSS Tax Saver Fund - Direct Growth",
+          "value": 230624.11,
+          "units": 2410.873,
+          "cost_basis": 180000
+        },
+        {
+          "name": "UTI Nifty 50 Index Fund - Direct Growth",
+          "value": 238195.41,
+          "units": 1505.66,
+          "cost_basis": 190000
+        },
+        {
+          "name": "ICICI Prudential Liquid Fund - Direct Growth",
+          "value": 228002.09,
+          "units": 612.004,
+          "cost_basis": 220000
+        }
+      ],
+      "total": 1621571.81
+    }
+  },
+  {
+    "id": "bank-fd.pdf",
+    "archetype": "bank-fd",
+    "format": "pdf",
+    "file": "bank-fd.pdf",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "Suvarna Bank Deposits",
+        "institution": "Suvarna Bank",
+        "account_type": "bank",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Fixed Deposit SYN-71001",
+          "value": 500000
+        },
+        {
+          "name": "Fixed Deposit SYN-71002",
+          "value": 300000
+        },
+        {
+          "name": "Fixed Deposit SYN-71003",
+          "value": 750000
+        },
+        {
+          "name": "Tax Saver FD SYN-71004",
+          "value": 150000
+        }
+      ],
+      "total": 1700000
+    }
+  },
+  {
+    "id": "pms-letter.pdf",
+    "archetype": "pms-letter",
+    "format": "pdf",
+    "file": "pms-letter.pdf",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "Meridian PMS",
+        "institution": "Meridian Portfolio Managers",
+        "account_type": "pms_aif",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Meridian Growth Portfolio",
+          "value": 12750000,
+          "cost_basis": 10000000
+        }
+      ],
+      "total": 12750000
+    }
+  },
+  {
+    "id": "nps-statement.pdf",
+    "archetype": "nps-statement",
+    "format": "pdf",
+    "file": "nps-statement.pdf",
+    "tier": "local",
+    "truth": {
+      "account": {
+        "name": "NPS Tier I",
+        "institution": "Sahyadri Pension Fund",
+        "account_type": "nps",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Scheme E - Tier I (Equity)",
+          "value": 477090.32,
+          "units": 9120.442
+        },
+        {
+          "name": "Scheme C - Tier I (Corporate Bonds)",
+          "value": 217626.63,
+          "units": 5210.118
+        },
+        {
+          "name": "Scheme G - Tier I (Govt Securities)",
+          "value": 249255.74,
+          "units": 6404.31
+        }
+      ],
+      "total": 943972.69
+    }
+  },
+  {
+    "id": "demat-equity.png",
+    "archetype": "demat-equity",
+    "format": "png",
+    "file": "demat-equity.png",
+    "tier": "claude",
+    "truth": {
+      "account": {
+        "name": "Apex Securities Demat",
+        "institution": "Apex Securities",
+        "account_type": "demat",
+        "currency": "INR"
+      },
+      "holdings": [
+        {
+          "name": "Reliance Industries",
+          "value": 352800,
+          "units": 120,
+          "cost_basis": 285000
+        },
+        {
+          "name": "HDFC Bank",
+          "value": 511500,
+          "units": 300,
+          "cost_basis": 432000
+        },
+        {
+          "name": "Infosys",
+          "value": 247350,
+          "units": 150,
+          "cost_basis": 201000
+        },
+        {
+          "name": "Tata Consultancy Services",
+          "value": 219840,
+          "units": 60,
+          "cost_basis": 192000
+        },
+        {
+          "name": "ITC",
+          "value": 342400,
+          "units": 800,
+          "cost_basis": 268000
+        },
+        {
+          "name": "Larsen & Toubro",
+          "value": 308700,
+          "units": 90,
+          "cost_basis": 198000
+        },
+        {
+          "name": "Asian Paints",
+          "value": 286000,
+          "units": 110,
+          "cost_basis": 319000
+        },
+        {
+          "name": "Tata Motors",
+          "value": 198750,
+          "units": 250,
+          "cost_basis": 112500
+        }
+      ],
+      "total": 2467340
+    }
+  },
+  {
+    "id": "us-broker.png",
+    "archetype": "us-broker",
+    "format": "png",
+    "file": "us-broker.png",
+    "tier": "claude",
+    "truth": {
+      "account": {
+        "name": "Lakeshore Brokerage",
+        "institution": "Lakeshore Securities",
+        "account_type": "foreign_broker",
+        "currency": "USD"
+      },
+      "holdings": [
+        {
+          "name": "Apple Inc (AAPL)",
+          "value": 9252,
+          "units": 40,
+          "cost_basis": 6480
+        },
+        {
+          "name": "Microsoft Corp (MSFT)",
+          "value": 11385.5,
+          "units": 25,
+          "cost_basis": 7950
+        },
+        {
+          "name": "NVIDIA Corp (NVDA)",
+          "value": 5511,
+          "units": 30,
+          "cost_basis": 3660
+        },
+        {
+          "name": "Alphabet Inc (GOOGL)",
+          "value": 6419,
+          "units": 35,
+          "cost_basis": 4795
+        },
+        {
+          "name": "Vanguard S&P 500 ETF (VOO)",
+          "value": 9889.2,
+          "units": 18,
+          "cost_basis": 7020
+        }
+      ],
+      "total": 42456.7
+    }
+  }
+]

@@ -1,0 +1,39 @@
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [5 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj
+5 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >> endobj
+6 0 obj << /Length 1194 >>
+stream
+BT /F1 9 Tf 40 752 Td 12 TL
+(National Pension System  Statement of Transaction \(synthetic eval fixture\)) Tj T*
+(CRA: Synthetic Records Agency      PRAN: SYN-REDACTED      Tier: I) Tj T*
+(Statement as on 31-May-2026        Pension Fund: Sahyadri Pension Fund) Tj T*
+() Tj T*
+(Scheme                                       Units Held      NAV \(Rs\)     Holding Value \(Rs\)) Tj T*
+(--------------------------------------------------------------------------------------------) Tj T*
+(Scheme E - Tier I \(Equity\)                   9120.442        52.31        4,77,090.32) Tj T*
+(Scheme C - Tier I \(Corporate Bonds\)          5210.118        41.77        2,17,626.63) Tj T*
+(Scheme G - Tier I \(Govt Securities\)          6404.31         38.92        2,49,255.74) Tj T*
+(--------------------------------------------------------------------------------------------) Tj T*
+(Total Tier I Holdings                                                     9,43,972.69) Tj T*
+() Tj T*
+(Contributions are invested per your active scheme preference \(Auto/Active choice\).) Tj T*
+(Units are allotted at the NAV of the investment day. NPS withdrawals are subject) Tj T*
+(to PFRDA exit regulations.) Tj T*
+ET
+endstream endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000185 00000 n 
+0000000260 00000 n 
+0000000396 00000 n 
+trailer << /Size 7 /Root 1 0 R >>
+startxref
+1642
+%%EOF

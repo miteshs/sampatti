@@ -5,7 +5,7 @@
 // `claude_stream` streams Anthropic's SSE response back to the UI over a Channel, emitting
 // only the text deltas (the same shape the web transport parses).
 
-mod local_llm;
+pub mod local_llm; // pub: examples/local_eval.rs drives the same inference path
 
 use futures_util::StreamExt;
 use serde_json::Value;
