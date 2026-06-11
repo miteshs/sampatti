@@ -1,0 +1,54 @@
+# Fast verification on every push/PR — main is only as trustworthy as what runs against it.
+# (The Windows workflow runs the full platform gates at release time; this one keeps every
+# commit honest for cheap: 1×-minute ubuntu runners.)
+#
+#   gates: vitest (incl. privacy/egress/version contracts, fuzz, migration) + tsc +
+#          relay tests + production-dependency audit
+#   e2e:   the built app driven by real Chrome through the whole user journey
+
+name: quick-gates
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit, component, contract & fuzz tests
+        run: npm test
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Relay tests
+        run: cd relay && npm ci && npx vitest run
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - run: npm ci
+      - run: npm run build
+      - name: Smoke — the whole user journey in real Chrome
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm run e2e

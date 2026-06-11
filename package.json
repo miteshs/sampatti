@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "verify:imports": "vitest run --config scripts/vitest.config.ts",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "e2e": "node scripts/e2e/smoke.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.9",
@@ -33,7 +34,9 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^6.0.2",
+    "fast-check": "^4.8.0",
     "jsdom": "^29.1.1",
+    "puppeteer-core": "^25.1.0",
     "typescript": "^5.6.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"
