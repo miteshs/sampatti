@@ -7,6 +7,8 @@
 import { describe, expect, it } from "vitest";
 import { demoPortfolio } from "../demo";
 import { buildBrief, briefForModel } from "../domain/brief";
+import { bucketSegments } from "../domain/buckets";
+import { buildSegments } from "../domain/group";
 import { snapshotSeries } from "../domain/snapshots";
 import { visiblePortfolio } from "../domain/types";
 import { useStore } from "../storage/store";
@@ -30,6 +32,13 @@ describe("unit-rule triangle — hero, chart and outbound brief agree", () => {
 
       expect(chart).toBe(hero);
       expect(outbound).toBe(hero);
+      // Fourth + fifth legs: BOTH allocation sources (the detail table's buildSegments
+      // AND the donut's bucketSegments) total to the same "what you own" quantity —
+      // the donut had its own aggregation path and kept the mortgage after the first fix.
+      const table = buildSegments(visP.holdings, visP.accounts, "asset_class", p.settings.usdInr).total;
+      const donut = bucketSegments(visP.holdings, visP.accounts, p.settings.usdInr).total;
+      expect(fmtMoney(table)).toBe(fmtMoney(buildBrief(visP).totalAssets));
+      expect(fmtMoney(donut)).toBe(fmtMoney(buildBrief(visP).totalAssets));
       // And the factor-of-rate failure modes by name, so a regression reads clearly:
       // double conversion shrinks by ~95×, missing conversion inflates by ~95×.
       expect(hero).not.toBe(fmtMoney(buildBrief(visP).netWorth / p.settings.usdInr));

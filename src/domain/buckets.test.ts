@@ -28,7 +28,7 @@ describe("bucketSegments", () => {
       h("gold_sgb", 30), // gold 30
       h("cash", 20), // cash_other 20
     ];
-    const { total, segments } = bucketSegments(holdings, 88);
+    const { total, segments } = bucketSegments(holdings, [], 88);
     expect(total).toBe(300);
     expect(segments.map((s) => [s.key, s.value])).toEqual([
       ["equity", 150], ["fixed", 100], ["gold", 30], ["cash_other", 20],
@@ -37,18 +37,18 @@ describe("bucketSegments", () => {
   });
 
   it("keeps the detail keys of each bucket for click-to-expand", () => {
-    const { segments } = bucketSegments([h("indian_equity", 10), h("us_equity", 5)], 88);
+    const { segments } = bucketSegments([h("indian_equity", 10), h("us_equity", 5)], [], 88);
     expect(segments).toHaveLength(1);
     expect(segments[0].classes.sort()).toEqual(["indian_equity", "us_equity"]);
   });
 
   it("USD holdings convert at the given rate before bucketing", () => {
-    const { total } = bucketSegments([h("us_equity", 1, "USD")], 90);
+    const { total } = bucketSegments([h("us_equity", 1, "USD")], [], 90);
     expect(total).toBe(90);
   });
 
   it("empty buckets are dropped, order is stable", () => {
-    const { segments } = bucketSegments([h("real_estate", 1), h("indian_equity", 1)], 88);
+    const { segments } = bucketSegments([h("real_estate", 1), h("indian_equity", 1)], [], 88);
     expect(segments.map((s) => s.key)).toEqual(["equity", "property"]);
   });
 });

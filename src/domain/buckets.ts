@@ -4,7 +4,7 @@
 // not a rotating palette.
 
 import { holdingBase } from "./format";
-import type { AssetClass, Holding } from "./types";
+import type { Account, AssetClass, Holding } from "./types";
 import type { Segment } from "./group";
 
 export type BucketKey = "equity" | "fixed" | "property" | "gold" | "managed" | "cash_other";
@@ -52,10 +52,14 @@ export interface BucketSegment extends Segment {
 const ORDER: BucketKey[] = ["equity", "fixed", "property", "gold", "managed", "cash_other"];
 
 // Group holdings into the six buckets, in fixed order, empty buckets dropped.
-export function bucketSegments(holdings: Holding[], usdInr: number): { total: number; segments: BucketSegment[] } {
+// Liability-account holdings are excluded: a mortgage is not "where your money sits"
+// (it once inflated the donut's total above the assets figure — same bug as buildSegments).
+export function bucketSegments(holdings: Holding[], accounts: Account[], usdInr: number): { total: number; segments: BucketSegment[] } {
+  const liability = new Set(accounts.filter((a) => a.accountType === "liability").map((a) => a.id));
   const sums = new Map<BucketKey, { value: number; classes: Set<AssetClass> }>();
   let total = 0;
   for (const h of holdings) {
+    if (liability.has(h.accountId)) continue;
     const v = holdingBase(h, usdInr);
     const b = CLASS_BUCKET[h.assetClass] ?? "cash_other";
     const cur = sums.get(b) ?? { value: 0, classes: new Set<AssetClass>() };

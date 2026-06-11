@@ -78,7 +78,7 @@ export function Overview() {
 
   // The donut's first read: six plain-language buckets with semantic colors. The detail
   // table below stays full-granularity; clicking a bucket expands its classes there.
-  const buckets = useMemo(() => bucketSegments(view.holdings, usdInr), [view.holdings, usdInr]);
+  const buckets = useMemo(() => bucketSegments(view.holdings, view.accounts, usdInr), [view.holdings, view.accounts, usdInr]);
 
   const acctById = useMemo(() => new Map(view.accounts.map((a) => [a.id, a])), [view.accounts]);
 

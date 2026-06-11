@@ -53,6 +53,9 @@ export function buildSegments(
   const vals = new Map<string, { label: string; value: number }>();
   let total = 0;
   for (const h of holdings) {
+    // Loans are not "where your money sits": a liability rendered as a positive slice
+    // inflated the donut total above the assets figure (caught by demo-video frame QC).
+    if (acctById.get(h.accountId)?.accountType === "liability") continue;
     const v = holdingBase(h, usdInr);
     const { key, label } = keyFor(h, acctById.get(h.accountId), by);
     const cur = vals.get(key) ?? { label, value: 0 };
