@@ -3,7 +3,7 @@
 // of the P&L table and totals entirely, and the coverage card says how much of the portfolio
 // that leaves unmeasured. No simulation here — the chart is the recorded per-account stack.
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { holdingBase, holdingGain, inr, pct, type HoldingGain } from "../domain/format";
@@ -27,11 +27,33 @@ function heldFor(buyDate?: string): string | null {
 
 interface RowData { h: Holding; a?: Account; value: number; g: HoldingGain | null; }
 
-type SortKey = "gainers" | "losers" | "largest";
+// One P&L table row. In the by-account view the rows sit under their account's subtotal
+// header, so the account suffix is dropped and the name indents.
+function HoldingRow({ row: { h, a, value, g }, grouped }: { row: RowData; grouped?: boolean }) {
+  const held = heldFor(h.buyDate);
+  return (
+    <tr style={{ borderTop: "1px solid var(--line-2)" }}>
+      <td style={grouped ? { paddingLeft: "1.6rem" } : undefined}>
+        <span style={{ fontWeight: 600 }}>{h.name}</span>
+        {!grouped && <span className="muted" style={{ fontSize: "0.78rem" }}> · {a?.name}</span>}
+        {h.currency !== "INR" && <span className="muted" style={{ fontSize: "0.78rem" }}> · {h.currency}</span>}
+      </td>
+      <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[h.assetClass]}</span></td>
+      <td className="num muted" style={{ fontSize: "0.84rem" }}>{held ?? "—"}</td>
+      <td className="num">{g ? inr(g.invested) : "—"}</td>
+      <td className="num" style={{ fontWeight: 600 }}>{inr(value)}</td>
+      <td className="num" style={{ fontWeight: 600, color: g ? signColor(g.gain) : undefined }}>{g ? signed(g.gain) : "—"}</td>
+      <td className="num" style={{ color: g ? signColor(g.gain) : undefined }}>{g?.gainPct != null ? signedPct(g.gainPct) : "—"}</td>
+    </tr>
+  );
+}
+
+type SortKey = "gainers" | "losers" | "largest" | "by_account";
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "gainers", label: "Top gainers" },
   { key: "losers", label: "Top losers" },
   { key: "largest", label: "Largest" },
+  { key: "by_account", label: "By account" },
 ];
 
 export function Performance() {
@@ -64,7 +86,7 @@ export function Performance() {
   const sorted = useMemo(() => {
     const s = [...rows];
     const pctOf = (r: RowData) => (r.g?.gainPct ?? null);
-    if (sort === "largest") s.sort((a, b) => b.value - a.value);
+    if (sort === "largest" || sort === "by_account") s.sort((a, b) => b.value - a.value);
     else
       s.sort((a, b) => {
         const pa = pctOf(a), pb = pctOf(b);
@@ -75,6 +97,27 @@ export function Performance() {
       });
     return s;
   }, [rows, sort]);
+
+  // "By account": the same measured rows, bucketed under their account with subtotals —
+  // accounts ordered by measured value, holdings inside by value.
+  const byAccount = useMemo(() => {
+    if (sort !== "by_account") return null;
+    const groups = new Map<string, { a?: Account; rows: RowData[] }>();
+    for (const r of sorted) {
+      const key = r.a?.id ?? "?";
+      const g = groups.get(key) ?? { a: r.a, rows: [] };
+      g.rows.push(r);
+      groups.set(key, g);
+    }
+    return [...groups.values()]
+      .map((g) => {
+        const invested = g.rows.reduce((s, r) => s + (r.g?.invested ?? 0), 0);
+        const value = g.rows.reduce((s, r) => s + r.value, 0);
+        const gain = g.rows.reduce((s, r) => s + (r.g?.gain ?? 0), 0);
+        return { ...g, invested, value, gain, gainPct: invested > 0 ? Math.round((gain / invested) * 1000) / 10 : null };
+      })
+      .sort((x, y) => y.value - x.value);
+  }, [sort, sorted]);
 
   const totals = useMemo(() => {
     let invested = 0, gain = 0, up = 0, down = 0;
@@ -166,24 +209,24 @@ export function Performance() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map(({ h, a, value, g }) => {
-                const held = heldFor(h.buyDate);
-                return (
-                  <tr key={h.id} style={{ borderTop: "1px solid var(--line-2)" }}>
-                    <td>
-                      <span style={{ fontWeight: 600 }}>{h.name}</span>
-                      <span className="muted" style={{ fontSize: "0.78rem" }}> · {a?.name}</span>
-                      {h.currency !== "INR" && <span className="muted" style={{ fontSize: "0.78rem" }}> · {h.currency}</span>}
-                    </td>
-                    <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[h.assetClass]}</span></td>
-                    <td className="num muted" style={{ fontSize: "0.84rem" }}>{held ?? "—"}</td>
-                    <td className="num">{g ? inr(g.invested) : "—"}</td>
-                    <td className="num" style={{ fontWeight: 600 }}>{inr(value)}</td>
-                    <td className="num" style={{ fontWeight: 600, color: g ? signColor(g.gain) : undefined }}>{g ? signed(g.gain) : "—"}</td>
-                    <td className="num" style={{ color: g ? signColor(g.gain) : undefined }}>{g?.gainPct != null ? signedPct(g.gainPct) : "—"}</td>
-                  </tr>
-                );
-              })}
+              {byAccount
+                ? byAccount.map((grp) => (
+                  <Fragment key={grp.a?.id ?? "?"}>
+                    <tr style={{ borderTop: "2px solid var(--line)", background: "var(--surface-2)" }}>
+                      <td style={{ fontWeight: 750 }}>
+                        {grp.a?.name ?? "Unknown account"}
+                        <span className="muted" style={{ fontWeight: 400, fontSize: "0.78rem" }}> · {grp.rows.length} holding{grp.rows.length === 1 ? "" : "s"}</span>
+                      </td>
+                      <td /><td />
+                      <td className="num" style={{ fontWeight: 650 }}>{inr(grp.invested)}</td>
+                      <td className="num" style={{ fontWeight: 700 }}>{inr(grp.value)}</td>
+                      <td className="num" style={{ fontWeight: 700, color: signColor(grp.gain) }}>{signed(grp.gain)}</td>
+                      <td className="num" style={{ color: signColor(grp.gain) }}>{grp.gainPct != null ? signedPct(grp.gainPct) : "—"}</td>
+                    </tr>
+                    {grp.rows.map((r) => <HoldingRow key={r.h.id} row={r} grouped />)}
+                  </Fragment>
+                ))
+                : sorted.map((r) => <HoldingRow key={r.h.id} row={r} />)}
             </tbody>
           </table>
         </div>

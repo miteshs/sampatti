@@ -3,7 +3,7 @@
 // cost (no estimated bases dressed up as gains), a coverage card for what's left out, and
 // the recorded per-account stack instead of any simulation.
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useStore } from "../storage/store";
 import { emptyPortfolio } from "../domain/types";
 import { demoPortfolio } from "../demo";
@@ -48,5 +48,16 @@ describe("Performance — real purchase costs only", () => {
     expect(screen.getByText(/Real Estate/)).toBeTruthy(); // biggest account, own band
     // The demo's small/new accounts (Groww folio, Alibaug plot) live inside the roll-up.
     expect(screen.getByText(/Other accounts \(\d+\)/)).toBeTruthy();
+  });
+
+  it("the table can be organized by account, with per-account subtotal headers", () => {
+    renderWithDemo();
+    fireEvent.click(screen.getByRole("button", { name: "By account" }));
+    // Group headers carry a holding count; rows lose their account suffix (it's the header now).
+    expect(screen.getAllByText(/· \d+ holdings?$/).length).toBeGreaterThan(1);
+    expect(screen.getByText("Infosys")).toBeTruthy(); // still listed, under Zerodha Demat
+    // Accounts with no real-basis holdings (e.g. Provident Fund) get no group header.
+    const headers = screen.getAllByText(/· \d+ holdings?$/).map((el) => el.parentElement?.textContent ?? "");
+    expect(headers.some((t) => t.includes("Provident Fund"))).toBe(false);
   });
 });
