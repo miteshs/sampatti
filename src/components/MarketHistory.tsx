@@ -15,8 +15,10 @@ import { buildResolver, resolverFromData, coversHoldings, type Resolver, type Re
 import {
   PERIODS, periodChange, periodStart, reconstruct, sampleDates, type NetWorthPoint, type Period,
 } from "../domain/history";
+import { snapshotSeries, snapshotTime } from "../domain/snapshots";
+import { growthOnlySeries, modifiedDietz } from "../domain/actual";
 import { inr } from "../domain/format";
-import { TrendChart } from "./TrendChart";
+import { TrendChart, type TrendOverlay } from "./TrendChart";
 
 const CACHE_KEY = "sampatti.nwhistory.v1";
 interface Cached { fetchedAt: string; data: ResolverData; }
@@ -61,6 +63,24 @@ export function MarketHistory() {
     const pts = reconstruct(visible.holdings, visible.accounts, usdInr, resolver.resolve, sampleDates(periodStart(period)));
     return { points: pts, change: periodChange(pts), trackedVisible: visible.holdings.filter((h) => resolver.resolve(h)).length };
   }, [resolver, visible, period, usdInr]);
+
+  // Actual-vs-simulated: the RECORDED curve (and its growth-only variant, with money you
+  // added/started-tracking removed) over whatever part of the period the record covers.
+  // The "market alone" % is the simulation sliced to the SAME days, so the comparison is fair.
+  const actual = useMemo(() => {
+    const visibleIds = new Set(visible.accounts.map((a) => a.id));
+    const recorded = snapshotSeries(portfolio.snapshots ?? [], visibleIds, periodStart(period));
+    if (recorded.length < 2) return null;
+    const flows = portfolio.flows ?? [];
+    const growth = growthOnlySeries(recorded, flows, visibleIds, snapshotTime);
+    const dietz = modifiedDietz(recorded, flows, visibleIds, snapshotTime);
+    const fromT = recorded[0].t;
+    const simSlice = points.filter((p) => p.t >= fromT);
+    const simChange = simSlice.length >= 2 ? periodChange(simSlice) : null;
+    const days = Math.max(1, Math.round((recorded[recorded.length - 1].t - fromT) / 86_400_000));
+    const hasEvents = growth[growth.length - 1].netWorth !== recorded[recorded.length - 1].netWorth;
+    return { recorded, growth, dietz, simChange, days, hasEvents };
+  }, [portfolio.snapshots, portfolio.flows, visible.accounts, period, points]);
 
   const load = async () => {
     setLoading(true);
@@ -133,7 +153,42 @@ export function MarketHistory() {
               <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> over {period} · simulated</span>
             </div>
           </div>
-          <TrendChart points={points} simulated />
+          {actual && (
+            <div style={{
+              display: "flex", alignItems: "baseline", gap: "0.45rem", flexWrap: "wrap",
+              fontSize: "0.84rem", margin: "0 0 0.6rem", padding: "0.5rem 0.7rem",
+              background: "var(--surface-2)", borderRadius: 10, border: "1px solid var(--line-2)",
+            }}>
+              <span className="muted">Last {actual.days} days, from your real record:</span>
+              {actual.dietz != null && (
+                <strong style={{ color: actual.dietz >= 0 ? "#19724f" : "var(--down)" }}>
+                  your actual return {actual.dietz >= 0 ? "+" : ""}{(actual.dietz * 100).toFixed(1)}%
+                </strong>
+              )}
+              {actual.dietz != null && <span className="muted" title="Money-weighted (Modified Dietz) — accounts for when money was added, not just how much">money-weighted</span>}
+              {actual.simChange?.pct != null && (
+                <span className="muted">· market alone would've given {actual.simChange.pct >= 0 ? "+" : ""}{actual.simChange.pct}%</span>
+              )}
+            </div>
+          )}
+          <TrendChart
+            points={points}
+            simulated
+            overlays={actual ? ([
+              { points: actual.recorded, color: "#4845e5", width: 2.2 },
+              ...(actual.hasEvents ? [{ points: actual.growth, color: "#8a8675", width: 1.5, opacity: 0.9 }] : []),
+            ] as TrendOverlay[]) : undefined}
+          />
+          {actual && (
+            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.45rem", marginBottom: 0 }}>
+              <span style={{ color: "#4845e5", fontWeight: 700 }}>━</span> your recorded net worth
+              {actual.hasEvents && (
+                <> · <span style={{ color: "#8a8675", fontWeight: 700 }}>━</span> growth only (money you
+                added &amp; newly tracked assets removed)</>
+              )}{" "}
+              · <span style={{ fontWeight: 700 }}>┄</span> market simulation
+            </p>
+          )}
           {stale && (
             <div className="badge badge-amber" style={{ marginTop: "0.5rem", padding: "0.35rem 0.6rem", display: "inline-block" }}>
               Holdings changed since the last refresh — ↻ to price the new ones.
