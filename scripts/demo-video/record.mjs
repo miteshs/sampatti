@@ -1,10 +1,13 @@
-// Region demo videos (1–2 min, narrated): drives the BUILT app in real Chrome through a
-// scripted tour — welcome → region → demo → every feature — with an animated cursor, and
-// lays per-scene narration (macOS `say`: Aman en-IN / Samantha en-US) over the screen
-// recording. Privacy is the through-line of both scripts.
+// Region tutorial videos (~2½ min, narrated): drives the BUILT app in real Chrome through
+// a story-driven walkthrough — the viewer's problem → the private promise → every tab →
+// how to switch the AI on (relay or your-own-key) → install. Privacy is the through-line.
+// Narration: edge-tts neural voices via uvx (en-IN-Neerja / en-US-Jenny), falling back to
+// macOS `say` (Aman / Samantha) when offline. Captions are burned in + .srt sidecars,
+// because embedded videos autoplay muted. See TUTORIAL-PLAN.md for the standing critique.
 //
 //   npm run build && node scripts/demo-video/record.mjs            # both regions
 //   node scripts/demo-video/record.mjs --region US                 # one region
+//   node scripts/demo-video/record.mjs --tts say                   # force offline voices
 //
 // Sync strategy: narration is generated FIRST; each scene's video runs exactly as long as
 // its audio (plus a breath), holding the last frame — so A/V sync is exact by construction.
@@ -41,57 +44,112 @@ function chromePath() {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- narration ------------------------------------------------------------------
-// Written to match what is ON SCREEN in each scene; region versions differ where the
-// market does (demo size, brokers/CAS, tax pillars, persona).
+// Tutorial voice, not tour voice: every scene tells the viewer what to DO ("open the
+// Performance tab"), matches what is ON SCREEN, and the arc is problem → promise → every
+// tab → switch the AI on → install. Region versions differ where the market does.
 const SCRIPTS = {
   IN: {
-    voice: "Aman",
+    edgeVoice: "en-IN-NeerjaNeural",
+    voice: "Aman", // `say` fallback
     rate: null, // Siri-quality voice: -r is ignored; its native pace is already conversational
-    pronounce: "Sampatti", // en-IN phonology reads the 'a's as schwas — correct as written
+    pronounce: "Sampatti", // Indian-English phonology reads the 'a's as schwas — correct as written
     label: "india",
     regionChip: "India",
     scenes: {
-      welcome: "This is Sampatti — all your money, in one private picture. There's no account and no cloud: everything lives on your own computer. Pick your market — India — and start with the built-in demo.",
-      overview: "One click loads a realistic fourteen-crore portfolio. The Overview reads like a story: your net worth, what you own, what you owe — and plain-words verdicts on equity, liquidity and concentration, all computed on this device.",
-      performance: "Performance shows eighteen months of real history — what actually grew, versus what you added. Zoom into any period, or break it down account by account, using genuine purchase costs — never guesses.",
-      adddata: "Adding your own money is drag and drop. Spreadsheets parse right here — even your CAS PDF, password and all, never leaves this computer. Imports land in a review card; nothing is saved until you approve.",
-      ai: "Want a second opinion? A SEBI-aware analyst reviews concentration, diversification, Indian tax planning and retirement. And here is the heart of the privacy story: only this compact brief is ever sent — you can read every line of it before anything leaves.",
-      privacy: "The Privacy page spells the whole deal out: where your data lives, what leaves, and when. Export everything as a single file — or erase it all with one click. Gone means gone.",
-      close: "Sampatti. Private portfolio analysis, made for India. Install it with Homebrew — and see your whole picture tonight.",
+      welcome: "If you're like most of us, your money lives in a dozen places — brokers, mutual-fund apps, EPF, the bank. Sampatti brings all of it into one private picture, on your own computer. No account, no cloud, nothing to sign up for. Let's set it up together. Choose your market — India — and load the demo portfolio, so you can explore before adding anything of your own.",
+      overview: "The demo loads a realistic fourteen-crore portfolio, and you land on the Overview. At the top, your net worth. Below it, what you own and what you owe. And these plain-word verdicts — equity, liquidity, concentration — are computed entirely on this device. This is the picture you'll see every time you open the app.",
+      performance: "Next, open the Performance tab. It answers the question that actually matters: did your money grow, or did you just add more? Pick any period — one year, or everything. Then break it down account by account, built from genuine purchase costs, never guesses.",
+      manage: "The Manage tab keeps you in control. Edit any account or holding, pause one out of the totals, or remove it completely. You can also see how fresh every price is, and refresh them whenever you like.",
+      adddata: "When you're ready for your own numbers, open Add data. Drag in a broker spreadsheet — or your CAS PDF, password and all. Everything parses right here on your computer. Each import lands in a review card, and nothing is saved until you approve it.",
+      ai: "Now, the part everyone asks about: AI analysis. A SEBI-aware analyst reviews your concentration, diversification, tax planning and retirement. And before anything is sent, Sampatti shows you the exact brief that will leave your machine — a compact summary, never your raw data. You can read every line of it first.",
+      settings: "To switch the AI on, open Settings. There are two ways. The relay is the easiest — ask us for access on GitHub, and your analysis flows through it without you handling any keys. Or, for maximum privacy, choose your own Anthropic key: paste a key from console.anthropic.com, and it's stored in your system keychain — it never even enters the app's web view.",
+      privacy: "Finally, the Privacy page is the whole contract in plain words: what stays on your machine, what can leave, and when. Export everything as a single file whenever you like — or erase it all with one click. Gone means gone.",
+      close: "That's Sampatti — your whole financial picture, private by design. Install it with Homebrew tonight, load the demo, and meet your money.",
     },
   },
   US: {
-    voice: "Samantha",
+    edgeVoice: "en-US-JennyNeural",
+    voice: "Samantha", // `say` fallback
     rate: 150, // narration pace, not announcer pace
     // en-US reads "Sampatti" as "sam-PAT-ee" (cat-vowels). सम्पत्ति is "sum-PUTT-ee";
-    // "Sumputty" gets Samantha there. Spoken text only — on-screen spelling is untouched.
+    // "Sumputty" gets both Jenny and Samantha there. Spoken text only — on-screen
+    // spelling is untouched, and captions show the real name.
     pronounce: "Sumputty",
     label: "us",
     regionChip: "United States",
     scenes: {
-      welcome: "This is Sampatti — all your money, in one private picture. There's no account and no cloud: everything lives on your own computer. Pick your market — the United States — and start with the built-in demo.",
-      overview: "One click loads a realistic two point three million dollar portfolio. The Overview reads like a story: your net worth, what you own, what you owe — and plain-words verdicts on equity, liquidity and concentration, all computed on this device.",
-      performance: "Performance shows eighteen months of real history — what actually grew, versus what you added. Zoom into any period, or break it down account by account, using genuine purchase costs — never guesses.",
-      adddata: "Adding your own money is drag and drop. Download the positions file from Schwab, Fidelity or Vanguard and drop it in — it parses right here and never leaves this computer. Imports land in a review card; nothing is saved until you approve.",
-      ai: "Want a second opinion? A fiduciary-style analyst reviews concentration, diversification, capital-gains planning, wash sales, and four-oh-one-k versus Roth placement. And here is the heart of the privacy story: only this compact brief is ever sent — you can read every line before anything leaves.",
-      privacy: "The Privacy page spells the whole deal out: where your data lives, what leaves, and when. Export everything as a single file — or erase it all with one click. Gone means gone.",
-      close: "Sampatti. Private portfolio analysis, made for the United States. Download it free — and see your whole picture tonight.",
+      welcome: "If you're like most of us, your money lives in a dozen places — brokerages, retirement accounts, the bank. Sampatti brings all of it into one private picture, on your own computer. No account, no cloud, nothing to sign up for. Let's set it up together. Choose your market — the United States — and load the demo portfolio, so you can explore before adding anything of your own.",
+      overview: "The demo loads a realistic two-point-three-million-dollar portfolio, and you land on the Overview. At the top, your net worth. Below it, what you own and what you owe. And these plain-word verdicts — equity, liquidity, concentration — are computed entirely on this device. This is the picture you'll see every time you open the app.",
+      performance: "Next, open the Performance tab. It answers the question that actually matters: did your money grow, or did you just add more? Pick any period — one year, or everything. Then break it down account by account, built from genuine purchase costs, never guesses.",
+      manage: "The Manage tab keeps you in control. Edit any account or holding, pause one out of the totals, or remove it completely. You can also see how fresh every price is, and refresh them whenever you like.",
+      adddata: "When you're ready for your own numbers, open Add data. Download the positions file from Schwab, Fidelity or Vanguard, and drop it in. Everything parses right here on your computer. Each import lands in a review card, and nothing is saved until you approve it.",
+      ai: "Now, the part everyone asks about: AI analysis. A fiduciary-style analyst reviews concentration, diversification, capital-gains planning, wash sales, and four-oh-one-k versus Roth placement. And before anything is sent, Sampatti shows you the exact brief that will leave your machine — a compact summary, never your raw data. You can read every line of it first.",
+      settings: "To switch the AI on, open Settings. There are two ways. The relay is the easiest — ask us for access on GitHub, and your analysis flows through it without you handling any keys. Or, for maximum privacy, choose your own Anthropic key: paste a key from console.anthropic.com, and it's stored in your system's credential manager — it never even enters the app's web view.",
+      privacy: "Finally, the Privacy page is the whole contract in plain words: what stays on your machine, what can leave, and when. Export everything as a single file whenever you like — or erase it all with one click. Gone means gone.",
+      close: "That's Sampatti — your whole financial picture, private by design. Download it free tonight, load the demo, and meet your money.",
     },
   },
 };
 
-const SENTENCE_GAP = 0.45; // breath between sentences, edited in as real silence
+const SENTENCE_GAP = 0.55; // breath between sentences, edited in as real silence
+const EDGE_RATE = "-8%";   // a touch below Jenny/Neerja's default — tutorial pace
+
+// Engine choice: edge-tts neural voices when uvx + network are there, `say` offline.
+// --tts say|edge overrides. Detected once; a mid-run network drop should fail loudly
+// rather than silently produce a two-voice video.
+const TTS = (() => {
+  const i = process.argv.indexOf("--tts");
+  const forced = i > 0 ? process.argv[i + 1] : null;
+  if (forced === "say") return "say";
+  try {
+    execFileSync("uvx", ["edge-tts", "--version"], { stdio: "pipe", timeout: 30000 });
+    return "edge";
+  } catch {
+    if (forced === "edge") throw new Error("--tts edge requested but uvx edge-tts is unavailable");
+    console.warn("⚠ edge-tts unavailable — falling back to macOS `say` voices");
+    return "say";
+  }
+})();
+
+function ttsSentence(region, file, text) {
+  if (TTS === "edge") {
+    // The service occasionally drops a connection; one retry covers it.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        execFileSync("uvx", ["edge-tts", "--voice", region.edgeVoice, `--rate=${EDGE_RATE}`,
+          "--text", text, "--write-media", file], { stdio: "pipe", timeout: 60000 });
+        return;
+      } catch (e) {
+        if (attempt >= 1) throw e;
+      }
+    }
+  }
+  const args = ["-v", region.voice];
+  if (region.rate) args.push("-r", String(region.rate));
+  execFileSync("say", [...args, "-o", file, text]);
+}
 
 function makeAudio(region, name, text) {
-  const spoken = text.replaceAll("Sampatti", region.pronounce);
-  const sentences = spoken.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const ext = TTS === "edge" ? "mp3" : "aiff";
   const parts = sentences.map((s, i) => {
-    const f = join(OUT, `${region.label}-${name}-s${i}.aiff`);
-    const args = ["-v", region.voice];
-    if (region.rate) args.push("-r", String(region.rate));
-    execFileSync("say", [...args, "-o", f, s]);
+    const f = join(OUT, `${region.label}-${name}-s${i}.${ext}`);
+    ttsSentence(region, f, s.replaceAll("Sampatti", region.pronounce));
     return f;
   });
+  // Per-sentence durations drive both the stitch and the caption cues (original text in
+  // the cues — viewers must read "Sampatti", whatever the engine was told to say).
+  const probe = (f) => parseFloat(execFileSync("ffprobe", [
+    "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f,
+  ]).toString().trim());
+  const partDur = parts.map(probe);
+  const cues = [];
+  let t = 0;
+  sentences.forEach((s, i) => {
+    cues.push({ text: s, start: t, end: t + partDur[i] });
+    t += partDur[i] + SENTENCE_GAP;
+  });
+
   const wav = join(OUT, `${region.label}-${name}.wav`);
   const n = parts.length;
   const norm = parts.map((_, i) =>
@@ -105,10 +163,19 @@ function makeAudio(region, name, text) {
     "-filter_complex", [...norm, ...gaps].join(";") + `;${seq}concat=n=${2 * n - 1}:v=0:a=1[out]`,
     "-map", "[out]", wav,
   ]);
-  const dur = parseFloat(execFileSync("ffprobe", [
-    "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", wav,
-  ]).toString().trim());
-  return { file: wav, dur };
+  return { file: wav, dur: probe(wav), cues };
+}
+
+// ---------- captions ---------------------------------------------------------------------
+const srtTime = (t) => {
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = Math.floor(t % 60);
+  const ms = Math.round((t % 1) * 1000);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
+};
+
+function writeSrt(file, cues) {
+  writeFileSync(file, cues.map((c, i) =>
+    `${i + 1}\n${srtTime(c.start)} --> ${srtTime(c.end)}\n${c.text}\n`).join("\n"));
 }
 
 // ---------- cursor + page helpers --------------------------------------------------------
@@ -168,6 +235,20 @@ const park = async (page) => {
 
 const scroll = async (page, top, ms = 1200) => {
   await page.evaluate((t) => window.scrollTo({ top: t, behavior: "smooth" }), top);
+  await sleep(ms);
+};
+
+// Scroll an element into the middle of the viewport — no pixel guesses, so the camera
+// always shows what the narration is talking about (caught by the Settings scene, which
+// clicked the relay chips below the fold while the viewer saw "Developer mode").
+const scrollToEl = async (page, text, tags = "button, summary, a, h2, h3", ms = 1100) => {
+  const found = await page.evaluate(({ text, tags }) => {
+    const el = [...document.querySelectorAll(tags)].find((e) => e.textContent?.includes(text));
+    if (!el) return false;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    return true;
+  }, { text, tags });
+  if (!found) throw new Error(`scrollToEl target not found: ${text}`);
   await sleep(ms);
 };
 
@@ -250,7 +331,7 @@ function buildScene(region, name, frames, t0, audio) {
 // ---------- the tour -----------------------------------------------------------------------
 async function recordRegion(key, page, cdp) {
   const region = SCRIPTS[key];
-  console.log(`\n▶ ${key} demo (voice: ${region.voice})`);
+  console.log(`\n▶ ${key} demo (voice: ${TTS === "edge" ? region.edgeVoice : region.voice})`);
   const audio = {};
   for (const [name, text] of Object.entries(region.scenes)) audio[name] = makeAudio(region, name, text);
 
@@ -261,6 +342,8 @@ async function recordRegion(key, page, cdp) {
   await installCursor(page);
 
   const sceneFiles = [];
+  const allCues = [];
+  let timelineT = 0; // running start of the current scene in the final cut — anchors captions
   const scene = async (name, actions) => {
     const dir = join(OUT, `${region.label}-${name}-frames`);
     const cap = startCapture(cdp, dir);
@@ -277,6 +360,10 @@ async function recordRegion(key, page, cdp) {
     if (cap.frames.length === 0) throw new Error(`no frames for scene ${name}`);
     const first = cap.frames[0].ts;
     sceneFiles.push(buildScene(region, name, cap.frames, Math.min(first, t0 + 0.35), audio[name]));
+    for (const c of audio[name].cues) {
+      allCues.push({ text: c.text, start: timelineT + LEAD + c.start, end: timelineT + LEAD + c.end });
+    }
+    timelineT += audio[name].dur + LEAD + TAIL;
     console.log(`  ✓ ${name} (${audio[name].dur.toFixed(1)}s narration, ${cap.frames.length} frames)`);
   };
 
@@ -315,6 +402,15 @@ async function recordRegion(key, page, cdp) {
     await scroll(page, 560, 1100);
   });
 
+  await scene("manage", async () => {
+    await scroll(page, 0, 400);
+    await click(page, "Manage");
+    await park(page);
+    await sleep(2200);
+    await scrollToEl(page, "Data freshness");
+    await sleep(1400);
+  });
+
   await scene("adddata", async () => {
     await scroll(page, 0, 400);
     await click(page, "Add data");
@@ -335,6 +431,22 @@ async function recordRegion(key, page, cdp) {
     await scroll(page, 760, 1100);
   });
 
+  await scene("settings", async () => {
+    await scroll(page, 0, 400);
+    await click(page, "Settings");
+    await park(page);
+    await sleep(1300);
+    await scrollToEl(page, "How analysis reaches Claude");
+    await sleep(600);
+    await cursorTo(page, "Relay (default, easiest)");
+    await sleep(1500);
+    await click(page, "My own Anthropic key");
+    await sleep(1300);
+    await cursorTo(page, "Save key");
+    await sleep(900);
+    await park(page);
+  });
+
   await scene("privacy", async () => {
     await scroll(page, 0, 400);
     await click(page, "Privacy");
@@ -349,20 +461,33 @@ async function recordRegion(key, page, cdp) {
 
   await scene("close", async () => {
     await scroll(page, 0, 350);
-    await click(page, "Settings");
+    await click(page, "Overview");
     await park(page);
-    await sleep(1350);
+    await sleep(1400);
     await endCard(page, region);
     await sleep(1200);
   });
 
-  // Concat scenes (identical codecs → stream copy).
+  // Concat scenes (identical codecs → stream copy), then one finishing pass: burn the
+  // captions (embedded videos autoplay muted) and master loudness to -16 LUFS.
   const listFile = join(OUT, `${region.label}-all.txt`);
   writeFileSync(listFile, sceneFiles.map((f) => `file '${f}'`).join("\n"));
+  const master = join(OUT, `${region.label}-master.mp4`);
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listFile, "-c", "copy", master]);
+
+  const srt = join(OUT, `sampatti-demo-${region.label}.srt`);
+  writeSrt(srt, allCues);
+
   const final = join(OUT, `sampatti-demo-${region.label}.mp4`);
-  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listFile, "-c", "copy", "-movflags", "+faststart", final]);
+  execFileSync("ffmpeg", [
+    "-y", "-loglevel", "error", "-i", master,
+    "-vf", `subtitles=${srt}:force_style='FontName=Helvetica,FontSize=12,PrimaryColour=&H00FFFFFF,BackColour=&H66000000,BorderStyle=4,Outline=0,Shadow=0,MarginV=30,Alignment=2'`,
+    "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+    "-c:v", "libx264", "-crf", "20", "-preset", "medium",
+    "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", final,
+  ]);
   const dur = parseFloat(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).toString().trim());
-  console.log(`✓ ${final} — ${dur.toFixed(1)}s`);
+  console.log(`✓ ${final} — ${dur.toFixed(1)}s (captions burned + ${srt.split("/").pop()} sidecar)`);
   return final;
 }
 
