@@ -60,3 +60,11 @@ the e2e/visual layers below exist so that class of bug can't ship again.
   tests + the Windows CI round-trip. Revisit if web and desktop behavior ever diverge.
 - **Mutation testing as a CI gate** — runtime is minutes per module; keep it a manual
   audit (`npm run mutate`) after big domain changes.
+
+## Mutation audit snapshot (2026-06-11)
+
+Score over the five money-math modules: **71.4%** (319 killed · 107 survived · 21 uncovered).
+snapshots 77.8 · verdicts 79.6 · flows 70.5 · basisHistory 65.7 · buckets 64.6. Survivors are
+dominated by cosmetic string/color literals (verdict copy, bucket labels) which the tests
+deliberately don't freeze; the thinner structural spots are basisHistory's sampling-step
+edges and flows' rounding boundaries — strengthen there first if hardening further.
