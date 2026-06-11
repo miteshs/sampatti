@@ -57,8 +57,20 @@ fi
 [ "$SIGNED" = "1" ] || echo "⚠ UNSIGNED build (no .env.signing) — the cask postflight strips quarantine instead."
 
 echo "▶ Building PUBLIC Sampatti ${VERSION} (relay token excluded)…"
+# Strip the build machine's identity: Rust dependencies embed absolute panic/debug paths
+# (/Users/<name>/.cargo/…) into release binaries — 749 of them in the first 0.3.0 cut.
+# Remap everything under $HOME for rustc and for the C/C++ in llama.cpp alike.
+export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME=/build"
+export CFLAGS="${CFLAGS:-} -ffile-prefix-map=$HOME=/build"
+export CXXFLAGS="${CXXFLAGS:-} -ffile-prefix-map=$HOME=/build"
 VITE_RELAY_TOKEN="" npm run tauri build >/dev/null
 [ -f "$DMG" ] || { echo "✗ dmg not found at $DMG"; exit 1; }
+
+# Binary-level PII gate: the published executable must not contain the builder's home path.
+if strings "$APP/Contents/MacOS/sampatti" | grep -q "/Users/"; then
+  echo "✗ ABORT: build paths leak the build machine's identity — check the remap flags."
+  exit 1
+fi
 
 # Belt & braces: the published bundle must not contain the relay token from .env.local.
 if [ -f .env.local ]; then
