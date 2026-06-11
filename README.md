@@ -11,17 +11,24 @@ plain web app for development.
 
 ## What it does
 
-- **Bring in data any way you have it** — the canonical CSV/Excel format (parsed on-device),
-  or a PDF/screenshot of a statement (read by Claude, with your confirmation, then shown to
-  you as an editable draft before anything is saved).
-- **Dashboard** — net worth, and allocation by **asset class / account / tax class / region /
-  account type / institution**, with concentration and data-freshness panels.
+- **Five-minute full import** — drop in your **CAS PDFs** (CAMS/KFintech mutual-fund CAS and
+  the NSDL/CDSL depository CAS): password-protected files are decrypted and parsed **entirely
+  on-device**, with cross-account duplicate reconciliation so a CAS and a platform export
+  never double-count.
+- **Bring in anything else any way you have it** — CSV/Excel (parsed on-device), or a
+  PDF/screenshot of a statement (read by Claude, with your confirmation, then shown to you as
+  an editable draft before anything is saved).
+- **Dashboard** — net worth with plain-words verdicts on every headline number, allocation by
+  **type / account / tax / region / institution**, daily-recorded net-worth history with a
+  growth-vs-money-added split.
+- **Performance** — the portfolio stacked account by account over time (back to your oldest
+  purchase via cost bases), drag-to-zoom, and P&L strictly from real purchase costs.
 - **AI Analysis (interactive)** — a streamed review covering concentration, diversification,
   India tax (equity LTCG/STCG, debt slab taxation, ELSS/80C, NPS/80CCD(1B), SGB, harvesting),
   liquidity, and a retirement/income read — then a chat box to ask follow-ups.
 - **Privacy by construction** — see [PRIVACY.md](./PRIVACY.md).
 
-Try it instantly with **Add data → Load demo portfolio** (a hypothetical ~₹12 Cr HNI).
+Try it instantly with **Add data → Load demo portfolio** (a hypothetical ~₹14 Cr HNI with 18 months of recorded history).
 
 ## Run it (development)
 
@@ -98,12 +105,13 @@ Two modes, switchable on the Privacy screen:
 ## Layout
 
 ```
-src/domain      types, classification/alias maps, allocation grouping, the Portfolio Brief
-src/ingest      CSV / Excel / PDF parsing + the Claude document-extraction pipeline
+src/domain      types, classification, allocation grouping, snapshots/flows, the Portfolio Brief
+src/ingest      CSV / Excel / CAS (CAMS + NSDL/CDSL) / PDF parsing, duplicate reconciliation,
+                and the Claude document-extraction pipeline
 src/storage     the on-device portfolio store (one JSON file)
 src/claude      transport (relay/BYO, streaming) + the analyst prompts
-src/platform    Tauri-vs-web abstraction (storage, keychain, network)
-src/components   Overview, AnalysisChat, AddData, Privacy, Donut, Markdown
+src/platform    Tauri-vs-web abstraction (storage, keystore, network, OS copy)
+src/components   Overview, Performance (AccountStack), Manage, AnalysisChat, AddData, Privacy
 src-tauri        the Rust shell: OS keystore + the native Claude stream, macOS/Windows bundle config
 ```
 

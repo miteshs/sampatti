@@ -34,22 +34,31 @@ will object once (unsigned build): **More info → Run anyway**. Details in [win
 
 ## 3. Gather your statements into one folder
 
-Make a folder (e.g. `~/Desktop/statements`) and download a holdings/positions export from
-**every** account. Prefer **CSV/Excel** over PDF — they parse entirely on-device — and pick
-the export that includes **cost basis / buy value** where your broker offers one, so you get
-true P&L and (later) tax tooling:
+**The two-file shortcut (covers most Indian portfolios):**
+
+1. Your monthly **NSDL/CDSL CAS email** — every demat stock, ETF, REIT and SGB across all
+   your demat accounts, plus MF folios. (Password: usually your PAN in capitals.)
+2. The **detailed CAMS/KFintech CAS** from
+   [camsonline.com → Statements → CAS](https://www.camsonline.com/Investors/Statements/Consolidated-Account-Statement)
+   — every mutual fund **with purchase costs**, which powers true P&L and tax tooling.
+
+Both are password-protected PDFs and both are parsed **entirely on this device** — Sampatti
+asks for the password in-app and never stores or sends it.
+
+For everything the CAS doesn't cover, add the platform's own export:
 
 | Account | Best export |
 |---|---|
 | Indian broker (Zerodha, Groww, …) | Holdings CSV/XLSX — include *Buy value / Avg. cost* columns |
-| Demat (CDSL / NSDL) | Holding Statement (XLSX) |
-| Mutual funds | CAMS / KFintech holdings export, or your platform's CSV |
 | US broker (Schwab, Fidelity, …) | Positions CSV — include *Cost Basis* and *Date Acquired* |
 | RSU/ESPP plan | The plan's holdings/share-detail sheet |
 | Anything else | A PDF statement or even a screenshot works (read by Claude, after you confirm) |
 
 No clean export for something (flat, PPF, FD, insurance, physical gold)? Skip it — you'll add
 those by hand in step 5.
+
+> Already imported a platform export *and* a CAS? The review card flags overlapping holdings
+> and offers one-click removal of exact duplicates, so nothing double-counts.
 
 ## 4. Import the whole folder
 
@@ -78,11 +87,13 @@ field, every holding, cost basis, buy dates).
 - **Add data → Income** — salary, rent, dividends (powers the retirement sense-check).
 - **Manage tab** — ✎ to fix anything, untick accounts to exclude them from all analysis,
   **Refresh live prices** to mark everything to market.
-- **Overview** — sanity-check net worth and allocation. Your real net worth is recorded
-  automatically every day you open the app and charts itself as history accumulates.
-  **Performance** shows every holding's P&L — rows marked ≈ have no purchase cost on file;
-  add real costs whenever you find them — and can simulate the past year from market data
-  (clearly labelled as a what-if, since it back-prices today's holdings).
+- **Overview** — sanity-check net worth and allocation; every headline number carries a
+  plain-words read. Your real net worth is recorded automatically every day you open the
+  app and charts itself as history accumulates.
+- **Performance** — your portfolio stacked account by account over time (the **All** view
+  reaches back to your oldest purchase using cost bases; drag across the chart to zoom any
+  range), plus P&L for every holding **with a real purchase cost on file** — holdings
+  without one are left out rather than estimated; add costs in Manage to include them.
 
 ## 6. Run the AI analysis
 

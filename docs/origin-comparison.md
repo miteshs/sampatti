@@ -22,7 +22,7 @@ A cloud, subscription all-in-one US money app:
 | Capability | Origin | Sampatti | Verdict |
 |---|---|---|---|
 | Account sync | Auto (Plaid, US) | Manual + file import, local | Gap *(by design)* |
-| Net worth | Auto + **over time** | Point-in-time snapshot | **Gap** |
+| Net worth | Auto + **over time** | Daily-recorded history + per-account stack, growth-vs-flows split | **Closed** |
 | Investment analysis | Portfolio view + AI | Deep: HHI/concentration/allocation/tax look-through | **Sampatti deeper** |
 | Budgeting / spending | Core (txns, subscriptions) | None (income sources only) | Gap |
 | Managed investing | Robo, no AUM | — | Non-goal *(not a broker)* |
@@ -31,7 +31,7 @@ A cloud, subscription all-in-one US money app:
 | Estate / human CFP | Yes | — | Non-goal |
 | Goals & retirement planning | Yes | AI mentions only | **Gap** |
 | Couples / household | Add a partner | Single portfolio | Gap |
-| Mobile | iOS + Android | Mac + web | Gap |
+| Mobile | iOS + Android | macOS + Windows + web preview | Gap (mobile) |
 | **Privacy** | Cloud + Plaid (full data on servers) | **100% local, nothing sold** | **Sampatti wins big** |
 | **Geography** | US only ($/Zillow/Column Tax) | **India-first** (₹, SGB/NPS/PPF/PMS/AIF, gold by weight) | **Sampatti wins for India** |
 | Cost | $99/yr | Free + your own Claude (~cents/analysis) | Sampatti wins |
@@ -50,12 +50,10 @@ A cloud, subscription all-in-one US money app:
 ## Gaps that matter — and how to close them (staying local + India)
 
 ### Tier 1 — close first (high value, feasible, on-brand)
-1. **Live price refresh** — the biggest functional gap. Auto-revalue holdings from **AMFI
-   daily NAV** (free CSV) for mutual funds and a quote API for listed equities; FX and gold
-   are already live. Net worth updates without re-importing → removes the "my numbers are
-   stale" objection.
-2. **Net worth over time** — save a dated snapshot locally on each change → trend chart.
-   Pure-local; directly matches Origin's headline feature.
+1. ~~**Live price refresh**~~ — **DONE** (Yahoo/AMFI/mfapi via the native layer; FX auto-refreshes
+   at launch).
+2. ~~**Net worth over time**~~ — **DONE** (daily recorded snapshots, per-account stack, brush zoom,
+   growth-vs-flows split).
 3. **Goals + retirement projection** — corpus-vs-goals, SWP / safe-withdrawal, inflation,
    India return assumptions, NPS/PPF-aware — deterministic numbers + an AI narrative (the
    brief already does a retirement sense-check).
@@ -71,7 +69,7 @@ A cloud, subscription all-in-one US money app:
 ### Tier 3 — strategic, heavy
 - **India Account Aggregator** integration — consent-based, privacy-respecting aggregation
   (requires registering as / using an FIU + TSP). The privacy-aligned answer to Plaid.
-- MF Central / CAS auto-import.
+- ~~MF Central / CAS import~~ — **DONE** (CAMS/KFintech + NSDL/CDSL CAS parsed fully on-device, password handling included, with cross-account duplicate reconciliation). Remaining: MF Central API-style auto-fetch.
 
 ## Deliberate non-goals (and why)
 | Origin feature | Why we don't match it |

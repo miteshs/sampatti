@@ -81,8 +81,9 @@ export function NetWorthTrend() {
           Sampatti records your net worth automatically every day you open it —{" "}
           <strong>{recordedDays} day{recordedDays === 1 ? "" : "s"} on file</strong>
           {first ? ` (since ${first})` : ""}. Your real history builds from here: imports, edits,
-          live-price refreshes and FX changes all land in the daily record. Until it accumulates,
-          the <strong>Performance</strong> tab can simulate the past year from market data.
+          live-price refreshes and FX changes all land in the daily record. Meanwhile the{" "}
+          <strong>Performance</strong> tab's <em>All</em> view already reaches back through your
+          purchase costs, account by account.
         </p>
       ) : (
         <div style={{ marginTop: "0.8rem" }}>

@@ -190,7 +190,7 @@ export function AddData() {
         <div className="eyebrow">{hasData ? "Add more" : "Get started"}</div>
         <h2 style={{ fontSize: "1.3rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-          {hasData && <button className="btn" onClick={loadDemo}>▶ Load demo portfolio (₹13.5 Cr)</button>}
+          {hasData && <button className="btn" onClick={loadDemo}>▶ Load demo portfolio (₹14 Cr)</button>}
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import files (CSV / Excel / PDF / image)</button>
           <button className="btn" onClick={() => folderRef.current?.click()}>📁 Import a whole folder</button>
           <button className="btn btn-ghost" onClick={downloadTemplate}>Download CSV template</button>
@@ -367,7 +367,7 @@ function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => voi
         </button>
       </div>
       <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.9rem" }}>
-        The demo is a made-up ₹13.5 Cr portfolio — play freely, then clear it with one click.
+        The demo is a made-up ₹14 Cr portfolio with 18 months of history — play freely, then clear it with one click.
       </p>
     </div>
   );
