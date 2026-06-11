@@ -217,14 +217,15 @@ tr:last-child td { border-bottom: none; }
 .verdict.ok { color: var(--ink-2); } .verdict.ok .dot { background: #b3ae9f; }
 .verdict.watch { color: #9a5a10; } .verdict.watch .dot { background: var(--amber); }
 
-/* ---- the Overview hero: the one number they open the app for ---- */
+/* ---- the Overview hero: the one number they open the app for ----
+   Inter, not the display serif: figures must be instantly readable, and matching the other
+   numerals keeps the whole screen speaking one numeric voice. The serif stays on prose. */
 .hero-figure {
-  font-family: var(--font-display);
-  font-weight: 560;
-  font-size: clamp(2.4rem, 5vw, 3.1rem);
-  letter-spacing: -0.015em;
+  font-weight: 800;
+  font-size: clamp(2.3rem, 5vw, 2.9rem);
+  letter-spacing: -0.04em;
   line-height: 1.05;
-  font-variant-numeric: lining-nums;
+  font-variant-numeric: tabular-nums;
 }
 .delta-chip {
   display: inline-flex; align-items: center; gap: 0.3rem;
