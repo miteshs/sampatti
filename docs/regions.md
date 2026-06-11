@@ -45,8 +45,10 @@ Phase R1 — the seam (no behavior change for existing users)
       follows the setting; the VALUE-side base conversion is R2's `toBase` item)
 
 Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tests throughout)
-- [ ] Money-format seam adoption: components render via `profileFor(settings)` instead of
-      importing `inr()` directly (≈15 files; mechanical; visual baselines re-pinned once)
+- [x] Money-format seam adoption: all 10 money-rendering components now call `fmtMoney`
+      (store-backed, region-aware) instead of importing `inr()` directly; `inr` remains the
+      IN implementation inside the seam. Visual suite confirmed PIXEL-IDENTICAL for India
+      (no baseline change needed) — the adoption itself changed nothing
 - [ ] Base-currency generalization: `toBase` → profile-aware (US base: INR→USD divides);
       `usdInr` setting becomes the single FX pair both ways; Privacy FX card copy per region
 - [ ] Tax wrappers per region: brief's taxable/exemptEEE/nps → US: taxable/traditional/

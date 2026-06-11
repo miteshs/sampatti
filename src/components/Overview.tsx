@@ -2,7 +2,8 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { buildSegments, keyFor, DIMENSIONS, type Dimension } from "../domain/group";
-import { holdingBase, inr, pct } from "../domain/format";
+import { holdingBase, pct } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { bucketSegments } from "../domain/buckets";
 import { concentrationVerdict, equityVerdict, liquidityVerdict, type Verdict } from "../domain/verdicts";
@@ -153,26 +154,26 @@ export function Overview() {
       {/* The one number they open the app for — given a real moment. */}
       <div className="card card-pad-lg">
         <div className="eyebrow">Net worth</div>
-        <div className="hero-figure">{inr(Math.round(animatedNetWorth))}</div>
+        <div className="hero-figure">{fmtMoney(Math.round(animatedNetWorth))}</div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", flexWrap: "wrap", marginTop: "0.55rem" }}>
           {delta ? (
             <span className={`delta-chip ${delta.abs > 0 ? "up" : delta.abs < 0 ? "down" : "flat"}`}>
               {delta.abs > 0 ? "▲" : delta.abs < 0 ? "▼" : "•"}{" "}
-              {`${delta.abs >= 0 ? "+" : "−"}${inr(Math.abs(delta.abs))}`} since {delta.since}
+              {`${delta.abs >= 0 ? "+" : "−"}${fmtMoney(Math.abs(delta.abs))}`} since {delta.since}
             </span>
           ) : (
             <span className="delta-chip flat">Day one on record — your history starts now</span>
           )}
           <span className="muted" style={{ fontSize: "0.84rem" }}>
-            {inr(brief.totalAssets)} you own · {inr(brief.totalLiabilities)} in loans
+            {fmtMoney(brief.totalAssets)} you own · {fmtMoney(brief.totalLiabilities)} in loans
           </span>
         </div>
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
         <StatCard label="In the stock market" value={`${equityPct}%`}
-          sub={`${inr(equityBase)} in shares & equity funds`} verdict={equityVerdict(equityPct)} />
-        <StatCard label="Easy to reach (liquid)" value={inr(brief.liquidAssets)}
+          sub={`${fmtMoney(equityBase)} in shares & equity funds`} verdict={equityVerdict(equityPct)} />
+        <StatCard label="Easy to reach (liquid)" value={fmtMoney(brief.liquidAssets)}
           sub={`${brief.liquidPct}% of what you own`} verdict={liquidityVerdict(brief.liquidPct)} />
         <StatCard label="Concentration" value={`${top10Pct}%`}
           sub={`in your top ${top10Count} holding${top10Count === 1 ? "" : "s"}`} verdict={concentrationVerdict(top10Pct)} />
@@ -244,7 +245,7 @@ export function Overview() {
                         {s.label}
                         <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> · {items.length} holding{items.length === 1 ? "" : "s"}</span>
                       </td>
-                      <td className="num" style={{ fontWeight: 700 }}>{inr(s.value)}</td>
+                      <td className="num" style={{ fontWeight: 700 }}>{fmtMoney(s.value)}</td>
                       <td className="num muted">{s.percent}%</td>
                     </tr>
                     {open && items.map(({ h, a, base }) => (
@@ -255,7 +256,7 @@ export function Overview() {
                           <span className="muted" style={{ fontSize: "0.78rem" }}> · {a?.name}</span>
                           {by !== "asset_class" && <span className="badge badge-gray" style={{ marginLeft: "0.4rem" }}>{ASSET_CLASS_LABEL[h.assetClass]}</span>}
                         </td>
-                        <td className="num">{inr(base)}</td>
+                        <td className="num">{fmtMoney(base)}</td>
                         <td className="num muted">{pct(base, brief.totalAssets)}%</td>
                       </tr>
                     ))}
@@ -292,7 +293,7 @@ export function Overview() {
                   <td style={{ fontWeight: 600 }}>{h.name}</td>
                   <td><span className="badge badge-gray">{h.assetClass}</span></td>
                   <td className="muted" style={{ fontSize: "0.84rem" }}>{h.account}</td>
-                  <td className="num" style={{ fontWeight: 600 }}>{inr(h.value)}</td>
+                  <td className="num" style={{ fontWeight: 600 }}>{fmtMoney(h.value)}</td>
                   <td className="num muted">{h.pctOfAssets}%</td>
                 </tr>
               ))}

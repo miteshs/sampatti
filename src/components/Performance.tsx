@@ -6,13 +6,14 @@
 import { Fragment, useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { visiblePortfolio, type Account, type Holding } from "../domain/types";
-import { holdingBase, holdingGain, inr, pct, type HoldingGain } from "../domain/format";
+import { holdingBase, holdingGain, pct, type HoldingGain } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { AccountStack } from "./AccountStack";
 
 const GREEN = "#137a52", RED = "#c22f4c"; // text-grade (≥4.5:1)
 const signColor = (n: number) => (n >= 0 ? GREEN : RED);
-const signed = (n: number) => `${n >= 0 ? "+" : "−"}${inr(Math.abs(n))}`;
+const signed = (n: number) => `${n >= 0 ? "+" : "−"}${fmtMoney(Math.abs(n))}`;
 const signedPct = (n: number) => `${n >= 0 ? "+" : ""}${n}%`;
 
 // "6.9 y" / "8 mo" since the buy date — the holding-period column (and the seed of the
@@ -40,8 +41,8 @@ function HoldingRow({ row: { h, a, value, g }, grouped }: { row: RowData; groupe
       </td>
       <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[h.assetClass]}</span></td>
       <td className="num muted" style={{ fontSize: "0.84rem" }}>{held ?? "—"}</td>
-      <td className="num">{g ? inr(g.invested) : "—"}</td>
-      <td className="num" style={{ fontWeight: 600 }}>{inr(value)}</td>
+      <td className="num">{g ? fmtMoney(g.invested) : "—"}</td>
+      <td className="num" style={{ fontWeight: 600 }}>{fmtMoney(value)}</td>
       <td className="num" style={{ fontWeight: 600, color: g ? signColor(g.gain) : undefined }}>{g ? signed(g.gain) : "—"}</td>
       <td className="num" style={{ color: g ? signColor(g.gain) : undefined }}>{g?.gainPct != null ? signedPct(g.gainPct) : "—"}</td>
     </tr>
@@ -155,7 +156,7 @@ export function Performance() {
             {signed(totals.gain)}
           </div>
           <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.15rem" }}>
-            {signedPct(totals.gainPct)} on the {inr(totals.invested)} you put in — holdings with a real purchase cost only
+            {signedPct(totals.gainPct)} on the {fmtMoney(totals.invested)} you put in — holdings with a real purchase cost only
           </div>
         </div>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
@@ -173,7 +174,7 @@ export function Performance() {
           <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.15rem" }}>
             {unmeasured.count === 0
               ? "every holding has a purchase cost on file"
-              : `of value — ${unmeasured.count} holding${unmeasured.count === 1 ? "" : "s"} (${inr(unmeasured.value)}) have no purchase cost and aren't shown; add costs in Manage → ✎`}
+              : `of value — ${unmeasured.count} holding${unmeasured.count === 1 ? "" : "s"} (${fmtMoney(unmeasured.value)}) have no purchase cost and aren't shown; add costs in Manage → ✎`}
           </div>
         </div>
       </div>
@@ -218,8 +219,8 @@ export function Performance() {
                         <span className="muted" style={{ fontWeight: 400, fontSize: "0.78rem" }}> · {grp.rows.length} holding{grp.rows.length === 1 ? "" : "s"}</span>
                       </td>
                       <td /><td />
-                      <td className="num" style={{ fontWeight: 650 }}>{inr(grp.invested)}</td>
-                      <td className="num" style={{ fontWeight: 700 }}>{inr(grp.value)}</td>
+                      <td className="num" style={{ fontWeight: 650 }}>{fmtMoney(grp.invested)}</td>
+                      <td className="num" style={{ fontWeight: 700 }}>{fmtMoney(grp.value)}</td>
                       <td className="num" style={{ fontWeight: 700, color: signColor(grp.gain) }}>{signed(grp.gain)}</td>
                       <td className="num" style={{ color: signColor(grp.gain) }}>{grp.gainPct != null ? signedPct(grp.gainPct) : "—"}</td>
                     </tr>

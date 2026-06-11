@@ -9,7 +9,7 @@ import { visiblePortfolio } from "../domain/types";
 import { PERIODS, periodStart, type Period } from "../domain/history";
 import { perAccountSeries } from "../domain/snapshots";
 import { basisBandsByAccount, basisSampleTimes } from "../domain/basisHistory";
-import { inr } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 import { color } from "./ui";
 import { TimeAxis } from "./timeAxis";
 import { useBrush } from "./useBrush";
@@ -157,12 +157,12 @@ export function AccountStack() {
                 >
                   <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color, flexShrink: 0, transform: "translateY(1px)" }} />
                   <span style={{ fontWeight: 600 }}>{b.name}</span>
-                  <span className="muted" style={{ fontVariantNumeric: "tabular-nums" }}>{inr(last)}</span>
+                  <span className="muted" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtMoney(last)}</span>
                   {joined ? (
                     <span className="muted" style={{ fontSize: "0.74rem" }}>from {joined.replace(" ", " ’")}</span>
                   ) : delta !== 0 ? (
                     <span style={{ fontSize: "0.74rem", fontVariantNumeric: "tabular-nums", color: delta > 0 ? "var(--up-ink)" : "var(--down-ink)" }}>
-                      {delta > 0 ? "+" : "−"}{inr(Math.abs(delta))}
+                      {delta > 0 ? "+" : "−"}{fmtMoney(Math.abs(delta))}
                     </span>
                   ) : null}
                 </div>

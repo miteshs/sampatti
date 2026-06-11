@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Segment } from "../domain/group";
-import { inr, pct } from "../domain/format";
+import { pct } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 import { color } from "./ui";
 
 // A clean SVG donut with a center total and a hover-to-highlight legend.
@@ -48,7 +49,7 @@ export function Donut({ segments, total, onSelect }: {
           {hover != null ? segments[hover].label : "Total"}
         </text>
         <text x={C} y={C + 18} textAnchor="middle" fontSize="20" fill="var(--ink)" fontWeight={800}>
-          {hover != null ? inr(segments[hover].value) : inr(total)}
+          {hover != null ? fmtMoney(segments[hover].value) : fmtMoney(total)}
         </text>
         {hover != null && (
           <text x={C} y={C + 38} textAnchor="middle" fontSize="12" fill="var(--ink-3)">
@@ -73,7 +74,7 @@ export function Donut({ segments, total, onSelect }: {
             <span style={{ width: 10, height: 10, borderRadius: 3, background: colorFor(i), flexShrink: 0 }} />
             <span style={{ fontSize: "0.85rem", color: "var(--ink)", flex: 1 }}>{s.label}</span>
             <span style={{ fontSize: "0.85rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-              {inr(s.value)}
+              {fmtMoney(s.value)}
             </span>
             <span style={{ fontSize: "0.78rem", color: "var(--ink-3)", width: 46, textAlign: "right" }}>
               {pct(s.value, total)}%

@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
-import { inr } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 import type { AccountType, AssetClass, Region, TaxTreatment } from "../domain/types";
 
 const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
@@ -182,7 +182,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
       <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem" }}>
         Changes save automatically. Value is in each holding's currency; totals use ₹ at the app's USD→INR rate.
         Cost basis is optional — left blank (≈), gains on the Performance tab are measured since first import instead.
-        Current account total ≈ {inr(holdings.reduce((s, h) => s + (h.currency === "INR" ? h.marketValue : h.marketValue * portfolio.settings.usdInr), 0))}.
+        Current account total ≈ {fmtMoney(holdings.reduce((s, h) => s + (h.currency === "INR" ? h.marketValue : h.marketValue * portfolio.settings.usdInr), 0))}.
       </p>
     </div>
   );

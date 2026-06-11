@@ -6,7 +6,8 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { liveRevalue, type Revaluation } from "../domain/market";
-import { holdingBase, inr } from "../domain/format";
+import { holdingBase } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 
 export function RefreshPrices() {
   const portfolio = useStore((s) => s.portfolio);
@@ -94,7 +95,7 @@ export function RefreshPrices() {
               <div style={{ display: "flex", alignItems: "baseline", gap: "0.8rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
                 <span style={{ fontWeight: 700 }}>{revals.length} holding{revals.length === 1 ? "" : "s"} will update</span>
                 <span style={{ fontWeight: 700, color: deltaBase >= 0 ? "#1a9e6b" : "#d6455d" }}>
-                  net {deltaBase >= 0 ? "+" : "−"}{inr(Math.abs(deltaBase))}
+                  net {deltaBase >= 0 ? "+" : "−"}{fmtMoney(Math.abs(deltaBase))}
                 </span>
               </div>
               <div style={{ maxHeight: 260, overflow: "auto" }}>
@@ -104,7 +105,7 @@ export function RefreshPrices() {
                     {revals.map((r) => {
                       const h = holdingById.get(r.holdingId);
                       const ccy = h?.currency ?? "INR";
-                      const f = (v: number) => ccy === "INR" ? inr(v) : `${ccy} ${Math.round(v).toLocaleString("en-US")}`;
+                      const f = (v: number) => ccy === "INR" ? fmtMoney(v) : `${ccy} ${Math.round(v).toLocaleString("en-US")}`;
                       const upd = r.newValue >= r.oldValue;
                       return (
                         <tr key={r.holdingId}>

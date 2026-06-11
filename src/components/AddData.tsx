@@ -6,7 +6,7 @@ import { classifyFile, ingestFile, ingestPdf, ingestWithClaude, isImportable, Ne
 import { filesForClaude, planBatch } from "../ingest/consent";
 import { findCrossAccountDuplicates } from "../ingest/reconcile";
 import { engineFor, localModelStatus, withExtractionEngine } from "../ai/engine";
-import { inr } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
 } from "../domain/classify";
@@ -530,7 +530,7 @@ function DraftReview({ draft, accounts, existingHoldings, onCurrency, onHolding,
   onApply: (target: "new" | string, money: FlowKind) => void; onDiscard: () => void;
 }) {
   const total = draft.holdings.reduce((s, h) => s + h.marketValue, 0);
-  const fmt = (v: number) => draft.account.currency === "INR" ? inr(v) : `${draft.account.currency} ${v.toLocaleString("en-US")}`;
+  const fmt = (v: number) => draft.account.currency === "INR" ? fmtMoney(v) : `${draft.account.currency} ${v.toLocaleString("en-US")}`;
   const matched = findMatchingAccount(accounts, draft.account);
   const [target, setTarget] = useState<"new" | string>(matched?.id ?? "new");
   // For a NEW account: is this money you already had (just starting to track it) or fresh
@@ -852,7 +852,7 @@ function ManualAccount({ onAdd, usdInr }: {
         <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
           {goldBusy && goldPrice == null ? "Fetching the live gold price…" : goldPrice ? (
             <>Live 24K gold ≈ <strong>₹{goldPrice.toLocaleString("en-IN")}/g</strong>
-              {goldValue > 0 && <> · {hGrams}g = <strong>{inr(goldValue)}</strong></>}
+              {goldValue > 0 && <> · {hGrams}g = <strong>{fmtMoney(goldValue)}</strong></>}
               {" "}· editable (lower it ~8% for 22K, or use a dealer quote).</>
           ) : "Couldn't fetch the live gold price — enter ₹/gram manually."}
         </p>
@@ -865,7 +865,7 @@ function ManualAccount({ onAdd, usdInr }: {
               <tr key={i}>
                 <td>{h.name}</td>
                 <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[h.assetClass]}</span></td>
-                <td className="num" style={{ fontWeight: 600 }}>{inr(h.marketValue)}</td>
+                <td className="num" style={{ fontWeight: 600 }}>{fmtMoney(h.marketValue)}</td>
                 <td className="num"><button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setHoldings((all) => all.filter((_, j) => j !== i))}>✕</button></td>
               </tr>
             ))}

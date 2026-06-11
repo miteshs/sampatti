@@ -4,7 +4,8 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
-import { holdingBase, inr } from "../domain/format";
+import { holdingBase } from "../domain/format";
+import { fmtMoney } from "../regions/profile";
 import { ACCOUNT_TYPE_LABEL } from "../domain/classify";
 import { visiblePortfolio } from "../domain/types";
 import { AccountEditor } from "./AccountEditor";
@@ -85,7 +86,7 @@ export function Manage() {
                     {editedAccountIds.has(a.id) && <span className="badge badge-amber" style={{ marginLeft: "0.4rem", fontSize: "0.66rem" }} title="Has manual edits">✎ edited</span>}
                     <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
                   </div>
-                  <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{inr(acctTotals.get(a.id) ?? 0)}</span>
+                  <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{fmtMoney(acctTotals.get(a.id) ?? 0)}</span>
                   <button className={`btn btn-ghost ${editing ? "active" : ""}`} style={{ padding: "0.2rem 0.6rem", flexShrink: 0 }} title="Edit account & holdings"
                     onClick={() => setEditingId(editing ? null : a.id)}>✎ Edit</button>
                   {confirmRemove === a.id ? (

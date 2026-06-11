@@ -4,6 +4,7 @@
 // holds the only allowed country branch (personas are inherently per-market prose).
 
 import { inr } from "../domain/format";
+import { useStore } from "../storage/store";
 
 export type Region = "IN" | "US";
 
@@ -68,3 +69,9 @@ export function regionOf(settings: { country: string }): Region {
 
 export const profileFor = (settings: { country: string }): RegionProfile =>
   PROFILES[regionOf(settings)];
+
+// Store-backed convenience for COMPONENTS: format in the current region's style. Every
+// money-rendering component subscribes to the portfolio, so a region change re-renders
+// them and this reads fresh. Pure domain modules keep taking parameters instead.
+export const fmtMoney = (value: number, opts?: { compact?: boolean }): string =>
+  profileFor(useStore.getState().portfolio.settings).formatMoney(value, opts);
