@@ -3,7 +3,7 @@
 // is carrying it. Assets only (a loan doesn't "perform"); newly added accounts rise out of
 // the baseline on the day they were added. No simulation anywhere — this is the record.
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { visiblePortfolio } from "../domain/types";
 import { PERIODS, periodStart, type Period } from "../domain/history";
@@ -15,11 +15,36 @@ import { TimeAxis } from "./timeAxis";
 
 const MAX_BANDS = 8; // beyond this, small accounts roll into "Other accounts"
 
+// Slice the assembled chart data to a dragged time window. Pure + exported for tests.
+// Returns null when the window covers fewer than 3 points (nothing meaningful to zoom to).
+export function zoomSlice<B extends { values: number[] }>(
+  times: number[],
+  bands: B[],
+  splitIndex: number,
+  from: number,
+  to: number,
+): { times: number[]; bands: B[]; splitIndex: number } | null {
+  const i0 = times.findIndex((t) => t >= from);
+  let i1 = -1;
+  for (let i = times.length - 1; i >= 0; i--) if (times[i] <= to) { i1 = i; break; }
+  if (i0 < 0 || i1 - i0 < 2) return null;
+  return {
+    times: times.slice(i0, i1 + 1),
+    bands: bands.map((b) => ({ ...b, values: b.values.slice(i0, i1 + 1) })),
+    // Keep the estimated/recorded boundary honest inside the slice: ≤0 = all recorded,
+    // ≥ length = the whole slice is the estimated era.
+    splitIndex: Math.max(0, Math.min(splitIndex - i0, i1 - i0 + 1)),
+  };
+}
+
 export function AccountStack() {
   const portfolio = useStore((s) => s.portfolio);
   const visible = useMemo(() => visiblePortfolio(portfolio), [portfolio]);
   const [period, setPeriod] = useState<Period>("All"); // the stack's job is the whole story
   const [hover, setHover] = useState<string | null>(null);
+  // Drag-selected time window (brush zoom) — cleared by the ✕ chip, double-click, or
+  // picking any period.
+  const [zoom, setZoom] = useState<{ from: number; to: number } | null>(null);
 
   const data = useMemo(() => {
     // Assets only — liability accounts are excluded from a performance stack.
@@ -67,8 +92,14 @@ export function AccountStack() {
         ],
       });
     }
+    if (zoom) {
+      const sliced = zoomSlice(allTimes, bands, preTimes.length, zoom.from, zoom.to);
+      // Accounts that are zero across the zoomed window (not tracked yet then) drop out;
+      // colors were assigned before slicing, so each account keeps its color across zooms.
+      if (sliced) return { ...sliced, bands: sliced.bands.filter((b) => b.values.some((v) => v !== 0)) };
+    }
     return { times: allTimes, bands, splitIndex: preTimes.length };
-  }, [portfolio.snapshots, visible.accounts, visible.holdings, portfolio.settings.usdInr, period]);
+  }, [portfolio.snapshots, visible.accounts, visible.holdings, portfolio.settings.usdInr, period, zoom]);
 
   if ((portfolio.snapshots ?? []).length === 0 || visible.holdings.length === 0) return null;
 
@@ -81,8 +112,14 @@ export function AccountStack() {
         </div>
         {data && (
           <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+            {zoom && (
+              <button className="chip active" onClick={() => setZoom(null)} title="Back to the full period">
+                ✕ Custom range
+              </button>
+            )}
             {PERIODS.map((p) => (
-              <button key={p} className={`chip ${period === p ? "active" : ""}`} onClick={() => setPeriod(p)}>{p}</button>
+              <button key={p} className={`chip ${!zoom && period === p ? "active" : ""}`}
+                onClick={() => { setPeriod(p); setZoom(null); }}>{p}</button>
             ))}
           </div>
         )}
@@ -95,7 +132,11 @@ export function AccountStack() {
         </p>
       ) : (
         <div style={{ marginTop: "0.8rem" }}>
-          <StackSvg times={data.times} bands={data.bands} hover={hover} splitIndex={data.splitIndex} />
+          <StackSvg
+            times={data.times} bands={data.bands} hover={hover} splitIndex={data.splitIndex}
+            onBrush={(from, to) => setZoom({ from, to })}
+            onResetZoom={() => setZoom(null)}
+          />
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem 1.1rem", marginTop: "0.6rem" }}>
             {data.bands.map((b) => {
               const first = b.values[0], last = b.values[b.values.length - 1];
@@ -134,8 +175,10 @@ export function AccountStack() {
               without a cost basis join at the divider). Right of it is the daily record. </>
             )}
             Assets only (loans aren't shown); an account added along the way rises out of the
-            baseline on its add-day. Each legend figure is today's value, with its change over the
-            window. Honors the account selection on Manage.
+            baseline on its add-day. Each legend figure is the account's value at the end of the
+            window shown, with its change across it. <strong>Drag across the chart to zoom into
+            any range</strong> — double-click (or ✕ Custom range) to zoom back out. Honors the
+            account selection on Manage.
           </p>
         </div>
       )}
@@ -143,20 +186,35 @@ export function AccountStack() {
   );
 }
 
-function StackSvg({ times, bands, hover, splitIndex = 0 }: {
+function StackSvg({ times, bands, hover, splitIndex = 0, onBrush, onResetZoom }: {
   times: number[];
   bands: { key: string; name: string; color: string; values: number[] }[];
   hover: string | null;
   splitIndex?: number; // first index of the RECORDED era; >0 means an estimated era precedes it
+  onBrush?: (from: number, to: number) => void;
+  onResetZoom?: () => void;
 }) {
   const W = 720, H = 200, PAD = 6;
   const n = times.length;
+  const svgRef = useRef<SVGSVGElement>(null);
+  // Brush-in-progress: [start, current] in time units (live selection rectangle).
+  const [drag, setDrag] = useState<{ a: number; b: number } | null>(null);
+
   // Cumulative stack, drawn bottom-up: band i fills between cum(i-1) and cum(i).
   const totals = times.map((_, di) => bands.reduce((s, b) => s + b.values[di], 0));
   const maxY = Math.max(...totals, 1);
   const minX = times[0], spanX = times[n - 1] - times[0] || 1;
   const x = (t: number) => PAD + ((t - minX) / spanX) * (W - 2 * PAD);
   const y = (v: number) => H - PAD - (v / maxY) * (H - 2 * PAD);
+
+  // Pointer position → time, via the rendered element's box (the SVG scales with width).
+  const timeAt = (clientX: number): number => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return minX;
+    const xView = ((clientX - rect.left) / rect.width) * W;
+    const frac = Math.min(1, Math.max(0, (xView - PAD) / (W - 2 * PAD)));
+    return minX + frac * spanX;
+  };
 
   // An area path over an index range [from, to] inclusive.
   const areaOf = (lower: number[], upper: number[], from: number, to: number) => {
@@ -172,7 +230,9 @@ function StackSvg({ times, bands, hover, splitIndex = 0 }: {
     const upper = cum.map((v, di) => v + b.values[di]);
     cum = upper;
     const segs: { d: string; estimated: boolean }[] = [];
-    if (splitIndex > 0 && splitIndex < n) {
+    if (splitIndex >= n) {
+      segs.push({ d: areaOf(lower, upper, 0, n - 1), estimated: true }); // zoomed fully into the estimated era
+    } else if (splitIndex > 0) {
       segs.push({ d: areaOf(lower, upper, 0, splitIndex), estimated: true });
       segs.push({ d: areaOf(lower, upper, splitIndex, n - 1), estimated: false });
     } else {
@@ -182,10 +242,31 @@ function StackSvg({ times, bands, hover, splitIndex = 0 }: {
   });
 
   const baseOpacity = (k: string) => (hover == null ? 0.82 : hover === k ? 0.95 : 0.25);
+  const MIN_BRUSH_MS = 86_400_000; // sub-day drags are clicks, not selections
 
   return (
     <div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} preserveAspectRatio="none">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width: "100%", height: "auto", display: "block", cursor: "crosshair", touchAction: "none" }}
+        preserveAspectRatio="none"
+        onPointerDown={(e) => {
+          if (!onBrush) return;
+          (e.target as Element).setPointerCapture?.(e.pointerId);
+          const t = timeAt(e.clientX);
+          setDrag({ a: t, b: t });
+        }}
+        onPointerMove={(e) => drag && setDrag({ a: drag.a, b: timeAt(e.clientX) })}
+        onPointerUp={() => {
+          if (!drag) return;
+          const from = Math.min(drag.a, drag.b), to = Math.max(drag.a, drag.b);
+          setDrag(null);
+          if (onBrush && to - from >= MIN_BRUSH_MS) onBrush(from, to);
+        }}
+        onPointerLeave={() => setDrag(null)}
+        onDoubleClick={() => onResetZoom?.()}
+      >
         {layers.map((l) =>
           l.segs.map((s, i) => (
             <path
@@ -199,6 +280,14 @@ function StackSvg({ times, bands, hover, splitIndex = 0 }: {
           <line
             x1={x(times[splitIndex])} x2={x(times[splitIndex])} y1={PAD} y2={H - PAD}
             stroke="var(--ink-3)" strokeWidth="1" strokeDasharray="3 4" strokeOpacity="0.7"
+          />
+        )}
+        {drag && Math.abs(drag.b - drag.a) > 0 && (
+          <rect
+            x={Math.min(x(drag.a), x(drag.b))} y={PAD}
+            width={Math.abs(x(drag.b) - x(drag.a))} height={H - 2 * PAD}
+            fill="var(--primary)" fillOpacity="0.12"
+            stroke="var(--primary)" strokeWidth="1" strokeDasharray="4 3"
           />
         )}
       </svg>
