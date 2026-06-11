@@ -199,9 +199,10 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0.3rem 0", borderBottom: "1px solid var(--line-2)" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.7rem", padding: "0.3rem 0", borderBottom: "1px solid var(--line-2)" }}>
       <span className="muted" style={{ fontSize: "0.78rem" }}>{label}</span>
-      <span style={{ fontWeight: 700, fontSize: "0.84rem" }}>{value}</span>
+      {/* Right-align even when the value wraps to a second line. */}
+      <span style={{ fontWeight: 700, fontSize: "0.84rem", textAlign: "right", marginLeft: "auto", fontVariantNumeric: "tabular-nums" }}>{value}</span>
     </div>
   );
 }
