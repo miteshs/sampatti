@@ -19,6 +19,11 @@ describe("periodStart", () => {
   it("'All' opens the window to the whole record", () => {
     expect(periodStart("All")).toBe(-Infinity);
   });
+  it("2Y and 5Y look back whole years", () => {
+    const now = new Date("2026-06-10T12:00:00").getTime();
+    expect(new Date(periodStart("2Y", now)).getFullYear()).toBe(2024);
+    expect(new Date(periodStart("5Y", now)).getFullYear()).toBe(2021);
+  });
   it("1M / 1Y step back the expected amount", () => {
     const now = new Date("2026-06-09T00:00:00Z").getTime();
     expect(new Date(periodStart("1M", now)).getMonth()).toBe(4); // May

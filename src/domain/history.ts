@@ -12,8 +12,8 @@ import type { Account, Holding } from "./types";
 
 export interface PricePoint { t: number; price: number; } // t = epoch ms, ascending
 export type Series = PricePoint[];
-export type Period = "1M" | "3M" | "YTD" | "1Y" | "All";
-export const PERIODS: Period[] = ["1M", "3M", "YTD", "1Y", "All"];
+export type Period = "1M" | "3M" | "YTD" | "1Y" | "2Y" | "5Y" | "All";
+export const PERIODS: Period[] = ["1M", "3M", "YTD", "1Y", "2Y", "5Y", "All"];
 
 // Start of the lookback window for a period.
 export function periodStart(period: Period, now = Date.now()): number {
@@ -22,6 +22,8 @@ export function periodStart(period: Period, now = Date.now()): number {
     case "1M": d.setMonth(d.getMonth() - 1); break;
     case "3M": d.setMonth(d.getMonth() - 3); break;
     case "1Y": d.setFullYear(d.getFullYear() - 1); break;
+    case "2Y": d.setFullYear(d.getFullYear() - 2); break;
+    case "5Y": d.setFullYear(d.getFullYear() - 5); break;
     case "YTD": return new Date(d.getFullYear(), 0, 1).getTime();
     case "All": return -Infinity; // the whole record, however many years it spans
   }
