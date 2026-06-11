@@ -180,7 +180,8 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
         </div>
       )}
       <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem" }}>
-        Changes save automatically. Value is in each holding's currency; totals use ₹ at the app's USD→INR rate.
+        Changes save automatically. Value is in each holding's currency; totals use{" "}
+        {currentProfile().baseCurrency === "USD" ? "$ at the app's ₹/$ rate." : "₹ at the app's USD→INR rate."}
         Cost basis is optional — left blank (≈), gains on the Performance tab are measured since first import instead.
         Current account total ≈ {fmtMoney(holdings.reduce((s, h) => s + (h.currency === "INR" ? h.marketValue : h.marketValue * portfolio.settings.usdInr), 0))}.
       </p>

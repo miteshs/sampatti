@@ -229,7 +229,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
         <div className="eyebrow">{hasData ? "Add more" : "Get started"}</div>
         <h2 style={{ fontSize: "1.3rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-          {hasData && <button className="btn" onClick={loadDemo}>▶ Load demo portfolio (₹14 Cr)</button>}
+          {hasData && <button className="btn" onClick={loadDemo}>▶ Load demo portfolio ({currentProfile().region === "US" ? "$2.3M" : "₹14 Cr"})</button>}
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import files (CSV / Excel / PDF / image)</button>
           <button className="btn" onClick={() => folderRef.current?.click()}>📁 Import a whole folder</button>
           <button className="btn btn-ghost" onClick={downloadTemplate}>Download CSV template</button>
@@ -924,7 +924,7 @@ function IncomeForm({ onAdd }: { onAdd: (i: Omit<import("../domain/types").Incom
   const save = () => {
     const v = Number(amount.replace(/[₹,\s]/g, ""));
     if (!source || !v) return;
-    onAdd({ source, kind, amount: v, frequency, currency: "INR" });
+    onAdd({ source, kind, amount: v, frequency, currency: currentProfile().baseCurrency });
     setSource(""); setAmount("");
   };
   return (
@@ -938,7 +938,7 @@ function IncomeForm({ onAdd }: { onAdd: (i: Omit<import("../domain/types").Incom
             {INCOME_KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
           </select>
         </div>
-        <div style={{ flex: "1 1 120px" }}><label>Amount (₹)</label><input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="600000" /></div>
+        <div style={{ flex: "1 1 120px" }}><label>Amount ({currentProfile().symbol})</label><input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={currentProfile().region === "US" ? "8000" : "600000"} /></div>
         <div style={{ flex: "1 1 110px" }}><label>Frequency</label>
           <select value={frequency} onChange={(e) => setFrequency(e.target.value as "monthly" | "annual")}>
             <option value="monthly">monthly</option><option value="annual">annual</option>

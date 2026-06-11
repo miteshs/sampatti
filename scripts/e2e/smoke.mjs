@@ -275,6 +275,10 @@ try {
     await clickText(page, "AI Analysis");
     await waitFor(page, () => bodyHas(page, "Tax-advantaged (401k/Roth/HSA)"), "US wrappers fact");
     if (!(await bodyHas(page, "$2.28M"))) throw new Error("facts panel disagrees with the hero");
+    // The user-reported repro: with US data loaded, Add data must offer the US demo.
+    await clickText(page, "Add data");
+    await waitFor(page, () => bodyHas(page, "Load demo portfolio ($2.3M)"), "US demo re-load button");
+    if (await bodyHas(page, "₹14 Cr")) throw new Error("India demo label leaked into US mode");
   });
 
   await step("accessibility: no serious/critical WCAG A/AA violations", async () => {
