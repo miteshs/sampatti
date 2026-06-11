@@ -10,6 +10,7 @@ import { parseCsv } from "./csv";
 import { parseXlsx, xlsxToCsv } from "./xlsx";
 import { extractFromImage, extractFromText } from "./aiExtract";
 import { looksLikeCas, parseCamsCas } from "./cas";
+import { looksLikeDepositoryCas, parseDepositoryCas } from "./depositoryCas";
 
 // pdf.js (~the largest dependency) is loaded lazily on first PDF import so it stays out of
 // the initial bundle — most sessions never open a PDF.
@@ -116,6 +117,11 @@ export async function ingestPdf(file: File, password?: string): Promise<ImportDr
   } catch (e) {
     if (e instanceof PdfPasswordRequired) throw new PdfPasswordError(file, e.wrongPassword);
     throw e;
+  }
+  // Depository first: an NSDL/CDSL CAS also contains folio language that could trip the
+  // CAMS detector, but the reverse can't happen (a CAMS CAS has no DP/Client IDs).
+  if (looksLikeDepositoryCas(lines)) {
+    return parseDepositoryCas(lines, file.name);
   }
   if (looksLikeCas(lines)) {
     return parseCamsCas(lines, file.name);

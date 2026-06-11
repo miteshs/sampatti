@@ -15,7 +15,7 @@ no cloud database**. Nothing is uploaded for storage. Back it up or wipe it your
    percentages (net worth, allocations, concentration metrics, tax-wrapper coverage) — **not
    your raw files**. Your chat follow-ups are sent with it.
 2. **Documents you choose to extract.** CSV and Excel files are parsed on your device and
-   never sent — and so is your **CAMS/KFintech CAS PDF**, including its password handling
+   never sent — and so are your **CAS PDFs** (the CAMS/KFintech mutual-fund CAS and the NSDL/CDSL depository CAS), including their password handling
    (decryption happens locally; the password is never stored). Other **PDFs or screenshots**
    can't be parsed reliably without AI, so — only after you click confirm — that one document
    is sent to Claude to pull out the holdings, which you then review before saving.

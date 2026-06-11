@@ -70,7 +70,7 @@ export function Privacy() {
             questions are sent to Claude. (On the AI Analysis screen you can preview the exact JSON before
             anything is sent.) For PDFs and screenshots, the <strong>document you choose</strong> is sent to
             Claude to extract holdings — always after you confirm. CSV and Excel files — and your{" "}
-            <strong>CAMS/KFintech CAS</strong>, password and all — are parsed here and never sent, unless a
+            <strong>CAS</strong> (CAMS/KFintech and NSDL/CDSL), password and all — are parsed here and never sent, unless a
             file's layout can't be read and you explicitly choose “Parse with Claude”.</>} />
         <Flow icon="🛡️" title="What we never see"
           body={<>In relay mode the brief passes through the relay to Anthropic and is <strong>not

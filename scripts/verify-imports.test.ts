@@ -75,6 +75,7 @@ describe("real CAS in samples/cas (optional, local-only)", () => {
   it.skipIf(pdfs.length === 0)("parses the CAS locally with holdings and costs", async () => {
     const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const { looksLikeCas, parseCamsCas } = await import("../src/ingest/cas");
+    const { looksLikeDepositoryCas, parseDepositoryCas } = await import("../src/ingest/depositoryCas");
     const pwFile = join(casDir, "password.txt");
     const password = existsSync(pwFile) ? readFileSync(pwFile, "utf8").trim() : undefined;
     for (const f of pdfs) {
@@ -97,11 +98,14 @@ describe("real CAS in samples/cas (optional, local-only)", () => {
         }
         flush();
       }
-      expect(looksLikeCas(lines), `${f} should be detected as a CAS`).toBe(true);
-      const [draft] = parseCamsCas(lines, f);
-      const withCost = draft.holdings.filter((h) => h.costBasis != null).length;
-      console.log(`  ✓  ${f}: ${draft.holdings.length} schemes · ${withCost} with cost · asOf ${draft.account.asOf ?? "—"}${draft.warnings.length ? ` · ${draft.warnings.join(" / ")}` : ""}`);
-      expect(draft.holdings.length).toBeGreaterThan(0);
+      const isDepo = looksLikeDepositoryCas(lines);
+      expect(isDepo || looksLikeCas(lines), `${f} should be detected as a CAS`).toBe(true);
+      const drafts = isDepo ? parseDepositoryCas(lines, f) : parseCamsCas(lines, f);
+      for (const draft of drafts) {
+        const withCost = draft.holdings.filter((h) => h.costBasis != null).length;
+        console.log(`  ✓  ${f} [${draft.account.name}]: ${draft.holdings.length} holdings · ${withCost} with cost · asOf ${draft.account.asOf ?? "—"}${draft.warnings.length ? ` · ${draft.warnings.join(" / ")}` : ""}`);
+      }
+      expect(drafts.flatMap((d) => d.holdings).length).toBeGreaterThan(0);
     }
   });
 });

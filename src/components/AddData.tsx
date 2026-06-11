@@ -206,7 +206,7 @@ export function AddData() {
         </div>
         <p className="muted" style={{ fontSize: "0.78rem", marginTop: "0.7rem" }}>
           Pick several files or a whole folder of statements at once. CSV, Excel and{" "}
-          <strong>CAMS/KFintech CAS PDFs</strong> (password and all) are parsed entirely on this
+          <strong>CAS PDFs (CAMS/KFintech &amp; NSDL/CDSL)</strong> — password and all — are parsed entirely on this
           device; other PDFs and screenshots are read with Claude (you'll confirm the batch
           first). If a layout can't be read automatically, you'll be offered the option to parse
           it with Claude. Unsupported files are skipped.
@@ -401,8 +401,7 @@ function GettingStarted() {
       </summary>
       <div className="grid" style={{ gap: "0.65rem", marginTop: "0.9rem" }}>
         <Step n={1} title="Collect a statement from each place your money lives.">
-          <strong>Fastest start for mutual funds:</strong> request your CAS at camsonline.com
-          (Statements → CAS) — one PDF with every fund you own, read entirely on this computer.
+          <strong>Fastest start:</strong> your monthly <strong>NSDL/CDSL CAS email</strong> has every demat stock AND fund; for purchase costs request the detailed CAS at camsonline.com (Statements → CAS). Both are read entirely on this computer.
           For everything else, download the holdings statement — Excel or CSV is best (also read
           on this computer), and PDFs or screenshots work too. Put them all in one folder.
         </Step>
