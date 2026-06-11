@@ -18,7 +18,7 @@
 #      signature + notarization (then the postflight can be removed).
 cask "sampatti" do
   version "0.2.0"
-  sha256 "e9510bffbc8c4501705948d4da1bb95418879ba46549a6736b8f7ed568481ba8" # set per-release by scripts/release.sh
+  sha256 "8cf10a58641759fff7d256b6dd175b63254c4ecf08d4b00ab274bd7b3e1c2445" # set per-release by scripts/release.sh
 
   url "https://github.com/miteshs/sampatti-releases/releases/download/v#{version}/Sampatti_#{version}_aarch64.dmg"
   name "Sampatti"
