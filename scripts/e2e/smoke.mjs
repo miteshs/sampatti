@@ -137,6 +137,26 @@ try {
     if (!(await bodyHas(page, "Load demo portfolio"))) throw new Error("demo CTA missing");
   });
 
+  await step("welcome region choice swaps the copy and persists", async () => {
+    if (!(await bodyHas(page, "Where do you manage your money?"))) throw new Error("region question missing");
+    await clickText(page, "United States");
+    await waitFor(page, () => bodyHas(page, "401(k)s"), "US welcome copy");
+    if (!(await bodyHas(page, "$2.3M portfolio"))) throw new Error("US demo footnote missing");
+    await sleep(500); // persist debounce
+    const us = await store(page);
+    if (us.settings.country !== "US" || us.settings.baseCurrency !== "USD") {
+      throw new Error(`region didn't persist: ${us.settings.country}/${us.settings.baseCurrency}`);
+    }
+    // Back to India — the rest of the journey runs the IN experience unchanged.
+    await clickText(page, "India");
+    await waitFor(page, () => bodyHas(page, "PF, FDs, property, gold"), "India welcome copy back");
+    await sleep(500);
+    const back = await store(page);
+    if (back.settings.country !== "India" || back.settings.baseCurrency !== "INR") {
+      throw new Error("region didn't switch back to India");
+    }
+  });
+
   await step("CSV import → review card → commit lands in the store", async () => {
     const input = await page.$('input[type="file"][accept]');
     await input.uploadFile(join(ROOT, "scripts", "e2e", "fixtures", "smoke.csv"));

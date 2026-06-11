@@ -83,7 +83,8 @@ Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tes
       + late joiners for the trend, mortgage, 4 income kinds. demoPortfolio(country)
       dispatches; settings follow the region; demo.test runs BOTH demos through the same
       seven history invariants (India demo byte-identical)
-- [ ] Verdicts/buckets copy pass (lay-bucket names read naturally in both markets)
+- [x] Verdicts/buckets copy pass — VERIFIED already region-clean (pure percentages and
+      lay words; no ₹/India strings; money renders through fmtMoney)
 - [x] AI analysis prompts adapt per region (user-flagged 2026-06-11): persona was wired in
       R1 (`systemPrompt(settings.country)` — US gets the fiduciary CFP/RIA persona; the
       local quick-take inherits the same system prompt), the brief speaks the region's
@@ -91,9 +92,13 @@ Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tes
       region-aware (the LIC question is meaningless in the US)
 
 Phase R3 — exposure
-- [ ] Welcome region step (one question, two flags) + Privacy "Region" control with a
-      plain-words note (changes tax language & formatting, never your data)
-- [ ] e2e: region step + a US-mode smoke sweep; visual baselines per region for key screens
+- [x] Welcome region step ("Where do you manage your money?" chips — copy and demo
+      footnote swap live, settings persist) + Privacy "Region" control beside the FX rate
+      with the plain-words note (tax language/persona/examples/display follow the market;
+      data never changed or converted in storage)
+- [x] e2e: welcome region step (swap → US copy + persisted country/baseCurrency → back to
+      India; journey stays IN) — 11 smoke steps. Still open if wanted: a full US-mode
+      sweep + per-region visual baselines (deferred until US users exist)
 - [ ] Eval fixtures: US-broker archetypes already exist; add US-context extraction probes
 - [ ] Packaging decision: keep one app vs `VITE_REGION_DEFAULT` branded builds (revisit
       with real US interest; default = one app)

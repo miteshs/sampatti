@@ -266,6 +266,21 @@ export function Privacy() {
           })}
         </div>
 
+        <label>Region</label>
+        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.5rem", maxWidth: 600 }}>
+          Tax language, the analyst persona, examples and currency display follow your market.
+          Your data itself is never changed or converted in storage — figures display at the
+          ₹/$ rate below.
+        </p>
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+          <button className={`chip ${s.country !== "US" ? "active" : ""}`} onClick={() => updateSettings({ country: "India", baseCurrency: "INR" })}>
+            India
+          </button>
+          <button className={`chip ${s.country === "US" ? "active" : ""}`} onClick={() => updateSettings({ country: "US", baseCurrency: "USD" })}>
+            United States
+          </button>
+        </div>
+
         <div style={{ maxWidth: 320 }}>
           <label>{profileFor(s).fxLabel}</label>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>

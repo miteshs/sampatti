@@ -438,10 +438,20 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
 // so this screen makes exactly ONE ask — try the sample, or bring your own files — and
 // keeps the step-by-step under a collapsed "How it works".
 function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => void }) {
+  // Subscribing to country makes the copy below swap live when a chip is clicked.
+  const country = useStore((s) => s.portfolio.settings.country);
+  const updateSettings = useStore((s) => s.updateSettings);
+  const chooseRegion = (c: "India" | "US") =>
+    updateSettings({ country: c, baseCurrency: c === "US" ? "USD" : "INR" });
   return (
     <div className="card card-pad-lg" style={{ textAlign: "center", padding: "2.6rem 1.5rem" }}>
       <div className="eyebrow">Welcome</div>
       <h1 style={{ fontSize: "1.9rem", margin: "0.35rem 0 0.5rem" }}>All your money, in one private picture</h1>
+      <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", alignItems: "center", flexWrap: "wrap", margin: "0.2rem 0 0.9rem" }}>
+        <span className="muted" style={{ fontSize: "0.85rem" }}>Where do you manage your money?</span>
+        <button className={`chip ${country !== "US" ? "active" : ""}`} onClick={() => chooseRegion("India")}>India</button>
+        <button className={`chip ${country === "US" ? "active" : ""}`} onClick={() => chooseRegion("US")}>United States</button>
+      </div>
       <p className="muted" style={{ maxWidth: 520, margin: "0 auto 1.5rem", fontSize: "0.95rem", lineHeight: 1.6 }}>
         {currentProfile().region === "US"
           ? "Stocks, funds, 401(k)s, property — added up, explained in plain words, and reviewed by AI when you ask."
@@ -457,7 +467,9 @@ function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => voi
         </button>
       </div>
       <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.9rem" }}>
-        The demo is a made-up ₹14 Cr portfolio with 18 months of history — play freely, then clear it with one click.
+        {country === "US"
+          ? "The demo is a made-up $2.3M portfolio with 18 months of history — play freely, then clear it with one click."
+          : "The demo is a made-up ₹14 Cr portfolio with 18 months of history — play freely, then clear it with one click."}
       </p>
     </div>
   );
