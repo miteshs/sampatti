@@ -4,7 +4,7 @@
 // Credential Manager/BitLocker on Windows) and that the shown data path is join()ed, not
 // string-concatenated.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useStore } from "../storage/store";
 import { emptyPortfolio } from "../domain/types";
 
@@ -98,5 +98,48 @@ describe("custom-relay warning (the brief goes wherever relayUrl points)", () =>
     renderRelayPrivacy("");
     expect(screen.queryByText(/Custom relay/)).toBeNull();
     expect(screen.getByText(/No relay is set yet/)).toBeTruthy();
+  });
+});
+
+describe("developer mode gates the experimental AI-engines card", () => {
+  it("hidden by default: no AI engines card, only the developer-mode switch", () => {
+    useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
+    render(<Privacy />);
+    expect(screen.queryByText(/AI engines/)).toBeNull();
+    expect(screen.getByText(/Turn on developer mode/)).toBeTruthy();
+  });
+
+  it("enabling takes two steps — the risk notice, then the card appears", () => {
+    useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
+    render(<Privacy />);
+    fireEvent.click(screen.getByText(/Turn on developer mode/));
+    // Risk notice shown; nothing unlocked yet.
+    expect(screen.getByText(/heads-up before you switch this on/)).toBeTruthy();
+    expect(screen.queryByText(/AI engines/)).toBeNull();
+    fireEvent.click(screen.getByText(/I understand — turn it on/));
+    expect(useStore.getState().portfolio.settings.developerMode).toBe(true);
+    expect(screen.getByText(/AI engines/)).toBeTruthy();
+  });
+
+  it("cancel on the notice leaves everything off", () => {
+    useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
+    render(<Privacy />);
+    fireEvent.click(screen.getByText(/Turn on developer mode/));
+    fireEvent.click(screen.getByText(/Cancel/));
+    expect(useStore.getState().portfolio.settings.developerMode).toBe(false);
+    expect(screen.queryByText(/AI engines/)).toBeNull();
+  });
+
+  it("turning it off also resets engine routing to Claude (visible state == behavior)", () => {
+    const p = emptyPortfolio();
+    p.settings.developerMode = true;
+    p.settings.ai = { extraction: "local", analysis: "local" };
+    useStore.setState({ portfolio: p, loaded: true });
+    render(<Privacy />);
+    fireEvent.click(screen.getByText(/Turn off developer mode/));
+    const s = useStore.getState().portfolio.settings;
+    expect(s.developerMode).toBe(false);
+    expect(s.ai).toEqual({ extraction: "claude", analysis: "claude" });
+    expect(screen.queryByText(/AI engines/)).toBeNull();
   });
 });

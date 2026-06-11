@@ -30,9 +30,12 @@ export async function withExtractionEngine<T>(engine: AiEngine, fn: () => Promis
 export function engineFor(task: AiTask): AiEngine {
   // The embedded model only exists inside the desktop shell; the web preview always Claude.
   if (!isTauri()) return "claude";
+  const s = useStore.getState().portfolio.settings;
+  // The on-device tier is experimental and sits behind Developer mode: off means Claude,
+  // no matter what settings.ai says (the saved choice survives for re-enabling).
+  if (!s.developerMode) return "claude";
   if (task === "extraction" && extractionOverride) return extractionOverride;
-  const ai = useStore.getState().portfolio.settings.ai;
-  return task === "extraction" ? ai.extraction : ai.analysis;
+  return task === "extraction" ? s.ai.extraction : s.ai.analysis;
 }
 
 // ---- local model lifecycle (thin wrappers over the Rust commands) ------------

@@ -35,9 +35,10 @@ import { engineFor, generateForExtraction, streamAnalysis, withExtractionEngine 
 
 const fetchSpy = vi.fn(async () => { throw new Error("network touched"); });
 
-function setEngines(extraction: "claude" | "local", analysis: "claude" | "local") {
+function setEngines(extraction: "claude" | "local", analysis: "claude" | "local", developerMode = true) {
   const p = emptyPortfolio();
   p.settings.ai = { extraction, analysis };
+  p.settings.developerMode = developerMode; // the experimental tier is honored only behind this switch
   useStore.setState({ portfolio: p, loaded: true });
 }
 
@@ -82,6 +83,26 @@ describe("local engine = zero network (the promise)", () => {
     );
     expect(invokeLog.map((c) => c.cmd)).toEqual(["claude_stream"]);
     expect(invokeLog.some((c) => c.cmd === "local_generate")).toBe(false);
+  });
+});
+
+describe("developer mode — the gate in front of the experimental tier", () => {
+  it("OFF forces Claude for both tasks no matter what settings.ai says", async () => {
+    setEngines("local", "local", false);
+    expect(engineFor("extraction")).toBe("claude");
+    expect(engineFor("analysis")).toBe("claude");
+    await streamAnalysis(
+      { model: "claude-sonnet-4-6", max_tokens: 100, messages: [{ role: "user", content: "hi" }] },
+    );
+    expect(invokeLog.map((c) => c.cmd)).toEqual(["claude_stream"]);
+    expect(invokeLog.some((c) => c.cmd === "local_generate")).toBe(false);
+  });
+
+  it("OFF beats even the one-shot extraction override", async () => {
+    setEngines("claude", "claude", false);
+    await withExtractionEngine("local", async () => {
+      expect(engineFor("extraction")).toBe("claude");
+    });
   });
 });
 

@@ -117,6 +117,9 @@ export interface Settings {
   byoKeySet: boolean;
   analysisModel: string; // which Claude model writes the analysis (cost vs. quality)
   ai: AiRouting; // per-task engine choice (default: claude for both)
+  // Experimental features live behind this switch (today: the on-device AI engine).
+  // Off = the app behaves as if they don't exist; settings.ai is kept but not honored.
+  developerMode: boolean;
 }
 
 // A record of a manual edit the user made (so overrides are visible, and they know a value
@@ -197,6 +200,7 @@ export function emptyPortfolio(): Portfolio {
       byoKeySet: false,
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku on Privacy
       ai: { extraction: "claude", analysis: "claude" }, // per-task engine; local is opt-in
+      developerMode: false, // experimental features stay invisible until switched on
     },
     updatedAt: new Date().toISOString(),
   };
@@ -205,7 +209,9 @@ export function emptyPortfolio(): Portfolio {
 // Whether AI analysis can actually reach Claude: BYO mode needs a key in place; relay
 // mode needs a real relay URL configured (a blank/placeholder URL doesn't count).
 export function analysisReady(s: Settings): boolean {
-  if (s.ai.analysis === "local") return true; // on-device — model presence is checked at run time
+  // On-device analysis counts as ready only while developer mode honors it — with the
+  // switch off, routing falls back to Claude, so Claude's requirements apply below.
+  if (s.developerMode && s.ai.analysis === "local") return true; // model presence is checked at run time
   if (s.claudeMode === "byo") return s.byoKeySet;
   return /^https?:\/\/\S+/.test(s.relayUrl) && !s.relayUrl.includes("example.");
 }

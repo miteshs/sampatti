@@ -185,9 +185,19 @@ try {
     await auditA11y(page, "Privacy");
   });
 
-  await step("AI engines card: local gated off in the web preview; engine toggle persists", async () => {
+  await step("Developer mode gates AI engines; local gated off in web; toggle persists", async () => {
+    // The experimental card must not exist until developer mode is switched on.
+    if (await bodyHas(page, "AI engines")) throw new Error("AI engines card visible without developer mode");
+    await clickText(page, "Turn on developer mode");
+    await waitFor(page, () => bodyHas(page, "heads-up before you switch this on"), "risk notice");
+    if (await bodyHas(page, "AI engines")) throw new Error("card unlocked before the notice was confirmed");
+    await clickText(page, "I understand — turn it on");
+    await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card after enabling");
+    await sleep(500); // persist debounce
+
     // Seed the persisted store as if a desktop user had chosen the on-device engine for
-    // analysis — proves load()'s settings.ai migration/merge surfaces on the UI.
+    // analysis — proves load()'s settings.ai migration/merge surfaces on the UI. The
+    // reload also proves developerMode itself persisted (the card must come back).
     await page.evaluate(() => {
       const p = JSON.parse(localStorage.getItem("sampatti.portfolio"));
       p.settings.ai = { extraction: "claude", analysis: "local" };
@@ -195,7 +205,7 @@ try {
     });
     await page.reload({ waitUntil: "networkidle2" });
     await clickText(page, "Privacy");
-    await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card");
+    await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card (developer mode persisted)");
     if (!(await bodyHas(page, "available in the desktop app"))) throw new Error("web-preview model note missing");
 
     const local = await engineChip(page, "Portfolio analysis", "On this device");

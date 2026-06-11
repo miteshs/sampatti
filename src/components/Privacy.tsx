@@ -14,6 +14,7 @@ export function Privacy() {
   const [keyInput, setKeyInput] = useState("");
   const [keySet, setKeySet] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [confirmDev, setConfirmDev] = useState(false);
   const [fxBusy, setFxBusy] = useState(false);
   const [fxNote, setFxNote] = useState<string | null>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
@@ -124,6 +125,7 @@ export function Privacy() {
               desktop app stores it as a file on your computer instead.</>} />
       </div>
 
+      {s.developerMode && (
       <div className="card">
         <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>AI engines</h3>
         <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
@@ -179,6 +181,7 @@ export function Privacy() {
           </p>
         )}
       </div>
+      )}
 
       <div className="card">
         <h3 style={{ fontSize: "1.05rem", marginBottom: "0.8rem" }}>How analysis reaches Claude</h3>
@@ -275,6 +278,44 @@ export function Privacy() {
             {fxNote ?? "Refreshed automatically each time the app opens; fetch anytime — only the public rate is requested, no data about you is sent."}
           </p>
         </div>
+      </div>
+
+      <div className="card">
+        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>Developer mode</h3>
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
+          Unlocks experimental features — today, the <strong>on-device AI engine</strong>. Everyday
+          use doesn't need it; everything else in Sampatti works without it.
+        </p>
+        {s.developerMode ? (
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              // Leaving developer mode returns ALL routing to Claude so the visible state
+              // matches behavior — re-enabling starts from the safe default again.
+              updateSettings({ developerMode: false, ai: { extraction: "claude", analysis: "claude" } });
+            }}
+          >
+            Turn off developer mode
+          </button>
+        ) : confirmDev ? (
+          <div>
+            <p style={{ fontSize: "0.82rem", maxWidth: 600, margin: "0 0 0.7rem", lineHeight: 1.55 }}>
+              ⚠ <strong>A heads-up before you switch this on.</strong> Experimental features are newer
+              and less tested than the rest of Sampatti — expect rough edges, slower results, and the
+              occasional failure. They can't quietly corrupt anything: every import still lands in the
+              review card for your approval. If something misbehaves, turn this off and the app goes
+              back to exactly how it was.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button className="btn btn-primary" onClick={() => { updateSettings({ developerMode: true }); setConfirmDev(false); }}>
+                I understand — turn it on
+              </button>
+              <button className="btn btn-ghost" onClick={() => setConfirmDev(false)}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn" onClick={() => setConfirmDev(true)}>Turn on developer mode…</button>
+        )}
       </div>
 
       <div className="card">

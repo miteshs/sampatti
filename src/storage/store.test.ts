@@ -52,6 +52,16 @@ describe("store load() — relay URL self-heal on upgrade", () => {
     // The default model is filled in rather than left undefined.
     expect(useStore.getState().portfolio.settings.analysisModel).toBe(emptyPortfolio().settings.analysisModel);
   });
+
+  it("a pre-developer-mode save loads with the switch OFF (experimental stays invisible)", async () => {
+    const saved = emptyPortfolio() as unknown as Record<string, unknown>;
+    delete (saved.settings as Record<string, unknown>).developerMode;
+    localStorage.setItem("sampatti.portfolio", JSON.stringify(saved));
+
+    await useStore.getState().load();
+
+    expect(useStore.getState().portfolio.settings.developerMode).toBe(false);
+  });
 });
 
 describe("store addDraft — re-import upserts an account in place", () => {

@@ -16,6 +16,11 @@ src-tauri/src/local_llm.rs  embedded llama.cpp (llama-cpp-2): model download (ht
                           grammar-constrained streaming generation. No separate app, no
                           localhost server — inference runs in-process.
 Privacy → "AI engines"    per-task pickers + model manager (download w/ progress, remove).
+                          BEHIND Privacy → "Developer mode" (2026-06-11): the experimental
+                          tier is invisible until that switch is flipped past a plain-words
+                          risk notice; settings.developerMode=false forces engineFor →
+                          "claude" regardless of settings.ai, and analysisReady honors the
+                          same gate. Turning dev mode OFF resets settings.ai to claude/claude.
 ```
 
 **Pinned model (v1)** — one model, verified, pluggable later:
