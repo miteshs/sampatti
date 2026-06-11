@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { visiblePortfolio } from "../domain/types";
 import { PERIODS, periodChange, periodStart, type Period } from "../domain/history";
-import { snapshotSeries, snapshotTime } from "../domain/snapshots";
+import { pointsInWindow, snapshotSeries, snapshotTime } from "../domain/snapshots";
 import { flowsInWindow, incomeOverWindow } from "../domain/flows";
 import { inr } from "../domain/format";
 import { TrendChart } from "./TrendChart";
@@ -20,12 +20,18 @@ export function NetWorthTrend() {
   const portfolio = useStore((s) => s.portfolio);
   const visible = useMemo(() => visiblePortfolio(portfolio), [portfolio]);
   const [period, setPeriod] = useState<Period>("1Y");
+  // Drag-selected window (brush zoom) — cleared by the ✕ chip, double-click, or any period.
+  const [zoom, setZoom] = useState<{ from: number; to: number } | null>(null);
 
   const recordedDays = (portfolio.snapshots ?? []).length;
-  const points = useMemo(
-    () => snapshotSeries(portfolio.snapshots ?? [], new Set(visible.accounts.map((a) => a.id)), periodStart(period)),
-    [portfolio.snapshots, visible.accounts, period],
-  );
+  const points = useMemo(() => {
+    const all = snapshotSeries(portfolio.snapshots ?? [], new Set(visible.accounts.map((a) => a.id)), periodStart(period));
+    if (zoom) {
+      const sliced = pointsInWindow(all, zoom.from, zoom.to);
+      if (sliced.length >= 3) return sliced;
+    }
+    return all;
+  }, [portfolio.snapshots, visible.accounts, period, zoom]);
   const change = useMemo(() => periodChange(points), [points]);
 
   // Why did it change? flows/tracking/unclassified come from the ledger; growth is the
@@ -57,8 +63,14 @@ export function NetWorthTrend() {
         </div>
         {haveChart && (
           <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", alignItems: "center" }}>
+            {zoom && (
+              <button className="chip active" onClick={() => setZoom(null)} title="Back to the full period">
+                ✕ Custom range
+              </button>
+            )}
             {PERIODS.map((p) => (
-              <button key={p} className={`chip ${period === p ? "active" : ""}`} onClick={() => setPeriod(p)}>{p}</button>
+              <button key={p} className={`chip ${!zoom && period === p ? "active" : ""}`}
+                onClick={() => { setPeriod(p); setZoom(null); }}>{p}</button>
             ))}
           </div>
         )}
@@ -78,10 +90,10 @@ export function NetWorthTrend() {
             <div style={{ fontSize: "1.5rem", fontWeight: 750, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{inr(points[points.length - 1].netWorth)}</div>
             <div style={{ fontWeight: 700, color: change.abs >= 0 ? "#1a9e6b" : "#d6455d" }}>
               {change.abs >= 0 ? "▲" : "▼"} {inr(Math.abs(change.abs))}{change.pct != null ? ` · ${change.pct >= 0 ? "+" : ""}${change.pct}%` : ""}
-              <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> over {period}</span>
+              <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> over {zoom ? "the selected range" : period}</span>
             </div>
           </div>
-          <TrendChart points={points} />
+          <TrendChart points={points} onBrush={(from, to) => setZoom({ from, to })} onResetZoom={() => setZoom(null)} />
           {anyFlows && split && (
             <div style={{ marginTop: "0.6rem", padding: "0.55rem 0.8rem", background: "var(--surface-2)", borderRadius: "10px", fontSize: "0.84rem", display: "flex", gap: "1.1rem", flexWrap: "wrap", alignItems: "baseline" }}>
               <span>

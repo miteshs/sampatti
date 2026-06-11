@@ -12,6 +12,7 @@ import { basisBandsByAccount, basisSampleTimes } from "../domain/basisHistory";
 import { inr } from "../domain/format";
 import { color } from "./ui";
 import { TimeAxis } from "./timeAxis";
+import { useBrush } from "./useBrush";
 
 const MAX_BANDS = 8; // beyond this, small accounts roll into "Other accounts"
 
@@ -197,8 +198,6 @@ function StackSvg({ times, bands, hover, splitIndex = 0, onBrush, onResetZoom }:
   const W = 720, H = 200, PAD = 6;
   const n = times.length;
   const svgRef = useRef<SVGSVGElement>(null);
-  // Brush-in-progress: [start, current] in time units (live selection rectangle).
-  const [drag, setDrag] = useState<{ a: number; b: number } | null>(null);
 
   // Cumulative stack, drawn bottom-up: band i fills between cum(i-1) and cum(i).
   const totals = times.map((_, di) => bands.reduce((s, b) => s + b.values[di], 0));
@@ -215,6 +214,7 @@ function StackSvg({ times, bands, hover, splitIndex = 0, onBrush, onResetZoom }:
     const frac = Math.min(1, Math.max(0, (xView - PAD) / (W - 2 * PAD)));
     return minX + frac * spanX;
   };
+  const { drag, handlers } = useBrush(timeAt, onBrush);
 
   // An area path over an index range [from, to] inclusive.
   const areaOf = (lower: number[], upper: number[], from: number, to: number) => {
@@ -242,29 +242,15 @@ function StackSvg({ times, bands, hover, splitIndex = 0, onBrush, onResetZoom }:
   });
 
   const baseOpacity = (k: string) => (hover == null ? 0.82 : hover === k ? 0.95 : 0.25);
-  const MIN_BRUSH_MS = 86_400_000; // sub-day drags are clicks, not selections
 
   return (
     <div>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        style={{ width: "100%", height: "auto", display: "block", cursor: "crosshair", touchAction: "none" }}
+        style={{ width: "100%", height: "auto", display: "block", cursor: onBrush ? "crosshair" : "default", touchAction: "none" }}
         preserveAspectRatio="none"
-        onPointerDown={(e) => {
-          if (!onBrush) return;
-          (e.target as Element).setPointerCapture?.(e.pointerId);
-          const t = timeAt(e.clientX);
-          setDrag({ a: t, b: t });
-        }}
-        onPointerMove={(e) => drag && setDrag({ a: drag.a, b: timeAt(e.clientX) })}
-        onPointerUp={() => {
-          if (!drag) return;
-          const from = Math.min(drag.a, drag.b), to = Math.max(drag.a, drag.b);
-          setDrag(null);
-          if (onBrush && to - from >= MIN_BRUSH_MS) onBrush(from, to);
-        }}
-        onPointerLeave={() => setDrag(null)}
+        {...handlers}
         onDoubleClick={() => onResetZoom?.()}
       >
         {layers.map((l) =>

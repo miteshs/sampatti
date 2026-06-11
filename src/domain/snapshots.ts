@@ -76,6 +76,12 @@ export function perAccountSeries(
   return { times, series };
 }
 
+// Slice a point series to a dragged [from, to] window (inclusive). The Overview trend's
+// brush zoom: delta, day count and the growth split all recompute over the slice.
+export function pointsInWindow<P extends { t: number }>(points: P[], fromT: number, toT: number): P[] {
+  return points.filter((p) => p.t >= fromT && p.t <= toT);
+}
+
 // Recorded series over the currently-visible accounts, from `fromT` on. Deleted accounts drop
 // out naturally (their id is in no visible set); same for excluded ones.
 export function snapshotSeries(
