@@ -5,6 +5,8 @@
 // `claude_stream` streams Anthropic's SSE response back to the UI over a Channel, emitting
 // only the text deltas (the same shape the web transport parses).
 
+mod local_llm;
+
 use futures_util::StreamExt;
 use serde_json::Value;
 use tauri::ipc::Channel;
@@ -280,7 +282,11 @@ pub fn run() {
             has_api_key,
             clear_api_key,
             claude_stream,
-            market_fetch
+            market_fetch,
+            local_llm::local_model_status,
+            local_llm::local_model_download,
+            local_llm::local_model_remove,
+            local_llm::local_generate
         ])
         .run(tauri::generate_context!())
         .expect("error while running Sampatti");

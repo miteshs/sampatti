@@ -12,6 +12,7 @@ the e2e/visual layers below exist so that class of bug can't ship again.
 |---|---|---|
 | Unit/component (vitest, `src/**`) | Domain math, parsers, stores, per-OS copy, render behavior | `npm test` |
 | **Promise contracts** (`src/contracts.test.ts`) | Brief key-allowlist (no units/dates/folios/ISINs to Claude); CSP == Rust `MARKET_HOSTS` == agreed egress, **exact set**; app models ⊆ relay; version triple-match | in `npm test` |
+| **Local-AI contract** (`src/ai/engine.contract.test.ts` + source-scan in `contracts.test.ts`) | Local engine touches ONLY `local_generate` — no fetch/relay/claude; inference code in `local_llm.rs` is network-free by source scan | in `npm test` |
 | **Durability** (`src/storage/migration.test.ts`, `invariants.test.ts`) | Frozen oldest-schema file loads losslessly forever; snapshot ≡ live sums, basis on every holding, well-formed ledger after every mutation | in `npm test` |
 | **Fuzzing** (`src/ingest/fuzz.test.ts`, fast-check, seed 1991) | Parsers never hang/NaN on ANY input; `rowTriple` consistency; reconciliation bounds | in `npm test` |
 | Rust (`src-tauri`) | Keystore is a REAL OS store (not the mock), round-trip, market-URL allowlist, UTF-8-safe error paths | `cargo test` |

@@ -341,6 +341,7 @@ export function demoPortfolio(): Portfolio {
   const settings: Portfolio["settings"] = {
     country: "India", baseCurrency: "INR", claudeMode: "relay",
     relayUrl: "https://sampatti-relay.sampatti.workers.dev", usdInr: 95, byoKeySet: false, analysisModel: "claude-sonnet-4-6",
+    ai: { extraction: "claude", analysis: "claude" },
   };
 
   // A month of recorded history, walked back from today's exact per-account values

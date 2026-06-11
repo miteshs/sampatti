@@ -97,6 +97,15 @@ export interface Income {
   note?: string;
 }
 
+// Which engine performs an AI task. "claude" = the hosted/BYO Claude path (quality tier);
+// "local" = the embedded on-device model (privacy/offline tier — nothing leaves the device).
+// Per-task so a user can mix: e.g. extraction local, deep analysis on Claude.
+export type AiEngine = "claude" | "local";
+export interface AiRouting {
+  extraction: AiEngine; // statement extraction fallback (PDF text / unrecognized layouts)
+  analysis: AiEngine; // the portfolio review & chat
+}
+
 export interface Settings {
   country: "India"; // country drives the analyst persona + tax rules; India in v1
   baseCurrency: string; // "INR"
@@ -107,6 +116,7 @@ export interface Settings {
   // or sessionStorage (web fallback). This flag only records whether one is set.
   byoKeySet: boolean;
   analysisModel: string; // which Claude model writes the analysis (cost vs. quality)
+  ai: AiRouting; // per-task engine choice (default: claude for both)
 }
 
 // A record of a manual edit the user made (so overrides are visible, and they know a value
@@ -186,6 +196,7 @@ export function emptyPortfolio(): Portfolio {
       usdInr: 95, // fallback; refresh to a live rate on the Privacy screen
       byoKeySet: false,
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku on Privacy
+      ai: { extraction: "claude", analysis: "claude" }, // per-task engine; local is opt-in
     },
     updatedAt: new Date().toISOString(),
   };
@@ -194,6 +205,7 @@ export function emptyPortfolio(): Portfolio {
 // Whether AI analysis can actually reach Claude: BYO mode needs a key in place; relay
 // mode needs a real relay URL configured (a blank/placeholder URL doesn't count).
 export function analysisReady(s: Settings): boolean {
+  if (s.ai.analysis === "local") return true; // on-device — model presence is checked at run time
   if (s.claudeMode === "byo") return s.byoKeySet;
   return /^https?:\/\/\S+/.test(s.relayUrl) && !s.relayUrl.includes("example.");
 }

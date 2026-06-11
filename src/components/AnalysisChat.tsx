@@ -3,7 +3,8 @@ import { useStore } from "../storage/store";
 import { buildBrief } from "../domain/brief";
 import { inr } from "../domain/format";
 import { analysisReady, visiblePortfolio } from "../domain/types";
-import { streamClaude, type Msg } from "../claude/transport";
+import { type Msg } from "../claude/transport";
+import { engineFor, streamAnalysis } from "../ai/engine";
 import { chatMessages, initialMessages, systemPrompt } from "../claude/prompts";
 import { Markdown } from "./Markdown";
 
@@ -21,6 +22,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const abortRef = useRef<AbortController | null>(null);
   const system = systemPrompt(portfolio.settings.country);
   const ready = analysisReady(portfolio.settings);
+  const engine = engineFor("analysis");
 
   const run = async (messages: Msg[], seedTurns: Turn[]) => {
     setError(null);
@@ -29,7 +31,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
-      await streamClaude(
+      await streamAnalysis(
         { model: portfolio.settings.analysisModel, system, max_tokens: 4000, messages },
         (delta) => setTurns((t) => {
           const copy = [...t];
@@ -71,8 +73,14 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
         <div className="card" style={{ display: "flex", gap: "0.7rem", alignItems: "center", background: "linear-gradient(135deg, #f3f1ff, #ffffff)" }}>
           <span style={{ fontSize: "1.3rem" }}>🔒</span>
           <div style={{ fontSize: "0.82rem", color: "var(--ink-2)" }}>
-            Your raw statements never leave this device. Only the compact <strong>portfolio brief</strong>{" "}
-            on the right is sent to Claude ({portfolio.settings.claudeMode === "byo" ? "directly with your key" : "via the relay"}) to write this analysis.
+            {engine === "local" ? (
+              <>Everything stays on this device — this analysis is written by the <strong>on-device
+              model</strong> (quick take; switch to Claude on Privacy for the deepest review). Nothing
+              is sent anywhere.</>
+            ) : (
+              <>Your raw statements never leave this device. Only the compact <strong>portfolio brief</strong>{" "}
+              on the right is sent to Claude ({portfolio.settings.claudeMode === "byo" ? "directly with your key" : "via the relay"}) to write this analysis.</>
+            )}
           </div>
         </div>
 
@@ -140,7 +148,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
             )}
             <div className="card" style={{ display: "flex", gap: "0.5rem", position: "sticky", bottom: "1rem" }}>
               <input
-                placeholder={streaming ? "Claude is responding…" : "Ask anything in your own words…"}
+                placeholder={streaming ? (engine === "local" ? "Thinking on this device…" : "Claude is responding…") : "Ask anything in your own words…"}
                 value={question}
                 disabled={streaming}
                 onChange={(e) => setQuestion(e.target.value)}

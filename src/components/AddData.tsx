@@ -4,6 +4,7 @@ import { keyStoreName } from "../platform";
 import { demoPortfolio } from "../demo";
 import { classifyFile, ingestFile, ingestPdf, ingestWithClaude, isImportable, NeedsClaudeError, PdfPasswordError } from "../ingest";
 import { findCrossAccountDuplicates } from "../ingest/reconcile";
+import { engineFor } from "../ai/engine";
 import { inr } from "../domain/format";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
@@ -266,12 +267,14 @@ export function AddData() {
         <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "linear-gradient(135deg,#fff8ec,#fff)" }}>
           <h3 style={{ fontSize: "0.98rem" }}>Couldn't auto-read {file.name}</h3>
           <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
-            {reason} Send it to Claude {portfolio.settings.claudeMode === "byo" ? "with your own key" : "via the relay"} to
-            extract the holdings — you'll review the result before saving — or skip it.
+            {reason}{" "}
+            {engineFor("extraction") === "local"
+              ? "Parse it with the on-device model — nothing leaves this device — or skip it. You'll review the result before saving."
+              : `Send it to Claude ${portfolio.settings.claudeMode === "byo" ? "with your own key" : "via the relay"} to extract the holdings — you'll review the result before saving — or skip it.`}
           </p>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
             <button className="btn btn-primary" disabled={aiBusy === file.name} onClick={() => void parseWithClaude(file)}>
-              {aiBusy === file.name ? <span className="spinner" /> : "✨ Parse with Claude"}
+              {aiBusy === file.name ? <span className="spinner" /> : engineFor("extraction") === "local" ? "🔒 Parse on this device" : "✨ Parse with Claude"}
             </button>
             <button className="btn btn-ghost" onClick={() => setNeedsClaude((n) => n.filter((x) => x.file !== file))}>Skip</button>
           </div>
@@ -292,8 +295,10 @@ export function AddData() {
               )}
               {aiFiles.length > 0 && (
                 <li>
-                  <strong>{aiFiles.length}</strong> sent to Claude{" "}
-                  {portfolio.settings.claudeMode === "byo" ? "with your own API key" : "via the relay"}{" "}
+                  <strong>{aiFiles.length}</strong>{" "}
+                  {engineFor("extraction") === "local"
+                    ? "parsed by the on-device model (text files; nothing leaves this device — images/scans still use Claude)"
+                    : `sent to Claude ${portfolio.settings.claudeMode === "byo" ? "with your own API key" : "via the relay"}`}{" "}
                   to extract holdings — not stored. You'll review each before saving.
                 </li>
               )}

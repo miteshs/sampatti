@@ -6,6 +6,7 @@
 import { normAccountType, normAssetClass, normRegion, normTaxTreatment } from "../domain/classify";
 import type { ImportDraft } from "../domain/types";
 import { callClaude, EXTRACT_MODEL, type Block } from "../claude/transport";
+import { generateForExtraction } from "../ai/engine";
 import { normDate } from "./rows";
 
 const PROMPT = `You extract holdings from an Indian (or foreign) brokerage / mutual-fund / PMS / bank / insurance statement, or a screenshot of one.
@@ -168,8 +169,9 @@ export async function extractFromText(text: string, source: string): Promise<Imp
     text.length > 6000 && focused
       ? "KEY LINES from the statement (amounts & headers; boilerplate omitted):\n" + focused
       : text;
-  const content: Block[] = [{ type: "text", text: `${PROMPT}\n\n--- STATEMENT TEXT ---\n${payload.slice(0, 24000)}` }];
-  const out = await callClaude({ model: EXTRACT_MODEL, max_tokens: 4000, messages: [{ role: "user", content }] });
+  // Routed by the user's per-task engine choice (Privacy → AI engines): Claude, or the
+  // embedded on-device model with grammar-constrained JSON. Same prompt either way.
+  const out = await generateForExtraction(`${PROMPT}\n\n--- STATEMENT TEXT ---\n${payload.slice(0, 24000)}`);
   return validateDrafts(extractJson(out), source);
 }
 

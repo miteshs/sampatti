@@ -56,6 +56,7 @@ describe("legacy portfolio file migration", () => {
     expect(Array.isArray(p.edits)).toBe(true);
     expect(Array.isArray(p.flows)).toBe(true);
     expect(p.settings.analysisModel).toBe(emptyPortfolio().settings.analysisModel);
+    expect(p.settings.ai).toEqual({ extraction: "claude", analysis: "claude" }); // nested deep-merge
     expect(p.settings.relayUrl).toBe(DEFAULT_RELAY_URL); // empty relayUrl backfilled
     expect(p.settings.usdInr).toBe(83); // user's own value NOT clobbered by defaults
 

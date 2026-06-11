@@ -26,6 +26,13 @@ no cloud database**. Nothing is uploaded for storage. Back it up or wipe it your
 
 Nothing else is ever transmitted.
 
+### On-device AI (optional)
+
+On the Privacy screen you can switch either AI task — statement extraction, or the
+analysis — to an **on-device model** (downloaded once, integrity-verified, runs inside the
+app). In that mode the task sends **nothing anywhere**: no relay, no Anthropic, no network
+call at all — enforced by automated contract tests. Claude remains the default for quality.
+
 ## What we never see
 
 - In **relay mode**, the brief passes through a stateless relay to Anthropic. The relay binds

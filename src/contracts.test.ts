@@ -100,6 +100,17 @@ describe("egress contract: CSP == Rust allowlist == known endpoints", () => {
 
 // ---- 3. cross-file consistency ----------------------------------------------
 
+describe("local engine source contract", () => {
+  it("the inference path in local_llm.rs contains no network client usage", () => {
+    const src = read("src-tauri/src/local_llm.rs");
+    const start = src.indexOf("// ---- inference");
+    const end = src.indexOf("#[cfg(test)]"); // unit tests below contain URL fixtures
+    const inference = src.slice(start, end > start ? end : undefined);
+    expect(inference.length).toBeGreaterThan(100);
+    expect(inference).not.toMatch(/reqwest|http|fetch|tcp|socket/i);
+  });
+});
+
 describe("model and version consistency", () => {
   it("every app model is accepted by the relay", () => {
     const relay = read("relay/src/worker.ts");

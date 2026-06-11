@@ -203,6 +203,8 @@ export const useStore = create<State>((set, get) => ({
         // a relay was configured stores relayUrl:"" which would otherwise win the merge
         // above and leave relay mode unconfigured on upgrade.
         if (!p.settings.relayUrl) p.settings.relayUrl = defaults.relayUrl;
+        // Nested settings added later deep-merge (the shallow spread above only covers top level).
+        p.settings.ai = { ...defaults.ai, ...(p.settings.ai ?? {}) };
         if (!Array.isArray(p.edits)) p.edits = []; // added after some files were written
         if (!Array.isArray(p.snapshots)) p.snapshots = []; // ditto
         if (!Array.isArray(p.flows)) p.flows = []; // ditto

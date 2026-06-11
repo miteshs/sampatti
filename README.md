@@ -26,7 +26,8 @@ plain web app for development.
 - **AI Analysis (interactive)** — a streamed review covering concentration, diversification,
   India tax (equity LTCG/STCG, debt slab taxation, ELSS/80C, NPS/80CCD(1B), SGB, harvesting),
   liquidity, and a retirement/income read — then a chat box to ask follow-ups.
-- **Privacy by construction** — see [PRIVACY.md](./PRIVACY.md).
+- **Privacy by construction** — see [PRIVACY.md](./PRIVACY.md). Optional **on-device AI**
+  (per-task: extraction and/or analysis) that provably makes zero network calls.
 
 Try it instantly with **Add data → Load demo portfolio** (a hypothetical ~₹14 Cr HNI with 18 months of recorded history).
 

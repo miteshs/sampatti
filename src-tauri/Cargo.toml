@@ -24,6 +24,10 @@ futures-util = "0.3"
 # The platform keystores are opt-in features in keyring v3 — without them EVERY platform
 # silently falls back to the in-memory mock store and the saved key dies with the process.
 keyring = { version = "3", features = ["apple-native", "windows-native"] }
+sha2 = "0.10"
+# Embedded on-device inference (llama.cpp). CPU backend everywhere for v1; GPU offload is a
+# Phase-4 item in docs/local-ai.md.
+llama-cpp-2 = "0.1"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

@@ -3,6 +3,8 @@ import { useStore, exportPortfolio } from "../storage/store";
 import { DEFAULT_RELAY_URL } from "../domain/types";
 import { clearByoKey, diskEncryption, hasByoKey, keyStoreName, setByoKey, storageLocation, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
+import { localModelDownload, localModelRemove, localModelStatus, type LocalModelStatus } from "../ai/engine";
+import type { AiEngine } from "../domain/types";
 import { fetchUsdInr } from "../domain/fx";
 
 export function Privacy() {
@@ -15,6 +17,42 @@ export function Privacy() {
   const [fxBusy, setFxBusy] = useState(false);
   const [fxNote, setFxNote] = useState<string | null>(null);
   const [exportNote, setExportNote] = useState<string | null>(null);
+  const [model, setModel] = useState<LocalModelStatus | null>(null);
+  const [dlProgress, setDlProgress] = useState<number | null>(null); // 0..1 while downloading
+  const [modelErr, setModelErr] = useState<string | null>(null);
+
+  const refreshModel = async () => {
+    if (!isTauri()) return;
+    try { setModel(await localModelStatus()); } catch { /* command absent in old builds */ }
+  };
+
+  const downloadModel = async () => {
+    setModelErr(null);
+    setDlProgress(0);
+    try {
+      await localModelDownload((received, total) => setDlProgress(total ? received / total : 0));
+      await refreshModel();
+    } catch (e) {
+      setModelErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDlProgress(null);
+    }
+  };
+
+  const removeModel = async () => {
+    setModelErr(null);
+    try {
+      await localModelRemove();
+      // Local engine without a model is pointless — fall anything local back to Claude.
+      updateSettings({ ai: { extraction: "claude", analysis: "claude" } });
+      await refreshModel();
+    } catch (e) {
+      setModelErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const setEngine = (task: "extraction" | "analysis", engine: AiEngine) =>
+    updateSettings({ ai: { ...s.ai, [task]: engine } });
 
   const doExport = async () => {
     try {
@@ -41,6 +79,8 @@ export function Privacy() {
   useEffect(() => {
     void storageLocation().then(setLocation);
     void hasByoKey().then(setKeySet);
+    void refreshModel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const saveKey = async () => {
@@ -82,6 +122,62 @@ export function Privacy() {
               encrypt the whole disk, including this app's data file.</>
             : <>You're viewing the web preview, so data sits in this browser's local storage. The
               desktop app stores it as a file on your computer instead.</>} />
+      </div>
+
+      <div className="card">
+        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>AI engines</h3>
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
+          Choose, per task, whether AI runs on <strong>Claude</strong> (best quality; the brief or
+          the document you approve is sent) or <strong>on this device</strong> (nothing leaves —
+          a smaller model, downloaded once). Mix freely.
+        </p>
+        {(["extraction", "analysis"] as const).map((task) => (
+          <div key={task} style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", padding: "0.4rem 0" }}>
+            <span style={{ fontSize: "0.86rem", fontWeight: 600, width: 190 }}>
+              {task === "extraction" ? "Statement extraction" : "Portfolio analysis & chat"}
+            </span>
+            <button className={`chip ${s.ai[task] === "claude" ? "active" : ""}`} onClick={() => setEngine(task, "claude")}>
+              Claude — best quality
+            </button>
+            <button
+              className={`chip ${s.ai[task] === "local" ? "active" : ""}`}
+              disabled={model?.state !== "ready"}
+              title={model?.state !== "ready" ? "Download the on-device model below first" : undefined}
+              onClick={() => setEngine(task, "local")}
+            >
+              🔒 On this device{task === "analysis" ? " — quick take" : ""}
+            </button>
+          </div>
+        ))}
+        {isTauri() ? (
+          <div style={{ marginTop: "0.7rem", paddingTop: "0.7rem", borderTop: "1px solid var(--line-2)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.84rem", fontWeight: 600 }}>On-device model</span>
+              {model?.state === "ready" && <span className="badge badge-green">downloaded · {(model.size_bytes / 1e9).toFixed(2)} GB</span>}
+              {model?.state === "partial" && <span className="badge badge-amber">partially downloaded — resume below</span>}
+              {(!model || model.state === "absent") && <span className="badge badge-gray">not downloaded</span>}
+              {dlProgress != null ? (
+                <span className="muted" style={{ fontSize: "0.8rem" }}>downloading… {(dlProgress * 100).toFixed(0)}%</span>
+              ) : model?.state === "ready" ? (
+                <button className="btn btn-ghost" onClick={() => void removeModel()}>Remove model</button>
+              ) : (
+                <button className="btn" onClick={() => void downloadModel()}>
+                  ⬇ Download model (~2.3 GB, one time)
+                </button>
+              )}
+            </div>
+            <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.4rem", maxWidth: 600 }}>
+              Qwen3-4B (Apache-2.0), fetched once from huggingface.co and integrity-verified
+              (sha-256). It runs entirely inside Sampatti — no separate app, no server. Screenshots
+              and scans still use Claude even in on-device mode (small models can't read them well).
+            </p>
+            {modelErr && <div className="badge badge-rose" style={{ marginTop: "0.4rem", padding: "0.3rem 0.6rem" }}>{modelErr}</div>}
+          </div>
+        ) : (
+          <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>
+            The on-device model is available in the desktop app (this is the web preview).
+          </p>
+        )}
       </div>
 
       <div className="card">
