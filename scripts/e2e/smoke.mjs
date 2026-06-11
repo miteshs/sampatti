@@ -256,6 +256,27 @@ try {
     if (caches.length > 0) throw new Error(`caches survived: ${caches.join(", ")}`);
   });
 
+  await step("US mode: demo figures agree across hero, loans line and brief (unit rule)", async () => {
+    // Post-erase we're back on the welcome — run the US first-run experience for real.
+    await clickText(page, "Add data");
+    await waitFor(page, () => bodyHas(page, "Where do you manage your money?"), "welcome after erase");
+    await clickText(page, "United States");
+    await sleep(300);
+    await clickText(page, "Load demo portfolio");
+    await sleep(700);
+    await clickText(page, "Overview");
+    // The authored US-demo figures through the single display conversion. "$24K" here
+    // would mean the double-divide returned; "$216" would mean no conversion at all.
+    await waitFor(page, () => bodyHas(page, "$2.28M"), "US hero net worth");
+    if (!(await bodyHas(page, "$2.69M you own"))) throw new Error("assets line disagrees with the hero");
+    if (!(await bodyHas(page, "$410.0K in loans"))) throw new Error("loans line disagrees (the mangled-mortgage regression)");
+    if (await bodyHas(page, "₹")) throw new Error("rupee symbol leaked into US mode's Overview");
+    await auditA11y(page, "Overview-US");
+    await clickText(page, "AI Analysis");
+    await waitFor(page, () => bodyHas(page, "Tax-advantaged (401k/Roth/HSA)"), "US wrappers fact");
+    if (!(await bodyHas(page, "$2.28M"))) throw new Error("facts panel disagrees with the hero");
+  });
+
   await step("accessibility: no serious/critical WCAG A/AA violations", async () => {
     const bad = a11yIssues.filter((v) => v.impact === "serious" || v.impact === "critical");
     const minor = a11yIssues.filter((v) => v.impact !== "serious" && v.impact !== "critical");

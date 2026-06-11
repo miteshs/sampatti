@@ -85,8 +85,7 @@ try {
   mkdirSync(BASE_DIR, { recursive: true });
   mkdirSync(CAND_DIR, { recursive: true });
 
-  for (const [name, tab] of SHOTS) {
-    await clickText(page, tab);
+  const shoot = async (name) => {
     await sleep(600);
     await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
     await sleep(150);
@@ -104,7 +103,7 @@ try {
         writeFileSync(basePath, shot);
         console.log(`  ✎ baseline created: ${PLATFORM}/${name}.png`);
       }
-      continue;
+      return;
     }
 
     const a = PNG.sync.read(readFileSync(basePath));
@@ -113,7 +112,7 @@ try {
       failures++;
       writeFileSync(join(CAND_DIR, `${name}.png`), shot);
       console.error(`  ✗ ${name}: size changed ${a.width}×${a.height} → ${b.width}×${b.height} (candidate saved)`);
-      continue;
+      return;
     }
     const diff = new PNG({ width: a.width, height: a.height });
     const n = pixelmatch(a.data, b.data, diff.data, a.width, a.height, { threshold: 0.12 });
@@ -126,7 +125,23 @@ try {
     } else {
       console.log(`  ✓ ${name} (${(ratio * 100).toFixed(3)}% diff)`);
     }
+  };
+
+  for (const [name, tab] of SHOTS) {
+    await clickText(page, tab);
+    await shoot(name);
   }
+
+  // US-mode Overview: same frozen clock, fresh store → region chip → US demo. Catches
+  // gross $-formatting/unit breakage that India-only baselines can't (the $24K-hero class).
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "networkidle2" });
+  await sleep(1200);
+  await clickText(page, "United States");
+  await sleep(400);
+  await clickText(page, "Load demo portfolio");
+  await sleep(1500);
+  await shoot("overview-us");
 } finally {
   await browser.close();
   stopServer();
