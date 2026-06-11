@@ -75,8 +75,14 @@ Phase R2 — US coherence (work through the ₹ surface; IN output pinned by tes
       401(k)/IRA wording); Privacy FX label via profile.fxLabel. CAS PARSING deliberately
       stays available in every region — it's content-triggered, and a US-resident NRI
       importing an Indian CAS is legitimate; only the proactive CAS copy gates to IN
-- [ ] US demo portfolio (the demo IS the first-run experience; an India demo for a US
-      user undermines the pitch) — same synthesized-history machinery, US archetypes
+- [x] US demo portfolio (~$2.3M HNW) on the SAME synthesized-history machinery (MOVERS/
+      DEMO_ENTERS are name-keyed, so US accounts just use distinct names): Schwab taxable
+      (real tickers, an STCG-territory TSLA loss), Fidelity 401(k)/Roth IRA/HSA wrappers,
+      an EXCLUDED old-employer 401(k), private Stripe RSUs and the Austin house as the
+      no-basis ≈ showcases, an NRI Zerodha demat for the mixed-currency case, T-bill flow
+      + late joiners for the trend, mortgage, 4 income kinds. demoPortfolio(country)
+      dispatches; settings follow the region; demo.test runs BOTH demos through the same
+      seven history invariants (India demo byte-identical)
 - [ ] Verdicts/buckets copy pass (lay-bucket names read naturally in both markets)
 - [x] AI analysis prompts adapt per region (user-flagged 2026-06-11): persona was wired in
       R1 (`systemPrompt(settings.country)` — US gets the fiduciary CFP/RIA persona; the

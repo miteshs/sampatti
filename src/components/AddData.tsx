@@ -84,7 +84,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
   // how the demo used to get mixed into a real portfolio.
   const loadDemo = () => {
     if (hasData && !window.confirm("Replace your current data with the sample demo portfolio? This clears what's there now.")) return;
-    replaceAll(demoPortfolio());
+    replaceAll(demoPortfolio(portfolio.settings.country)); // the demo speaks the chosen region's language
   };
 
   const clearAll = () => { void wipe(); setDrafts([]); setConfirmClear(false); };

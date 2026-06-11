@@ -52,6 +52,12 @@ export const DEMO_ENTERS: Record<string, { daysAgo: number; kind: FlowEvent["kin
   "Crypto Wallet": { daysAgo: 150, kind: "tracking", label: "Started tracking the crypto wallet" },
   "Groww Mutual Funds": { daysAgo: DEMO_MF_DAYS_AGO, kind: "flow", label: "Opened Groww folio with new savings" },
   "Plot — Alibaug": { daysAgo: DEMO_PLOT_DAYS_AGO, kind: "tracking", label: "Started tracking — plot, Alibaug" },
+  // US-demo joiners (names are distinct from the India set; the maps are name-keyed).
+  "RSU — Stripe (Carta)": { daysAgo: 400, kind: "tracking", label: "Started tracking vested Stripe RSUs" },
+  "HSA Bank": { daysAgo: 270, kind: "tracking", label: "Started tracking the HSA" },
+  "Coinbase": { daysAgo: 160, kind: "tracking", label: "Started tracking the Coinbase wallet" },
+  "Treasury & CDs": { daysAgo: 30, kind: "flow", label: "Moved idle cash into T-bills" },
+  "Home — Austin": { daysAgo: 18, kind: "tracking", label: "Started tracking — primary residence" },
 };
 
 // Deterministic PRNG (mulberry32) — the demo must be identical on every load so tests and
@@ -80,6 +86,11 @@ const MOVERS: Record<string, { vol: number; drift: number; weekends?: boolean }>
   "Schwab Brokerage": { vol: 0.002, drift: 0.05 },
   "Crypto Wallet": { vol: 0.025, drift: 0.35, weekends: true },
   "HUF Demat": { vol: 0.009, drift: 0.12 },
+  "Schwab Taxable": { vol: 0.009, drift: 0.11 },
+  "Fidelity 401(k)": { vol: 0.007, drift: 0.1 },
+  "Vanguard Roth IRA": { vol: 0.007, drift: 0.1 },
+  "Coinbase": { vol: 0.025, drift: 0.35, weekends: true },
+  "Zerodha (NRI demat)": { vol: 0.009, drift: 0.12 },
 };
 
 const isWeekend = (date: string): boolean => {
@@ -161,8 +172,117 @@ function build(specs: AcctSpec[]): { accounts: Account[]; holdings: Holding[] } 
   return { accounts, holdings };
 }
 
-export function demoPortfolio(): Portfolio {
+// The US demo (~$2.3M HNW) mirrors the India demo's job: exercise every feature —
+// wrappers (401k/Roth/HSA incl. an EXCLUDED old employer plan), real tickers for live
+// refresh, winners AND losers, a recent STCG-territory loss, estimated-basis showcases
+// (private RSUs, the house), an NRI INR demat for the mixed-currency case, T-bill flow
+// and late joiners for the trend, a mortgage, varied income.
+function usSpecs(): AcctSpec[] {
+  return [
+    {
+      name: "Schwab Taxable", institution: "Charles Schwab", accountType: "demat",
+      taxTreatment: "taxable", region: "US", currency: "USD", asOf: "2026-05-31",
+      items: [
+        ["Apple Inc", "us_equity", 185_000, { symbol: "AAPL", units: 720, costBasis: 96_000, buyDate: "2020-03-20" }],
+        ["Microsoft Corp", "us_equity", 160_000, { symbol: "MSFT", units: 320, costBasis: 105_000, buyDate: "2021-05-10" }],
+        ["Vanguard S&P 500 ETF", "index_etf", 210_000, { symbol: "VOO", units: 360, costBasis: 150_000, buyDate: "2019-08-05" }],
+        ["NVIDIA Corp", "us_equity", 95_000, { symbol: "NVDA", units: 540, costBasis: 28_000, buyDate: "2022-10-12" }],
+        // Recent buy → short-term, and a loser — the Performance tab shows red too.
+        ["Tesla Inc", "us_equity", 38_000, { symbol: "TSLA", units: 110, costBasis: 45_000, buyDate: "2026-03-02" }],
+        ["Money market sweep", "cash", 22_000, { symbol: "SWVXX" }],
+      ],
+    },
+    {
+      name: "Fidelity 401(k)", institution: "Fidelity", accountType: "mutual_fund",
+      taxTreatment: "us_pretax", region: "US", currency: "USD", asOf: "2026-05-31",
+      items: [
+        ["Fidelity 500 Index Fund", "equity_mf", 385_000, { symbol: "FXAIX", costBasis: 235_000, buyDate: "2018-06-01" }],
+        ["Target Date 2045", "equity_mf", 155_000, { costBasis: 120_000, buyDate: "2020-01-15" }],
+      ],
+    },
+    {
+      name: "Vanguard Roth IRA", institution: "Vanguard", accountType: "mutual_fund",
+      taxTreatment: "us_roth", region: "US", currency: "USD", asOf: "2026-05-31",
+      items: [
+        ["Vanguard Total Stock Market ETF", "index_etf", 150_000, { symbol: "VTI", units: 480, costBasis: 92_000, buyDate: "2019-04-01" }],
+        ["Vanguard Total International ETF", "index_etf", 45_000, { symbol: "VXUS", units: 640, costBasis: 41_000, buyDate: "2022-07-01" }],
+      ],
+    },
+    {
+      name: "HSA Bank", institution: "HSA Bank / Schwab", accountType: "bank",
+      taxTreatment: "us_hsa", region: "US", currency: "USD", asOf: "2026-05-31",
+      items: [
+        ["HSA index sweep (S&P 500)", "index_etf", 40_000, { costBasis: 29_000, buyDate: "2021-02-01" }],
+        ["HSA cash", "cash", 5_000],
+      ],
+    },
+    {
+      // Joined the record a month ago with NEW money — a `flow` step in the trend.
+      name: "Treasury & CDs", institution: "TreasuryDirect / Marcus", accountType: "bank",
+      taxTreatment: "taxable", region: "US", currency: "USD", asOf: dayStr(0),
+      items: [
+        ["US Treasury Bills 4.8% 2026", "fd_rd", 130_000, { costBasis: 128_000, buyDate: dayStr(30) }],
+        ["Marcus CD 5.0% 2026", "fd_rd", 50_000, { costBasis: 50_000, buyDate: dayStr(30) }],
+      ],
+    },
+    {
+      name: "Coinbase", institution: "Coinbase", accountType: "other",
+      taxTreatment: "taxable", region: "Other", currency: "USD", asOf: "2026-05-31",
+      items: [
+        ["Bitcoin", "crypto", 62_000, { symbol: "BTC", units: 0.95, costBasis: 21_000, buyDate: "2020-11-15" }],
+        ["Ethereum", "crypto", 19_000, { symbol: "ETH", units: 6.2, costBasis: 16_000, buyDate: "2024-02-01" }],
+      ],
+    },
+    {
+      // Private-company RSUs: a value with NO basis — the ≈ since-import fallback on a
+      // big holding, plus the "your employer is your biggest risk" conversation.
+      name: "RSU — Stripe (Carta)", institution: "Carta", accountType: "other",
+      taxTreatment: "taxable", region: "US", currency: "USD", asOf: "2026-03-31",
+      defaultAssetClass: "us_equity", note: "Vested private RSUs at last 409A — no cost basis reported",
+      items: [["Stripe Inc (vested RSUs)", "us_equity", 140_000]],
+    },
+    {
+      // Pre-excluded: the Manage-tab include/exclude feature, US flavor.
+      name: "Old Employer 401(k) — Empower", institution: "Empower", accountType: "mutual_fund",
+      taxTreatment: "us_pretax", region: "US", currency: "USD", asOf: "2026-04-30",
+      excluded: true, note: "Pending rollover — tracked, excluded from net worth",
+      items: [["Target Date 2045", "equity_mf", 95_000, { costBasis: 70_000, buyDate: "2016-09-01" }]],
+    },
+    {
+      // The NRI case: an Indian demat alongside the US accounts — mixed currencies.
+      name: "Zerodha (NRI demat)", institution: "Zerodha", accountType: "demat",
+      taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
+      items: [
+        ["Reliance Industries", "indian_equity", 1_400_000, { symbol: "RELIANCE", units: 1110, costBasis: 900_000, buyDate: "2019-07-12" }],
+        ["ITC", "indian_equity", 600_000, { symbol: "ITC", units: 2150, costBasis: 450_000, buyDate: "2020-12-01" }],
+      ],
+    },
+    {
+      name: "Home — Austin", institution: "—", accountType: "real_estate",
+      taxTreatment: "taxable", region: "US", currency: "USD", asOf: dayStr(DEMO_PLOT_DAYS_AGO),
+      defaultAssetClass: "real_estate", note: "Zillow-style indicative value — update yearly",
+      items: [["Primary residence — Austin, TX", "real_estate", 780_000]],
+    },
+    {
+      name: "Mortgage", institution: "Rocket Mortgage", accountType: "liability",
+      taxTreatment: "na", region: "US", currency: "USD", asOf: "2026-05-31",
+      items: [["30-yr fixed (outstanding)", "other", 410_000]],
+    },
+  ];
+}
+
+function usIncome(): Income[] {
+  return [
+    { id: id(), source: "Salary", kind: "salary", amount: 24_000, frequency: "monthly", currency: "USD" },
+    { id: id(), source: "RSU vests (est.)", kind: "other", amount: 60_000, frequency: "annual", currency: "USD" },
+    { id: id(), source: "Dividends", kind: "dividend", amount: 9_000, frequency: "annual", currency: "USD" },
+    { id: id(), source: "Interest (T-bills, CDs)", kind: "interest", amount: 7_500, frequency: "annual", currency: "USD" },
+  ];
+}
+
+export function demoPortfolio(country: "India" | "US" = "India"): Portfolio {
   n = 0;
+  if (country === "US") return assemble(country, build(usSpecs()), usIncome());
   const { accounts, holdings } = build([
     {
       name: "Zerodha Demat", institution: "Zerodha", accountType: "demat",
@@ -330,23 +450,29 @@ export function demoPortfolio(): Portfolio {
     },
   ]);
 
-  const income: Income[] = [
+  return assemble(country, { accounts, holdings }, [
     { id: id(), source: "Salary (CTC)", kind: "salary", amount: 600_000, frequency: "monthly", currency: "INR" },
     { id: id(), source: "Rental income — Pune flat", kind: "rent", amount: 45_000, frequency: "monthly", currency: "INR" },
     { id: id(), source: "Consulting retainer", kind: "business", amount: 300_000, frequency: "annual", currency: "INR" },
     { id: id(), source: "Dividends", kind: "dividend", amount: 300_000, frequency: "annual", currency: "INR" },
     { id: id(), source: "FD & bond interest", kind: "interest", amount: 120_000, frequency: "annual", currency: "INR" },
-  ];
+  ]);
+}
 
+// Shared tail: settings per region (unit rule: snapshots stay INR-internal either way),
+// recorded history walked back from today's authored values, flows for the late joiners.
+function assemble(
+  country: "India" | "US",
+  { accounts, holdings }: { accounts: Account[]; holdings: Holding[] },
+  income: Income[],
+): Portfolio {
   const settings: Portfolio["settings"] = {
-    country: "India", baseCurrency: "INR", claudeMode: "relay",
+    country, baseCurrency: country === "US" ? "USD" : "INR", claudeMode: "relay",
     relayUrl: "https://sampatti-relay.sampatti.workers.dev", usdInr: 95, byoKeySet: false, analysisModel: "claude-sonnet-4-6",
     ai: { extraction: "claude", analysis: "claude" },
     developerMode: false,
   };
 
-  // A month of recorded history, walked back from today's exact per-account values
-  // (liabilities negative), with the two mid-month account events in the flows ledger.
   const todayByAccount = snapshotOf({
     version: CURRENT_VERSION, accounts, holdings, income, edits: [], snapshots: [], flows: [], settings,
     updatedAt: new Date().toISOString(),
