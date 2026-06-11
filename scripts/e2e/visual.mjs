@@ -81,7 +81,7 @@ try {
   const SHOTS = [
     ["overview", "Overview"], ["performance", "Performance"], ["manage", "Manage"],
     ["analysis", "AI Analysis"], ["add-data", "Add data"], ["privacy", "Privacy"],
-    ["settings", "⚙"],
+    ["settings", "Settings"],
   ];
   mkdirSync(BASE_DIR, { recursive: true });
   mkdirSync(CAND_DIR, { recursive: true });
@@ -141,6 +141,8 @@ try {
   await clickText(page, "United States");
   await sleep(400);
   await clickText(page, "Load demo portfolio");
+  await sleep(1200);
+  await clickText(page, "Overview");
   await sleep(1500);
   await shoot("overview-us");
 } finally {

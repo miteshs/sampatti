@@ -20,7 +20,7 @@ const NAV: { key: View; label: string; aria?: string }[] = [
   { key: "analysis", label: "AI Analysis" },
   { key: "add", label: "Add data" },
   { key: "privacy", label: "Privacy" },
-  { key: "settings", label: "⚙", aria: "Settings" }, // gear-only by request; aria carries the name
+  { key: "settings", label: "Settings" },
 ];
 
 export default function App() {

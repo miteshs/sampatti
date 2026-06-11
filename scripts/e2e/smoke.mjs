@@ -185,6 +185,11 @@ try {
     if (!(await bodyHas(page, "Measured"))) throw new Error("coverage card missing");
     await clickText(page, "By account");
     await waitFor(page, () => page.evaluate(() => /·\s*\d+ holdings?/.test(document.body.innerText)), "account subtotal header");
+    // Column sorting: click a header → desc arrow; again → asc. By-account keeps groups.
+    await clickText(page, "Value");
+    await waitFor(page, () => bodyHas(page, "▼"), "sort arrow desc");
+    await clickText(page, "Value");
+    await waitFor(page, () => bodyHas(page, "▲"), "sort arrow asc");
     await auditA11y(page, "Performance");
   });
 
@@ -206,7 +211,7 @@ try {
   });
 
   await step("Developer mode gates AI engines; local gated off in web; toggle persists", async () => {
-    await clickText(page, "⚙");
+    await clickText(page, "Settings");
     await waitFor(page, () => bodyHas(page, "How analysis reaches Claude"), "settings tab");
     // The experimental card must not exist until developer mode is switched on.
     if (await bodyHas(page, "AI engines")) throw new Error("AI engines card visible without developer mode");
@@ -226,7 +231,7 @@ try {
       localStorage.setItem("sampatti.portfolio", JSON.stringify(p));
     });
     await page.reload({ waitUntil: "networkidle2" });
-    await clickText(page, "⚙");
+    await clickText(page, "Settings");
     await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card (developer mode persisted)");
     await auditA11y(page, "Settings");
     if (!(await bodyHas(page, "available in the desktop app"))) throw new Error("web-preview model note missing");
@@ -242,7 +247,7 @@ try {
     const p = await store(page);
     if (p.settings.ai?.analysis !== "claude") throw new Error(`toggle didn't persist: ${JSON.stringify(p.settings.ai)}`);
     await page.reload({ waitUntil: "networkidle2" });
-    await clickText(page, "⚙");
+    await clickText(page, "Settings");
     await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card after reload");
     const after = await engineChip(page, "Portfolio analysis", "Claude");
     if (!after?.active) throw new Error("claude chip not active after reload");

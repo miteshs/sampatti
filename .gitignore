@@ -26,3 +26,4 @@ scripts/.pii-denylist
 # Apple signing/notarization credentials — never commit
 .env.signing
 .stryker-tmp/
+scripts/demo-video/out/

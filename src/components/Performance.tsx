@@ -28,8 +28,66 @@ function heldFor(buyDate?: string): string | null {
 
 interface RowData { h: Holding; a?: Account; value: number; g: HoldingGain | null; }
 
+// Column sorting: click a header to cycle ascending/descending (text columns start
+// ascending, numeric descending); picking a chip returns to its canonical order. In
+// "By account" the sort applies INSIDE each account group — never across boundaries
+// (groups themselves stay ordered by measured value).
+export type ColKey = "name" | "class" | "held" | "invested" | "value" | "gain" | "gainPct";
+const TEXT_COLS = new Set<ColKey>(["name", "class"]);
+export type ColSort = { col: ColKey; dir: "asc" | "desc" };
+export function nextColSort(prev: ColSort | null, col: ColKey): ColSort {
+  if (prev?.col === col) return { col, dir: prev.dir === "desc" ? "asc" : "desc" };
+  return { col, dir: TEXT_COLS.has(col) ? "asc" : "desc" };
+}
+export function compareRows(col: ColKey, dir: "asc" | "desc") {
+  const sgn = dir === "asc" ? 1 : -1;
+  const get = (r: RowData): string | number | null => {
+    switch (col) {
+      case "name": return r.h.name.toLowerCase();
+      case "class": return (ASSET_CLASS_LABEL[r.h.assetClass] ?? "").toLowerCase();
+      case "held": return r.h.buyDate ? Date.now() - new Date(r.h.buyDate).getTime() : null;
+      case "invested": return r.g?.invested ?? null;
+      case "value": return r.value;
+      case "gain": return r.g?.gain ?? null;
+      case "gainPct": return r.g?.gainPct ?? null;
+    }
+  };
+  return (a: RowData, b: RowData): number => {
+    const va = get(a), vb = get(b);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1; // unknowns sink, whichever direction
+    if (vb == null) return -1;
+    if (typeof va === "string") return sgn * va.localeCompare(vb as string);
+    return sgn * (va - (vb as number));
+  };
+}
+
 // One P&L table row. In the by-account view the rows sit under their account's subtotal
 // header, so the account suffix is dropped and the name indents.
+function SortTH({ col, colSort, onSort, num, style, children }: {
+  col: ColKey; colSort: ColSort | null; onSort: (s: ColSort) => void;
+  num?: boolean; style?: React.CSSProperties; children: React.ReactNode;
+}) {
+  const active = colSort?.col === col;
+  return (
+    <th className={num ? "num" : undefined} style={style}
+      aria-sort={active ? (colSort.dir === "asc" ? "ascending" : "descending") : undefined}>
+      <button
+        onClick={() => onSort(nextColSort(colSort, col))}
+        title="Sort by this column"
+        style={{
+          background: "none", border: 0, padding: 0, font: "inherit", color: "inherit",
+          letterSpacing: "inherit", textTransform: "inherit", cursor: "pointer",
+          width: "100%", textAlign: num ? "right" : "left",
+        }}
+      >
+        {children}
+        {active && <span aria-hidden style={{ fontSize: "0.6rem", marginLeft: 4, opacity: 0.85 }}>{colSort.dir === "asc" ? "▲" : "▼"}</span>}
+      </button>
+    </th>
+  );
+}
+
 function HoldingRow({ row: { h, a, value, g }, grouped }: { row: RowData; grouped?: boolean }) {
   const held = heldFor(h.buyDate);
   return (
@@ -62,6 +120,7 @@ export function Performance() {
   const usdInr = portfolio.settings.usdInr;
   const view = useMemo(() => visiblePortfolio(portfolio), [portfolio]);
   const [sort, setSort] = useState<SortKey>("gainers");
+  const [colSort, setColSort] = useState<ColSort | null>(null);
 
   const { rows, unmeasured } = useMemo(() => {
     const acctById = new Map(view.accounts.map((a) => [a.id, a]));
@@ -96,8 +155,9 @@ export function Performance() {
         if (pb == null) return -1;
         return sort === "gainers" ? pb - pa : pa - pb;
       });
+    if (colSort) s.sort(compareRows(colSort.col, colSort.dir));
     return s;
-  }, [rows, sort]);
+  }, [rows, sort, colSort]);
 
   // "By account": the same measured rows, bucketed under their account with subtotals —
   // accounts ordered by measured value, holdings inside by value.
@@ -190,7 +250,7 @@ export function Performance() {
           </div>
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
             {SORTS.map((s) => (
-              <button key={s.key} className={`chip ${sort === s.key ? "active" : ""}`} onClick={() => setSort(s.key)}>
+              <button key={s.key} className={`chip ${sort === s.key ? "active" : ""}`} onClick={() => { setSort(s.key); setColSort(null); }}>
                 {s.label}
               </button>
             ))}
@@ -200,13 +260,13 @@ export function Performance() {
           <table>
             <thead>
               <tr>
-                <th style={{ minWidth: 180 }}>Holding</th>
-                <th>Class</th>
-                <th className="num">Held</th>
-                <th className="num">Invested</th>
-                <th className="num">Value</th>
-                <th className="num">P&amp;L</th>
-                <th className="num">%</th>
+                <SortTH col="name" colSort={colSort} onSort={setColSort} style={{ minWidth: 180 }}>Holding</SortTH>
+                <SortTH col="class" colSort={colSort} onSort={setColSort}>Class</SortTH>
+                <SortTH col="held" colSort={colSort} onSort={setColSort} num>Held</SortTH>
+                <SortTH col="invested" colSort={colSort} onSort={setColSort} num>Invested</SortTH>
+                <SortTH col="value" colSort={colSort} onSort={setColSort} num>Value</SortTH>
+                <SortTH col="gain" colSort={colSort} onSort={setColSort} num>P&amp;L</SortTH>
+                <SortTH col="gainPct" colSort={colSort} onSort={setColSort} num>%</SortTH>
               </tr>
             </thead>
             <tbody>
