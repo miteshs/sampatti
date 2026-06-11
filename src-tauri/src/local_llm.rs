@@ -241,10 +241,15 @@ pub fn run_generate(
         .new_context(&engine.backend, ctx_params)
         .map_err(|e| e.to_string())?;
 
-    // Qwen3 chat template, minimal single-turn form.
-    let wrapped = format!(
-        "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
-    );
+    // Qwen3 chat template, minimal single-turn form. In text mode, prefill an EMPTY think
+    // block — Qwen3 is a thinking model and otherwise burns the whole token budget on raw
+    // <think> reasoning before any answer (caught by the Phase-2 quick-take probe). JSON
+    // mode needs no prefill: the grammar makes think-tokens illegal from the first token.
+    let wrapped = if json_mode {
+        format!("<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n")
+    } else {
+        format!("<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
+    };
     let tokens = model
         .str_to_token(&wrapped, AddBos::Always)
         .map_err(|e| e.to_string())?;

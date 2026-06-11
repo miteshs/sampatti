@@ -42,6 +42,7 @@ Rules:
 - A single-balance statement (PMS, pension, insurance surrender value, a flat) = ONE holding equal to the total/closing value.
 - Indian numbers may use lakh/crore grouping like 1,08,31,366.11 — read them correctly. Strip ₹ , $ and spaces. Do NOT invent values you cannot read.
 - Choose the closest asset_class: equity MF = "equity_mf"; tax-saver/ELSS = "elss"; liquid/debt/gilt fund = "debt_mf"; Sovereign Gold Bond = "gold_sgb"; gold ETF/physical = "gold_other"; PPF/EPF/VPF = "epf_ppf"; FD/RD/NCD/plain bond = "fd_rd"; market-linked note / structured product / MLD / autocallable / equity-linked note, or a bank-issued note with a 'DUE' maturity and a VAR/0%/odd coupon (e.g. "Morgan Stanley Fin VAR … DUE", "BNP Paribas 0% … DUE") = "structured_notes"; ULIP/endowment/LIC = "insurance"; RSU/ESPP/US stock = "us_equity"; private-equity / VC / buyout / private-markets fund = "private_equity"; private-credit / direct-lending / private-debt fund = "private_credit"; PMS / AIF / managed discretionary portfolio = "pms".
+- account_type follows the INSTITUTION, not the instruments: a bank's FD/term-deposit summary = "bank"; a US/foreign brokerage (values in USD) = "foreign_broker"; an Indian broker's stock holdings = "demat"; a fund house / RTA fund statement = "mutual_fund".
 - Output ONLY the JSON object. No markdown, no commentary.`;
 
 // ---- JSON repair (handles truncation from weaker/vision outputs) ----

@@ -288,6 +288,14 @@ pub fn run() {
             local_llm::local_model_remove,
             local_llm::local_generate
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Sampatti");
+        .build(tauri::generate_context!())
+        .expect("error while running Sampatti")
+        .run(|_app, event| {
+            // Release the cached llama engine before process teardown: ggml-metal's static
+            // destructors abort when model buffers are still alive at exit, which surfaces
+            // as "Sampatti quit unexpectedly" after any on-device AI use.
+            if let tauri::RunEvent::Exit = event {
+                local_llm::unload_engine();
+            }
+        });
 }
