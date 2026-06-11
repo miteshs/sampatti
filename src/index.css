@@ -4,8 +4,9 @@
 
 :root {
   --bg: #f7f5f0; /* warm paper, not office grey */
-  --bg-grad: radial-gradient(1100px 420px at 85% -8%, rgba(72, 69, 229, 0.045) 0%, rgba(72, 69, 229, 0) 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(217, 165, 20, 0.04) 0%, rgba(217, 165, 20, 0) 55%), #f7f5f0;
+  --bg-grad: radial-gradient(1100px 420px at 85% -8%, rgba(72, 69, 229, 0.07) 0%, rgba(72, 69, 229, 0) 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(217, 165, 20, 0.06) 0%, rgba(217, 165, 20, 0) 55%),
+    radial-gradient(700px 380px at 50% 115%, rgba(14, 159, 110, 0.025) 0%, rgba(14, 159, 110, 0) 60%), #f7f5f0;
   --card: #ffffff;
   --surface-2: #faf9f6; /* nested panels (inline editor, previews) */
   --ink: #23211b; /* warm near-black, matches the paper ground */
@@ -134,7 +135,7 @@ button { font-family: inherit; }
   cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
 }
-.btn:hover { border-color: #d4d8e3; background: #fcfcfe; }
+.btn:hover { border-color: #d8d4c8; background: #fdfcf9; }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
 .btn-primary {
@@ -178,12 +179,12 @@ input, select, textarea {
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
   width: 100%;
 }
-input:hover, select:hover, textarea:hover { border-color: #d4d8e3; }
+input:hover, select:hover, textarea:hover { border-color: #d8d4c8; }
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
 }
-input::placeholder, textarea::placeholder { color: #a6adc0; }
+input::placeholder, textarea::placeholder { color: #a5a092; }
 /* Checkboxes/radios must not inherit the full-width text-input styling above. */
 input[type="checkbox"], input[type="radio"] {
   width: auto; padding: 0; margin: 0; border-radius: 0; box-shadow: none;
@@ -220,7 +221,38 @@ tr:last-child td { border-bottom: none; }
 .verdict.watch { color: #9a5a10; } .verdict.watch .dot { background: var(--amber); }
 
 /* ---- the Overview hero: the one number they open the app for ----
-   Inter, not the display serif: figures must be instantly readable, and matching the other
+   The one card that gets a signature: a paper-grain wash and a hairline indigo→gold rule,
+   echoing the two brand washes in the ground. Everything else stays quiet around it. */
+.hero-card {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  box-shadow: var(--shadow), 0 14px 36px rgba(38, 33, 20, 0.06);
+}
+.hero-card::before {
+  content: "";
+  position: absolute; inset: 0; z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E"),
+    linear-gradient(160deg, rgba(72, 69, 229, 0.035) 0%, rgba(255, 255, 255, 0) 38%, rgba(217, 165, 20, 0.03) 100%);
+  background-size: 160px 160px, cover;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+.hero-card::after {
+  content: "";
+  position: absolute; top: 0; left: 1.75rem; right: 1.75rem; height: 2px; z-index: -1;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, var(--primary) 0%, #b8921f 55%, rgba(184, 146, 31, 0) 95%);
+  opacity: 0.85;
+}
+
+/* Verdict-toned stat cards read like margin notes: a hairline rule in the verdict's ink.
+   :has() is fine here — the desktop WebView and the audit Chrome both support it. */
+.card:has(.verdict.good) { box-shadow: inset 3px 0 0 var(--up), var(--shadow); }
+.card:has(.verdict.watch) { box-shadow: inset 3px 0 0 var(--amber), var(--shadow); }
+.card:has(.verdict.ok) { box-shadow: inset 3px 0 0 #c9c4b4, var(--shadow); }
+
+/* Inter, not the display serif: figures must be instantly readable, and matching the other
    numerals keeps the whole screen speaking one numeric voice. The serif stays on prose. */
 .hero-figure {
   font-weight: 800;
@@ -262,8 +294,8 @@ tr:last-child td { border-bottom: none; }
 
 /* ---- thin scrollbars for overflow tables/panes ---- */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #d4d8e3; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #bfc5d4; }
+::-webkit-scrollbar-thumb { background: #d6d2c6; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #c2bdae; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ---- analysis markdown ---- */

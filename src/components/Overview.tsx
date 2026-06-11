@@ -152,7 +152,7 @@ export function Overview() {
   return (
     <div className="grid stagger" style={{ gap: "1.25rem" }}>
       {/* The one number they open the app for — given a real moment. */}
-      <div className="card card-pad-lg">
+      <div className="card card-pad-lg hero-card">
         <div className="eyebrow">Net worth</div>
         <div className="hero-figure">{fmtMoney(Math.round(animatedNetWorth))}</div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", flexWrap: "wrap", marginTop: "0.55rem" }}>
