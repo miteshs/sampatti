@@ -65,3 +65,43 @@ describe("import coverage", () => {
       "\n\n  ✓ parsed locally   ⚠ would use the Claude fallback   ✗ crashed\n  Compare each ✓ row's totals/currency against the actual statement.\n");
   });
 });
+
+// Real CAS check: drop your CAS PDF into samples/cas/ (gitignored) with its password in
+// samples/cas/password.txt, and this verifies the LOCAL parser reads it end-to-end —
+// nothing leaves the machine. Uses pdf.js's node (legacy) build; skips cleanly when absent.
+describe("real CAS in samples/cas (optional, local-only)", () => {
+  const casDir = join(SAMPLES, "cas");
+  const pdfs = existsSync(casDir) ? readdirSync(casDir).filter((f) => /\.pdf$/i.test(f)) : [];
+  it.skipIf(pdfs.length === 0)("parses the CAS locally with holdings and costs", async () => {
+    const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const { looksLikeCas, parseCamsCas } = await import("../src/ingest/cas");
+    const pwFile = join(casDir, "password.txt");
+    const password = existsSync(pwFile) ? readFileSync(pwFile, "utf8").trim() : undefined;
+    for (const f of pdfs) {
+      const buf = readFileSync(join(casDir, f));
+      const doc = await getDocument({ data: new Uint8Array(buf), password }).promise;
+      const lines: string[] = [];
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const content = await page.getTextContent();
+        const runs = content.items
+          .filter((it: unknown): it is { str: string; transform: number[] } =>
+            typeof it === "object" && it !== null && "str" in it && !!(it as { str: string }).str.trim())
+          .map((it) => ({ text: it.str, x: it.transform[4], y: it.transform[5] }))
+          .sort((a, b) => b.y - a.y || a.x - b.x);
+        let cur: { y: number; parts: { x: number; text: string }[] } | null = null;
+        const flush = () => { if (cur) { cur.parts.sort((a, b) => a.x - b.x); lines.push(cur.parts.map((p) => p.text).join(" ").replace(/\s+/g, " ").trim()); cur = null; } };
+        for (const r of runs) {
+          if (!cur || Math.abs(cur.y - r.y) > 2.5) { flush(); cur = { y: r.y, parts: [{ x: r.x, text: r.text }] }; }
+          else cur.parts.push({ x: r.x, text: r.text });
+        }
+        flush();
+      }
+      expect(looksLikeCas(lines), `${f} should be detected as a CAS`).toBe(true);
+      const [draft] = parseCamsCas(lines, f);
+      const withCost = draft.holdings.filter((h) => h.costBasis != null).length;
+      console.log(`  ✓  ${f}: ${draft.holdings.length} schemes · ${withCost} with cost · asOf ${draft.account.asOf ?? "—"}${draft.warnings.length ? ` · ${draft.warnings.join(" / ")}` : ""}`);
+      expect(draft.holdings.length).toBeGreaterThan(0);
+    }
+  });
+});

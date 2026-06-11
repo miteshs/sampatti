@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../storage/store";
 import { keyStoreName } from "../platform";
 import { demoPortfolio } from "../demo";
-import { classifyFile, ingestFile, ingestWithClaude, isImportable, NeedsClaudeError } from "../ingest";
+import { classifyFile, ingestFile, ingestPdf, ingestWithClaude, isImportable, NeedsClaudeError, PdfPasswordError } from "../ingest";
+import { findCrossAccountDuplicates } from "../ingest/reconcile";
 import { inr } from "../domain/format";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
@@ -10,7 +11,7 @@ import {
 import { findMatchingAccount } from "../domain/types";
 import { fetchGoldPerGramInr } from "../domain/gold";
 import type {
-  Account, AccountType, AssetClass, FlowKind, ImportDraft, IncomeKind, Region, TaxTreatment,
+  Account, AccountType, AssetClass, FlowKind, Holding, ImportDraft, IncomeKind, Region, TaxTreatment,
 } from "../domain/types";
 
 const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
@@ -42,6 +43,11 @@ export function AddData() {
   const [skipped, setSkipped] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
   const [needsClaude, setNeedsClaude] = useState<{ file: File; reason: string }[]>([]);
+  // Password-protected PDFs (a CAS, usually) waiting for their password — decrypted and
+  // parsed on this device when provided.
+  const [lockedPdfs, setLockedPdfs] = useState<{ file: File; error?: string }[]>([]);
+  const [pdfPassword, setPdfPassword] = useState("");
+  const [unlockBusy, setUnlockBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -118,6 +124,9 @@ export function AddData() {
         // Unrecognized CSV/Excel → offer Claude rather than just failing.
         if (e instanceof NeedsClaudeError) {
           setNeedsClaude((n) => [...n, { file: e.file, reason: e.message }]);
+        } else if (e instanceof PdfPasswordError) {
+          // Locked PDF (usually a CAS) → ask for the password, decrypt locally, retry.
+          setLockedPdfs((l) => [...l, { file: e.file }]);
         } else {
           errs.push(`${f.name}: ${e instanceof Error ? e.message : String(e)}`);
         }
@@ -125,6 +134,28 @@ export function AddData() {
     }
     setBusy(null);
     setErrors(errs);
+  };
+
+  // Retry a locked PDF with the supplied password — everything stays on this device.
+  const unlockPdf = async (file: File) => {
+    const pw = pdfPassword.trim();
+    if (!pw) return;
+    setUnlockBusy(true);
+    try {
+      const result = await ingestPdf(file, pw);
+      setDrafts((d) => [...d, ...wrapDrafts(result)]);
+      setLockedPdfs((l) => l.filter((x) => x.file !== file));
+      setPdfPassword("");
+    } catch (e) {
+      if (e instanceof PdfPasswordError) {
+        setLockedPdfs((l) => l.map((x) => (x.file === file ? { ...x, error: e.message } : x)));
+      } else {
+        setLockedPdfs((l) => l.filter((x) => x.file !== file));
+        setErrors((er) => [...er, `${file.name}: ${e instanceof Error ? e.message : String(e)}`]);
+      }
+    } finally {
+      setUnlockBusy(false);
+    }
   };
 
   // Opt-in fallback for a file local parsing couldn't read — sends it to Claude.
@@ -174,10 +205,11 @@ export function AddData() {
           />
         </div>
         <p className="muted" style={{ fontSize: "0.78rem", marginTop: "0.7rem" }}>
-          Pick several files or a whole folder of statements at once. CSV and Excel are parsed
-          entirely on this device; PDFs and screenshots are read with Claude (you'll confirm the
-          batch first). If a CSV/Excel layout can't be read automatically, you'll be offered the
-          option to parse it with Claude. Unsupported files are skipped.
+          Pick several files or a whole folder of statements at once. CSV, Excel and{" "}
+          <strong>CAMS/KFintech CAS PDFs</strong> (password and all) are parsed entirely on this
+          device; other PDFs and screenshots are read with Claude (you'll confirm the batch
+          first). If a layout can't be read automatically, you'll be offered the option to parse
+          it with Claude. Unsupported files are skipped.
         </p>
         {busy && <div style={{ marginTop: "0.7rem" }}><span className="spinner" /> <span className="muted">{busy}</span></div>}
         {!busy && skipped > 0 && !pendingBatch && (
@@ -204,6 +236,30 @@ export function AddData() {
           </div>
         )}
       </div>
+
+      {/* Password-protected PDFs (usually a CAS) — unlock & parse on this device */}
+      {lockedPdfs.map(({ file, error }, i) => (
+        <div key={`lock-${i}`} className="card" style={{ borderLeft: "3px solid var(--primary)", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
+          <h3 style={{ fontSize: "0.98rem" }}>🔒 {file.name} is password-protected</h3>
+          <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem", maxWidth: 560 }}>
+            For a CAS this is usually <strong>your PAN in capital letters</strong> or the password
+            you chose when requesting it. The file is decrypted and read <strong>on this device
+            only</strong> — a CAS never goes to Claude, and the password is never stored.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", maxWidth: 420 }}>
+            <input
+              type="password" placeholder="PDF password" value={pdfPassword}
+              onChange={(e) => setPdfPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && void unlockPdf(file)}
+            />
+            <button className="btn btn-primary" disabled={unlockBusy || !pdfPassword.trim()} onClick={() => void unlockPdf(file)}>
+              {unlockBusy ? <span className="spinner" /> : "Unlock & import"}
+            </button>
+            <button className="btn btn-ghost" onClick={() => setLockedPdfs((l) => l.filter((x) => x.file !== file))}>Skip</button>
+          </div>
+          {error && <div className="badge badge-rose" style={{ marginTop: "0.55rem", padding: "0.3rem 0.6rem" }}>{error}</div>}
+        </div>
+      ))}
 
       {/* Files local parsing couldn't read — offer Claude, per file */}
       {needsClaude.map(({ file, reason }, i) => (
@@ -266,6 +322,7 @@ export function AddData() {
         <DraftReview
           key={p.key} draft={p.draft}
           accounts={portfolio.accounts}
+          existingHoldings={portfolio.holdings}
           onCurrency={(c) => setDraftCurrency(i, c)}
           onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
           onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
@@ -344,9 +401,10 @@ function GettingStarted() {
       </summary>
       <div className="grid" style={{ gap: "0.65rem", marginTop: "0.9rem" }}>
         <Step n={1} title="Collect a statement from each place your money lives.">
-          From your broker, bank, fund house or employer, download the holdings statement —
-          Excel or CSV files are best (they're read on this computer and never sent anywhere),
-          but PDFs and even screenshots work too. Put them all in one folder.
+          <strong>Fastest start for mutual funds:</strong> request your CAS at camsonline.com
+          (Statements → CAS) — one PDF with every fund you own, read entirely on this computer.
+          For everything else, download the holdings statement — Excel or CSV is best (also read
+          on this computer), and PDFs or screenshots work too. Put them all in one folder.
         </Step>
         <Step n={2} title="Import that folder here.">
           Every statement becomes a card for you to check — the account name, the amounts,
@@ -380,8 +438,8 @@ function GettingStarted() {
 // are preselected to Update; otherwise they can still pick any existing account to overwrite,
 // or add as a new one. Updating replaces that account's holdings wholesale (items sold since
 // the last statement simply drop off; new items are added).
-function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, onApply, onDiscard }: {
-  draft: ImportDraft; accounts: Account[]; onCurrency: (currency: string) => void;
+function DraftReview({ draft, accounts, existingHoldings, onCurrency, onHolding, onRemoveHolding, onApply, onDiscard }: {
+  draft: ImportDraft; accounts: Account[]; existingHoldings: Holding[]; onCurrency: (currency: string) => void;
   onHolding: (hi: number, patch: Partial<ImportDraft["holdings"][number]>) => void;
   onRemoveHolding: (hi: number) => void;
   onApply: (target: "new" | string, money: FlowKind) => void; onDiscard: () => void;
@@ -398,6 +456,19 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
   // No exact (institution+name) match, but a same-name account exists (e.g. its institution was
   // edited) — surface it so the user can choose to overwrite instead of silently duplicating.
   const likely = matched ? undefined : accounts.find((a) => a.name.trim().toLowerCase() === draft.account.name.trim().toLowerCase());
+  // Holdings that already exist in OTHER accounts (the CAS-overlap problem): a CAS lists
+  // every fund, so funds tracked via a platform account would be double-counted. The
+  // Apply-to target is excluded — replacing it is the point.
+  const dupes = useMemo(
+    () => findCrossAccountDuplicates(draft, existingHoldings, accounts, target === "new" ? undefined : target),
+    [draft, existingHoldings, accounts, target],
+  );
+  const dupByIndex = useMemo(() => new Map(dupes.map((d) => [d.index, d])), [dupes]);
+  const exactDupes = dupes.filter((d) => d.exact);
+  const removeExactDupes = () => {
+    // Remove highest index first so earlier indices stay valid.
+    for (const d of [...exactDupes].sort((a, b) => b.index - a.index)) onRemoveHolding(d.index);
+  };
   return (
     <div className="card" style={{ borderLeft: `3px solid ${matched ? "var(--amber, #d98324)" : "var(--primary)"}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -475,6 +546,20 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
           it, choose <strong>Update: {likely.name}</strong> under “Apply to” to overwrite rather than create a second copy.
         </div>
       )}
+      {dupes.length > 0 && (
+        <div className="badge badge-rose" style={{ marginTop: "0.6rem", padding: "0.45rem 0.7rem", display: "block" }}>
+          ⚠ <strong>{dupes.length}</strong> of these holdings already exist in{" "}
+          {[...new Set(dupes.map((d) => d.accountName))].join(", ")} — importing both would{" "}
+          <strong>double-count</strong> your net worth (rows are marked below).
+          {exactDupes.length > 0 && <> Same instrument <em>and</em> same size is almost certainly the
+          same folio twice; different sizes may be a genuine second folio — keep those.</>}
+          {exactDupes.length > 0 && (
+            <button className="btn" style={{ marginLeft: "0.6rem", padding: "0.15rem 0.6rem", fontSize: "0.76rem" }} onClick={removeExactDupes}>
+              Remove {exactDupes.length} exact duplicate{exactDupes.length === 1 ? "" : "s"}
+            </button>
+          )}
+        </div>
+      )}
       {draft.warnings.length > 0 && (
         <div className="badge badge-amber" style={{ marginTop: "0.6rem", padding: "0.4rem 0.7rem", display: "block" }}>
           {draft.warnings.join(" · ")}
@@ -493,8 +578,15 @@ function DraftReview({ draft, accounts, onCurrency, onHolding, onRemoveHolding, 
           </tr></thead>
           <tbody>
             {draft.holdings.map((h, i) => (
-              <tr key={i}>
-                <td><input value={h.name} onChange={(e) => onHolding(i, { name: e.target.value })} style={{ width: "100%" }} /></td>
+              <tr key={i} style={dupByIndex.has(i) ? { background: "var(--rose-soft)" } : undefined}>
+                <td>
+                  <input value={h.name} onChange={(e) => onHolding(i, { name: e.target.value })} style={{ width: "100%" }} />
+                  {dupByIndex.has(i) && (
+                    <span className={`badge ${dupByIndex.get(i)!.exact ? "badge-rose" : "badge-amber"}`} style={{ marginTop: "0.2rem", fontSize: "0.66rem" }}>
+                      also in {dupByIndex.get(i)!.accountName}{dupByIndex.get(i)!.exact ? " · same size" : " · different size"}
+                    </span>
+                  )}
+                </td>
                 <td>
                   <select value={h.assetClass} onChange={(e) => onHolding(i, { assetClass: e.target.value as AssetClass })}>
                     {ASSET_CLASSES.map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}

@@ -15,9 +15,10 @@ no cloud database**. Nothing is uploaded for storage. Back it up or wipe it your
    percentages (net worth, allocations, concentration metrics, tax-wrapper coverage) — **not
    your raw files**. Your chat follow-ups are sent with it.
 2. **Documents you choose to extract.** CSV and Excel files are parsed on your device and
-   never sent. A **PDF or screenshot** can't be parsed reliably without AI, so — only after
-   you click confirm — that one document is sent to Claude to pull out the holdings, which you
-   then review before saving.
+   never sent — and so is your **CAMS/KFintech CAS PDF**, including its password handling
+   (decryption happens locally; the password is never stored). Other **PDFs or screenshots**
+   can't be parsed reliably without AI, so — only after you click confirm — that one document
+   is sent to Claude to pull out the holdings, which you then review before saving.
 3. **Anonymous price lookups.** Refreshing live prices sends only tickers / scheme codes to
    public market-data services, and the USD→INR rate (fetched automatically when the app
    opens) asks for nothing but the public rate. Neither carries your holdings, amounts, or
