@@ -8,6 +8,7 @@ import { useStore } from "../storage/store";
 import { visiblePortfolio } from "../domain/types";
 import { PERIODS, periodStart, type Period } from "../domain/history";
 import { perAccountSeries } from "../domain/snapshots";
+import { basisBandsByAccount, basisSampleTimes } from "../domain/basisHistory";
 import { inr } from "../domain/format";
 import { color } from "./ui";
 import { TimeAxis } from "./timeAxis";
@@ -26,6 +27,23 @@ export function AccountStack() {
     const { times, series } = perAccountSeries(portfolio.snapshots ?? [], assetIds, periodStart(period));
     if (times.length < 2) return null;
 
+    // On "All" only: reach back beyond the record using purchase costs — each real-basis
+    // holding anchors at (buyDate, cost) and compounds toward today. Drawn lighter, with a
+    // divider where the actual daily record begins. Basis-less holdings join at the divider.
+    let preTimes: number[] = [];
+    const preByAccount = new Map<string, number[]>();
+    if (period === "All") {
+      const assetHoldings = visible.holdings.filter((h) => assetIds.has(h.accountId));
+      preTimes = basisSampleTimes(assetHoldings, times[0]);
+      if (preTimes.length > 0) {
+        for (const b of basisBandsByAccount(assetHoldings, assetIds, portfolio.settings.usdInr, preTimes)) {
+          preByAccount.set(b.accountId, b.values);
+        }
+      }
+    }
+    const zerosPre = preTimes.map(() => 0);
+    const allTimes = [...preTimes, ...times];
+
     // Big accounts get their own band (largest at the bottom — stable to read);
     // the tail rolls up into "Other accounts".
     const nameById = new Map(visible.accounts.map((a) => [a.id, a.name]));
@@ -36,18 +54,21 @@ export function AccountStack() {
       key: s.accountId,
       name: nameById.get(s.accountId) ?? "—",
       color: color(i),
-      values: s.values,
+      values: [...(preByAccount.get(s.accountId) ?? zerosPre), ...s.values],
     }));
     if (rest.length > 0) {
       bands.push({
         key: "__other",
         name: `Other accounts (${rest.length})`,
         color: "#b3ae9f",
-        values: times.map((_, di) => rest.reduce((sum, s) => sum + s.values[di], 0)),
+        values: [
+          ...preTimes.map((_, ti) => rest.reduce((sum, s) => sum + (preByAccount.get(s.accountId)?.[ti] ?? 0), 0)),
+          ...times.map((_, di) => rest.reduce((sum, s) => sum + s.values[di], 0)),
+        ],
       });
     }
-    return { times, bands };
-  }, [portfolio.snapshots, visible.accounts, period]);
+    return { times: allTimes, bands, splitIndex: preTimes.length };
+  }, [portfolio.snapshots, visible.accounts, visible.holdings, portfolio.settings.usdInr, period]);
 
   if ((portfolio.snapshots ?? []).length === 0 || visible.holdings.length === 0) return null;
 
@@ -74,11 +95,17 @@ export function AccountStack() {
         </p>
       ) : (
         <div style={{ marginTop: "0.8rem" }}>
-          <StackSvg times={data.times} bands={data.bands} hover={hover} />
+          <StackSvg times={data.times} bands={data.bands} hover={hover} splitIndex={data.splitIndex} />
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem 1.1rem", marginTop: "0.6rem" }}>
             {data.bands.map((b) => {
               const first = b.values[0], last = b.values[b.values.length - 1];
               const delta = last - first;
+              // A band that starts at 0 JOINED mid-window — its "change" is not a gain,
+              // so show when it entered the chart instead of a green number.
+              const joinedIdx = first === 0 ? b.values.findIndex((v) => v !== 0) : -1;
+              const joined = joinedIdx > 0
+                ? new Date(data.times[joinedIdx]).toLocaleDateString("en-IN", { month: "short", year: "2-digit" })
+                : null;
               return (
                 <div
                   key={b.key}
@@ -89,19 +116,26 @@ export function AccountStack() {
                   <span style={{ width: 9, height: 9, borderRadius: 3, background: b.color, flexShrink: 0, transform: "translateY(1px)" }} />
                   <span style={{ fontWeight: 600 }}>{b.name}</span>
                   <span className="muted" style={{ fontVariantNumeric: "tabular-nums" }}>{inr(last)}</span>
-                  {delta !== 0 && (
+                  {joined ? (
+                    <span className="muted" style={{ fontSize: "0.74rem" }}>from {joined.replace(" ", " ’")}</span>
+                  ) : delta !== 0 ? (
                     <span style={{ fontSize: "0.74rem", fontVariantNumeric: "tabular-nums", color: delta > 0 ? "#19724f" : "var(--down)" }}>
                       {delta > 0 ? "+" : "−"}{inr(Math.abs(delta))}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               );
             })}
           </div>
           <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.55rem", marginBottom: 0 }}>
-            Stacked from your daily record — assets only (loans aren't shown). An account added
-            along the way rises out of the baseline on the day you added it. Each legend figure is
-            today's value, with its change over the window. Honors the account selection on Manage.
+            {data.splitIndex > 0 && (
+              <>Left of the dotted divider the bands are <strong>estimated from purchase costs</strong>
+              {" "}(lighter — each holding starts at what you paid and compounds to today; holdings
+              without a cost basis join at the divider). Right of it is the daily record. </>
+            )}
+            Assets only (loans aren't shown); an account added along the way rises out of the
+            baseline on its add-day. Each legend figure is today's value, with its change over the
+            window. Honors the account selection on Manage.
           </p>
         </div>
       )}
@@ -109,10 +143,11 @@ export function AccountStack() {
   );
 }
 
-function StackSvg({ times, bands, hover }: {
+function StackSvg({ times, bands, hover, splitIndex = 0 }: {
   times: number[];
   bands: { key: string; name: string; color: string; values: number[] }[];
   hover: string | null;
+  splitIndex?: number; // first index of the RECORDED era; >0 means an estimated era precedes it
 }) {
   const W = 720, H = 200, PAD = 6;
   const n = times.length;
@@ -123,26 +158,49 @@ function StackSvg({ times, bands, hover }: {
   const x = (t: number) => PAD + ((t - minX) / spanX) * (W - 2 * PAD);
   const y = (v: number) => H - PAD - (v / maxY) * (H - 2 * PAD);
 
+  // An area path over an index range [from, to] inclusive.
+  const areaOf = (lower: number[], upper: number[], from: number, to: number) => {
+    const fwd: string[] = [], back: string[] = [];
+    for (let i = from; i <= to; i++) fwd.push(`${i === from ? "M" : "L"}${x(times[i]).toFixed(1)},${y(upper[i]).toFixed(1)}`);
+    for (let i = to; i >= from; i--) back.push(`L${x(times[i]).toFixed(1)},${y(lower[i]).toFixed(1)}`);
+    return `${fwd.join(" ")} ${back.join(" ")} Z`;
+  };
+
   let cum = times.map(() => 0);
-  const areas = bands.map((b) => {
+  const layers = bands.map((b) => {
     const lower = cum;
     const upper = cum.map((v, di) => v + b.values[di]);
     cum = upper;
-    const fwd = upper.map((v, di) => `${di ? "L" : "M"}${x(times[di]).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-    const back = [...lower].reverse().map((v, ri) => `L${x(times[n - 1 - ri]).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-    return { key: b.key, color: b.color, d: `${fwd} ${back} Z` };
+    const segs: { d: string; estimated: boolean }[] = [];
+    if (splitIndex > 0 && splitIndex < n) {
+      segs.push({ d: areaOf(lower, upper, 0, splitIndex), estimated: true });
+      segs.push({ d: areaOf(lower, upper, splitIndex, n - 1), estimated: false });
+    } else {
+      segs.push({ d: areaOf(lower, upper, 0, n - 1), estimated: false });
+    }
+    return { key: b.key, color: b.color, segs };
   });
+
+  const baseOpacity = (k: string) => (hover == null ? 0.82 : hover === k ? 0.95 : 0.25);
 
   return (
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} preserveAspectRatio="none">
-        {areas.map((a) => (
-          <path
-            key={a.key} d={a.d} fill={a.color} stroke="#ffffff" strokeWidth="0.6"
-            fillOpacity={hover == null ? 0.82 : hover === a.key ? 0.95 : 0.25}
-            style={{ transition: "fill-opacity 0.15s ease" }}
+        {layers.map((l) =>
+          l.segs.map((s, i) => (
+            <path
+              key={`${l.key}-${i}`} d={s.d} fill={l.color} stroke="#ffffff" strokeWidth="0.6"
+              fillOpacity={baseOpacity(l.key) * (s.estimated ? 0.45 : 1)}
+              style={{ transition: "fill-opacity 0.15s ease" }}
+            />
+          )),
+        )}
+        {splitIndex > 0 && splitIndex < n && (
+          <line
+            x1={x(times[splitIndex])} x2={x(times[splitIndex])} y1={PAD} y2={H - PAD}
+            stroke="var(--ink-3)" strokeWidth="1" strokeDasharray="3 4" strokeOpacity="0.7"
           />
-        ))}
+        )}
       </svg>
       <TimeAxis minT={times[0]} maxT={times[n - 1]} pad={PAD} width={W} />
     </div>
