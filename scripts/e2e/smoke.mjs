@@ -206,6 +206,8 @@ try {
   });
 
   await step("Developer mode gates AI engines; local gated off in web; toggle persists", async () => {
+    await clickText(page, "⚙");
+    await waitFor(page, () => bodyHas(page, "How analysis reaches Claude"), "settings tab");
     // The experimental card must not exist until developer mode is switched on.
     if (await bodyHas(page, "AI engines")) throw new Error("AI engines card visible without developer mode");
     await clickText(page, "Turn on developer mode");
@@ -224,8 +226,9 @@ try {
       localStorage.setItem("sampatti.portfolio", JSON.stringify(p));
     });
     await page.reload({ waitUntil: "networkidle2" });
-    await clickText(page, "Privacy");
+    await clickText(page, "⚙");
     await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card (developer mode persisted)");
+    await auditA11y(page, "Settings");
     if (!(await bodyHas(page, "available in the desktop app"))) throw new Error("web-preview model note missing");
 
     const local = await engineChip(page, "Portfolio analysis", "On this device");
@@ -239,13 +242,15 @@ try {
     const p = await store(page);
     if (p.settings.ai?.analysis !== "claude") throw new Error(`toggle didn't persist: ${JSON.stringify(p.settings.ai)}`);
     await page.reload({ waitUntil: "networkidle2" });
-    await clickText(page, "Privacy");
+    await clickText(page, "⚙");
     await waitFor(page, () => bodyHas(page, "AI engines"), "AI engines card after reload");
     const after = await engineChip(page, "Portfolio analysis", "Claude");
     if (!after?.active) throw new Error("claude chip not active after reload");
   });
 
   await step("erase wipes the store completely", async () => {
+    await clickText(page, "Privacy");
+    await waitFor(page, () => bodyHas(page, "Erase all data"), "privacy data controls");
     await clickText(page, "Erase all data");
     await sleep(150);
     await clickText(page, "Yes, erase all data");

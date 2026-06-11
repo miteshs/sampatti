@@ -8,17 +8,19 @@ import { Manage } from "./components/Manage";
 import { AnalysisChat } from "./components/AnalysisChat";
 import { AddData } from "./components/AddData";
 import { Privacy } from "./components/Privacy";
+import { Settings } from "./components/Settings";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-type View = "overview" | "performance" | "manage" | "analysis" | "add" | "privacy";
+type View = "overview" | "performance" | "manage" | "analysis" | "add" | "privacy" | "settings";
 
-const NAV: { key: View; label: string }[] = [
+const NAV: { key: View; label: string; aria?: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "performance", label: "Performance" },
   { key: "manage", label: "Manage" },
   { key: "analysis", label: "AI Analysis" },
   { key: "add", label: "Add data" },
   { key: "privacy", label: "Privacy" },
+  { key: "settings", label: "⚙", aria: "Settings" }, // gear-only by request; aria carries the name
 ];
 
 export default function App() {
@@ -60,7 +62,8 @@ export default function App() {
         </div>
         <nav className="nav">
           {NAV.map((n) => (
-            <button key={n.key} className={view === n.key ? "active" : ""} onClick={() => setView(n.key)}>
+            <button key={n.key} className={view === n.key ? "active" : ""} aria-label={n.aria ?? n.label}
+              title={n.aria} onClick={() => setView(n.key)}>
               {n.label}
             </button>
           ))}
@@ -78,10 +81,11 @@ export default function App() {
             {view === "performance" && <Performance />}
             {view === "manage" && <Manage />}
             {view === "analysis" && (hasData
-              ? <AnalysisChat onConfigure={() => setView("privacy")} />
+              ? <AnalysisChat onConfigure={() => setView("settings")} />
               : <Empty onAdd={() => setView("add")} />)}
-            {view === "add" && <AddData onConfigure={() => setView("privacy")} />}
+            {view === "add" && <AddData onConfigure={() => setView("settings")} />}
             {view === "privacy" && <Privacy />}
+            {view === "settings" && <Settings />}
           </ErrorBoundary>
         </main>
       )}

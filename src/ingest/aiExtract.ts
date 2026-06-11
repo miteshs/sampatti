@@ -172,7 +172,7 @@ export async function extractFromText(text: string, source: string): Promise<Imp
     text.length > 6000 && focused
       ? "KEY LINES from the statement (amounts & headers; boilerplate omitted):\n" + focused
       : text;
-  // Routed by the user's per-task engine choice (Privacy → AI engines): Claude, or the
+  // Routed by the user's per-task engine choice (Settings → AI engines): Claude, or the
   // embedded on-device model with grammar-constrained JSON. Same prompt either way.
   const out = await generateForExtraction(`${PROMPT}\n\n--- STATEMENT TEXT ---\n${payload.slice(0, 24000)}`);
   return validateDrafts(extractJson(out), source);

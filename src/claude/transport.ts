@@ -48,7 +48,7 @@ export function relayHint(mode: string, message: string): Error {
   if (mode === "relay" && /\(40[13][^)]*\)/.test(message)) {
     const where = isTauri() ? `it stays in the ${keyStoreName()}` : "it stays on this device";
     return new Error(
-      `${message} — this build doesn't include hosted-relay access. Add your own Anthropic API key on the Privacy screen (${where}), or set your own relay URL.`,
+      `${message} — this build doesn't include hosted-relay access. Add your own Anthropic API key on the Settings tab (⚙) (${where}), or set your own relay URL.`,
     );
   }
   return new Error(message);
@@ -75,7 +75,7 @@ export async function streamClaude(
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (claudeMode === "byo") {
     const key = webByoKey();
-    if (!key) throw new Error("No Anthropic key set. Add one on the Privacy screen, or switch to relay mode.");
+    if (!key) throw new Error("No Anthropic key set. Add one on the Settings tab (⚙), or switch to relay mode.");
     url = ANTHROPIC_URL;
     headers["x-api-key"] = key;
     headers["anthropic-version"] = "2023-06-01";

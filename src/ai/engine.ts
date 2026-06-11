@@ -1,6 +1,6 @@
 // AI engine routing — the ONE place that decides whether an AI task runs on Claude or on
 // the embedded local model. Components never import transport.ts for AI work directly;
-// they ask for a task and the user's per-task setting (Privacy → AI engines) decides.
+// they ask for a task and the user's per-task setting (Settings → AI engines) decides.
 //
 // Hard rule (contract-tested): the local path touches ONLY the `local_*` Tauri commands —
 // never fetch, never the relay. That is the whole point of the local tier.

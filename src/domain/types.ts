@@ -201,10 +201,10 @@ export function emptyPortfolio(): Portfolio {
       country: "India",
       baseCurrency: "INR",
       claudeMode: "relay",
-      relayUrl: DEFAULT_RELAY_URL, // hosted relay; override or switch to your own key on Privacy
-      usdInr: 95, // fallback; refresh to a live rate on the Privacy screen
+      relayUrl: DEFAULT_RELAY_URL, // hosted relay; override or switch to your own key in Settings
+      usdInr: 95, // fallback; refresh to a live rate in Settings
       byoKeySet: false,
-      analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku on Privacy
+      analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku in Settings
       ai: { extraction: "claude", analysis: "claude" }, // per-task engine; local is opt-in
       developerMode: false, // experimental features stay invisible until switched on
     },

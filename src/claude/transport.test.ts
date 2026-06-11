@@ -12,7 +12,7 @@ describe("relayHint", () => {
   it("decorates a relay 401 with the BYO-key hint", () => {
     const e = relayHint("relay", "Claude request failed (401). ");
     expect(e.message).toContain("doesn't include hosted-relay access");
-    expect(e.message).toContain("Privacy screen");
+    expect(e.message).toContain("Settings tab");
   });
 
   it("decorates a relay 403, including Rust-style status text", () => {

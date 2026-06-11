@@ -17,6 +17,7 @@ vi.mock("@tauri-apps/api/path", () => ({
 }));
 
 import { Privacy } from "./Privacy";
+import { Settings } from "./Settings";
 
 const UA = {
   windows: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Edg/130.0",
@@ -28,11 +29,13 @@ function desktopOn(ua: string) {
   Object.defineProperty(window.navigator, "userAgent", { value: ua, configurable: true });
 }
 
+// The split screens are tested together where a promise spans both: the key copy lives
+// on Settings (⚙), the at-rest/disk advice on Privacy.
 function renderByoPrivacy() {
   const p = emptyPortfolio();
   p.settings.claudeMode = "byo";
   useStore.setState({ portfolio: p, loaded: true });
-  return render(<Privacy />);
+  return render(<><Privacy /><Settings /></>);
 }
 
 afterEach(() => {
@@ -80,7 +83,7 @@ describe("custom-relay warning (the brief goes wherever relayUrl points)", () =>
     p.settings.claudeMode = "relay";
     p.settings.relayUrl = relayUrl;
     useStore.setState({ portfolio: p, loaded: true });
-    return render(<Privacy />);
+    return render(<Settings />);
   }
 
   it("no warning on the official default relay", () => {
@@ -104,14 +107,14 @@ describe("custom-relay warning (the brief goes wherever relayUrl points)", () =>
 describe("developer mode gates the experimental AI-engines card", () => {
   it("hidden by default: no AI engines card, only the developer-mode switch", () => {
     useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
-    render(<Privacy />);
+    render(<Settings />);
     expect(screen.queryByText(/AI engines/)).toBeNull();
     expect(screen.getByText(/Turn on developer mode/)).toBeTruthy();
   });
 
   it("enabling takes two steps — the risk notice, then the card appears", () => {
     useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
-    render(<Privacy />);
+    render(<Settings />);
     fireEvent.click(screen.getByText(/Turn on developer mode/));
     // Risk notice shown; nothing unlocked yet.
     expect(screen.getByText(/heads-up before you switch this on/)).toBeTruthy();
@@ -123,7 +126,7 @@ describe("developer mode gates the experimental AI-engines card", () => {
 
   it("cancel on the notice leaves everything off", () => {
     useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
-    render(<Privacy />);
+    render(<Settings />);
     fireEvent.click(screen.getByText(/Turn on developer mode/));
     fireEvent.click(screen.getByText(/Cancel/));
     expect(useStore.getState().portfolio.settings.developerMode).toBe(false);
@@ -135,7 +138,7 @@ describe("developer mode gates the experimental AI-engines card", () => {
     p.settings.developerMode = true;
     p.settings.ai = { extraction: "local", analysis: "local" };
     useStore.setState({ portfolio: p, loaded: true });
-    render(<Privacy />);
+    render(<Settings />);
     fireEvent.click(screen.getByText(/Turn off developer mode/));
     const s = useStore.getState().portfolio.settings;
     expect(s.developerMode).toBe(false);

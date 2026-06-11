@@ -85,7 +85,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
           <div style={{ fontSize: "0.82rem", color: "var(--ink-2)" }}>
             {engine === "local" ? (
               <>Everything stays on this device — this analysis is written by the <strong>on-device
-              model</strong> (quick take; switch to Claude on Privacy for the deepest review). Nothing
+              model</strong> (quick take; switch to Claude in Settings for the deepest review). Nothing
               is sent anywhere.</>
             ) : (
               <>Your raw statements never leave this device. Only the compact <strong>portfolio brief</strong>{" "}
@@ -127,7 +127,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
               <div style={{ maxWidth: 460, margin: "0 auto", background: "var(--primary-soft)", border: "1px solid #e0e0ff", borderRadius: 12, padding: "1rem 1.1rem" }}>
                 <div style={{ fontWeight: 700, fontSize: "0.92rem", marginBottom: "0.3rem" }}>One quick step to enable AI analysis</div>
                 <p className="muted" style={{ fontSize: "0.82rem", margin: "0 0 0.8rem" }}>
-                  Connect Claude on the Privacy screen — add <strong>your own Anthropic key</strong> (most
+                  Connect Claude on the Settings tab (⚙) — add <strong>your own Anthropic key</strong> (most
                   private; it stays on this device) or a <strong>relay URL</strong>. Nothing runs until you do.
                 </p>
                 <button className="btn btn-primary" onClick={() => onConfigure?.()}>Open Privacy &amp; connect →</button>

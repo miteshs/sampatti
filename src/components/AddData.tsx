@@ -321,7 +321,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
               {reason}{" "}
               {extractionEngine === "local"
                 ? (localBlocked
-                  ? "Your import engine is set to on-device AI, but the model isn't downloaded yet (Privacy → AI engines). Send just this file to Claude instead, or skip it."
+                  ? "Your import engine is set to on-device AI, but the model isn't downloaded yet (Settings → AI engines). Send just this file to Claude instead, or skip it."
                   : "Parse it with the on-device model — nothing leaves this device — or skip it. You'll review the result before saving.")
                 : `Send it to Claude ${portfolio.settings.claudeMode === "byo" ? "with your own key" : "via the relay"} to extract the holdings — you'll review the result before saving — or skip it.`}
             </p>
@@ -392,7 +392,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
             <h3 style={{ fontSize: "1rem" }}>🔒 On-device AI is selected — but the model isn't downloaded</h3>
             <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.8rem", maxWidth: 600 }}>
               {aiCount} of these {modelGate.length} file{modelGate.length > 1 ? "s" : ""} need{aiCount === 1 ? "s" : ""} AI
-              to read, and your import engine is set to the on-device model (Privacy → AI engines) —
+              to read, and your import engine is set to the on-device model (Settings → AI engines) —
               but the model isn't on this computer yet. Download it once and imports stay fully
               private, or send {aiCount === 1 ? "this file" : "these files"} to Claude just this time.
               Your saved setting doesn't change either way.
