@@ -107,7 +107,9 @@ export interface AiRouting {
 }
 
 export interface Settings {
-  country: "India"; // country drives the analyst persona + tax rules; India in v1
+  // Drives the analyst persona, tax language, and money formatting via src/regions/profile.
+  // Stored human-readable for save-file compat; regionOf() maps it (unknown → India).
+  country: "India" | "US";
   baseCurrency: string; // "INR"
   claudeMode: "relay" | "byo"; // relay (hosted, default) | byo (your own key)
   relayUrl: string;
