@@ -1,8 +1,8 @@
 // Net-worth-over-time card (Overview) — the RECORDED history only. The store writes a
 // per-account snapshot into portfolio.json every day the app sees data (imports, edits,
 // price refreshes and FX changes all land in that day's record), so this curve is fact:
-// no simulation, no back-pricing. The market-data what-if lives on the Performance tab
-// (MarketHistory). Honors the account include/exclude selection at render time.
+// no simulation, no back-pricing. The per-account breakdown of the same record lives on
+// the Performance tab (AccountStack). Honors the account selection at render time.
 
 import { useMemo, useState } from "react";
 import { useStore } from "../storage/store";

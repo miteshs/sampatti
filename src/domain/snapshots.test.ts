@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { snapshotOf, snapshotSeries, snapshotTime, upsertSnapshot } from "./snapshots";
+import { perAccountSeries, snapshotOf, snapshotSeries, snapshotTime, upsertSnapshot } from "./snapshots";
 import { emptyPortfolio, type DailySnapshot, type Holding } from "./types";
 
 function portfolioWith(): ReturnType<typeof emptyPortfolio> {
@@ -77,5 +77,31 @@ describe("snapshotSeries", () => {
     const pts = snapshotSeries(snaps, new Set(["a", "b", "loan"]), snapshotTime("2026-06-03"));
     expect(pts).toHaveLength(1);
     expect(pts[0].netWorth).toBe(142);
+  });
+});
+
+describe("perAccountSeries (the stacked Performance chart)", () => {
+  const snaps: DailySnapshot[] = [
+    { date: "2026-06-01", accounts: { a: 100, b: 50 } },
+    { date: "2026-06-02", accounts: { a: 110, b: 50 } },
+    { date: "2026-06-03", accounts: { a: 105, b: 55, c: 70 } }, // c added mid-window
+  ];
+
+  it("aligns every account to the same days, zero-filling before an account existed", () => {
+    const { times, series } = perAccountSeries(snaps, new Set(["a", "b", "c"]));
+    expect(times).toHaveLength(3);
+    expect(series.find((s) => s.accountId === "c")!.values).toEqual([0, 0, 70]);
+    expect(series.find((s) => s.accountId === "a")!.values).toEqual([100, 110, 105]);
+  });
+
+  it("only includes requested accounts and drops all-zero ones", () => {
+    const { series } = perAccountSeries(snaps, new Set(["a", "ghost"]));
+    expect(series.map((s) => s.accountId)).toEqual(["a"]);
+  });
+
+  it("respects the fromT lower bound", () => {
+    const { times, series } = perAccountSeries(snaps, new Set(["a", "b"]), snapshotTime("2026-06-02"));
+    expect(times).toHaveLength(2);
+    expect(series.find((s) => s.accountId === "b")!.values).toEqual([50, 55]);
   });
 });

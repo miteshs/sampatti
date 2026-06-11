@@ -54,6 +54,28 @@ export function upsertSnapshot(snapshots: DailySnapshot[], snap: DailySnapshot):
   return true;
 }
 
+// Aligned per-account value series for the stacked Performance chart. Days are the recorded
+// snapshot days from `fromT` on; an account absent on a day (not yet tracked then) reads 0,
+// so a newly added account rises out of the baseline exactly on its add-day. Accounts that
+// are zero across the whole window are dropped.
+export interface AccountSeries {
+  accountId: string;
+  values: number[]; // aligned with `times`
+}
+
+export function perAccountSeries(
+  snapshots: DailySnapshot[],
+  accountIds: Set<string>,
+  fromT = -Infinity,
+): { times: number[]; series: AccountSeries[] } {
+  const days = snapshots.filter((s) => snapshotTime(s.date) >= fromT);
+  const times = days.map((s) => snapshotTime(s.date));
+  const series = [...accountIds]
+    .map((accountId) => ({ accountId, values: days.map((s) => s.accounts[accountId] ?? 0) }))
+    .filter((s) => s.values.some((v) => v !== 0));
+  return { times, series };
+}
+
 // Recorded series over the currently-visible accounts, from `fromT` on. Deleted accounts drop
 // out naturally (their id is in no visible set); same for excluded ones.
 export function snapshotSeries(
