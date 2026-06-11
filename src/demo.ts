@@ -12,13 +12,127 @@
 //   • recent buys (STCG territory), an SGB held by grams, USD accounts, an EXCLUDED account
 //     (Manage → include/exclude), liabilities, notes, and varied income kinds.
 
-import { CURRENT_VERSION, type Account, type Holding, type Income, type Portfolio } from "./domain/types";
+import { CURRENT_VERSION, type Account, type FlowEvent, type Holding, type Income, type Portfolio } from "./domain/types";
+import { snapshotOf, todayLocal } from "./domain/snapshots";
+import type { DailySnapshot } from "./domain/types";
 
 let n = 0;
 const id = () => `demo-${++n}`;
 
+// Local YYYY-MM-DD for `daysAgo` days back (same day-keying the store uses).
+const dayStr = (daysAgo: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return todayLocal(d);
+};
+
 interface AcctSpec extends Omit<Account, "id"> {
   items?: [name: string, cls: Holding["assetClass"], value: number, opts?: Partial<Holding>][];
+}
+
+// ---- one month of recorded history, synthesized -----------------------------
+// The trend chart should DEMO well: ~30 days of believable daily movement ending at
+// exactly today's authored values, plus two mid-month events (an account funded with new
+// money, an asset newly tracked) whose snapshot steps match the flows ledger to the rupee —
+// so the growth/added/tracking split sums precisely to the recorded change.
+
+export const DEMO_HISTORY_DAYS = 30;
+export const DEMO_MF_DAYS_AGO = 20; // Groww folio — new money (`flow`)
+export const DEMO_PLOT_DAYS_AGO = 15; // Alibaug plot — started tracking (`tracking`)
+
+// Deterministic PRNG (mulberry32) — the demo must be identical on every load so tests and
+// screenshots are stable; the seed is arbitrary but fixed.
+function rng(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Daily-movement profile per account, keyed by demo account NAME (everything else is flat:
+// EPF/FDs/insurance/property/PMS/AIF statements don't tick daily — exactly the user's ask).
+// vol = daily σ, drift = expected move over the whole month.
+const MOVERS: Record<string, { vol: number; drift: number; weekends?: boolean }> = {
+  "Zerodha Demat": { vol: 0.009, drift: 0.025 },
+  "Equity Mutual Funds": { vol: 0.007, drift: 0.02 },
+  "Groww Mutual Funds": { vol: 0.007, drift: 0.02 },
+  "Debt Funds": { vol: 0.0006, drift: 0.0055 },
+  "NPS Tier-1": { vol: 0.004, drift: 0.015 },
+  "Gold": { vol: 0.005, drift: 0.015, weekends: true },
+  "Morgan Stanley (RSU/ESPP)": { vol: 0.011, drift: 0.02 },
+  "Schwab Brokerage": { vol: 0.002, drift: 0.004 },
+  "Crypto Wallet": { vol: 0.025, drift: 0.05, weekends: true },
+  "HUF Demat": { vol: 0.009, drift: 0.02 },
+};
+
+const isWeekend = (date: string): boolean => {
+  const [y, m, d] = date.split("-").map(Number);
+  const dow = new Date(y, m - 1, d, 12).getDay();
+  return dow === 0 || dow === 6;
+};
+
+// Walk each account's value BACKWARD from today's exact figure, so day 0 always equals the
+// authored portfolio. Returns snapshots (ascending) + the two flow events, mutually consistent.
+function synthesizeHistory(accounts: Account[], todayByAccount: Record<string, number>):
+  { snapshots: DailySnapshot[]; flows: FlowEvent[] } {
+  const nameById = new Map(accounts.map((a) => [a.id, a.name]));
+  const firstDayFor = (name: string): number =>
+    name === "Groww Mutual Funds" ? DEMO_MF_DAYS_AGO : name === "Plot — Alibaug" ? DEMO_PLOT_DAYS_AGO : DEMO_HISTORY_DAYS;
+
+  // Per-account daily values, walked back from today. valuesByAccount[id][daysAgo].
+  const valuesByAccount = new Map<string, Map<number, number>>();
+  for (const [aid, todayValue] of Object.entries(todayByAccount)) {
+    const name = nameById.get(aid) ?? "";
+    const mover = MOVERS[name];
+    const rand = rng(1991 + [...name].reduce((s, c) => s + c.charCodeAt(0), 0));
+    const series = new Map<number, number>();
+    let v = todayValue;
+    series.set(0, Math.round(v));
+    for (let daysAgo = 1; daysAgo <= firstDayFor(name); daysAgo++) {
+      if (mover) {
+        const tradingDay = mover.weekends || !isWeekend(dayStr(daysAgo - 1));
+        if (tradingDay) {
+          const noise = (rand() + rand() - 1) * mover.vol; // ~triangular, mean 0
+          const r = mover.drift / (DEMO_HISTORY_DAYS * 0.72) + noise; // ÷ trading days
+          v = v / (1 + r);
+        }
+      }
+      series.set(daysAgo, Math.round(v));
+    }
+    valuesByAccount.set(aid, series);
+  }
+
+  const snapshots: DailySnapshot[] = [];
+  for (let daysAgo = DEMO_HISTORY_DAYS; daysAgo >= 0; daysAgo--) {
+    const day: DailySnapshot = { date: dayStr(daysAgo), accounts: {} };
+    for (const [aid, series] of valuesByAccount) {
+      const name = nameById.get(aid) ?? "";
+      if (daysAgo > firstDayFor(name)) continue; // account didn't exist in the record yet
+      day.accounts[aid] = series.get(daysAgo)!;
+    }
+    snapshots.push(day);
+  }
+
+  const idOf = (name: string) => accounts.find((a) => a.name === name)!.id;
+  const growwId = idOf("Groww Mutual Funds");
+  const plotId = idOf("Plot — Alibaug");
+  const flows: FlowEvent[] = [
+    {
+      id: id(), date: dayStr(DEMO_MF_DAYS_AGO), accountId: growwId,
+      amount: valuesByAccount.get(growwId)!.get(DEMO_MF_DAYS_AGO)!,
+      kind: "flow", source: "account_added", label: "Opened Groww folio with new savings",
+    },
+    {
+      id: id(), date: dayStr(DEMO_PLOT_DAYS_AGO), accountId: plotId,
+      amount: valuesByAccount.get(plotId)!.get(DEMO_PLOT_DAYS_AGO)!,
+      kind: "tracking", source: "account_added", label: "Started tracking — plot, Alibaug",
+    },
+  ];
+
+  return { snapshots, flows };
 }
 
 function build(specs: AcctSpec[]): { accounts: Account[]; holdings: Holding[] } {
@@ -183,6 +297,23 @@ export function demoPortfolio(): Portfolio {
       ],
     },
     {
+      // Added mid-month (15 days ago) as "started tracking an asset I already owned" —
+      // shows as a step in the recorded trend and a `tracking` line in the growth split.
+      name: "Plot — Alibaug", institution: "—", accountType: "real_estate",
+      taxTreatment: "taxable", region: "India", currency: "INR", asOf: dayStr(DEMO_PLOT_DAYS_AGO),
+      defaultAssetClass: "real_estate", note: "Added to tracking recently — indicative value",
+      items: [["Residential plot — Alibaug", "real_estate", 5_800_000]],
+    },
+    {
+      // Opened 20 days ago with NEW money (a `flow` event) — same fund family as the main
+      // folio, a recent STCG-territory buy with a real cost basis.
+      name: "Groww Mutual Funds", institution: "Groww", accountType: "mutual_fund",
+      taxTreatment: "taxable", region: "India", currency: "INR", asOf: dayStr(0),
+      items: [
+        ["Parag Parikh Flexi Cap (Direct)", "equity_mf", 625_000, { symbol: "122639", costBasis: 600_000, buyDate: dayStr(DEMO_MF_DAYS_AGO) }],
+      ],
+    },
+    {
       name: "Home Loan", institution: "HDFC Ltd", accountType: "liability",
       taxTreatment: "na", region: "India", currency: "INR", asOf: "2026-05-31",
       items: [["Mumbai home loan (outstanding)", "other", 6_500_000]],
@@ -197,18 +328,28 @@ export function demoPortfolio(): Portfolio {
     { id: id(), source: "FD & bond interest", kind: "interest", amount: 120_000, frequency: "annual", currency: "INR" },
   ];
 
+  const settings: Portfolio["settings"] = {
+    country: "India", baseCurrency: "INR", claudeMode: "relay",
+    relayUrl: "https://sampatti-relay.sampatti.workers.dev", usdInr: 95, byoKeySet: false, analysisModel: "claude-sonnet-4-6",
+  };
+
+  // A month of recorded history, walked back from today's exact per-account values
+  // (liabilities negative), with the two mid-month account events in the flows ledger.
+  const todayByAccount = snapshotOf({
+    version: CURRENT_VERSION, accounts, holdings, income, edits: [], snapshots: [], flows: [], settings,
+    updatedAt: new Date().toISOString(),
+  }).accounts;
+  const { snapshots, flows } = synthesizeHistory(accounts, todayByAccount);
+
   return {
     version: CURRENT_VERSION,
     accounts,
     holdings,
     income,
     edits: [],
-    snapshots: [],
-    flows: [],
-    settings: {
-      country: "India", baseCurrency: "INR", claudeMode: "relay",
-      relayUrl: "https://sampatti-relay.sampatti.workers.dev", usdInr: 95, byoKeySet: false, analysisModel: "claude-sonnet-4-6",
-    },
+    snapshots,
+    flows,
+    settings,
     updatedAt: new Date().toISOString(),
   };
 }
