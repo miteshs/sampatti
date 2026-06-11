@@ -16,6 +16,9 @@ describe("periodStart", () => {
     expect(new Date(periodStart("YTD", now)).getMonth()).toBe(0);
     expect(new Date(periodStart("YTD", now)).getDate()).toBe(1);
   });
+  it("'All' opens the window to the whole record", () => {
+    expect(periodStart("All")).toBe(-Infinity);
+  });
   it("1M / 1Y step back the expected amount", () => {
     const now = new Date("2026-06-09T00:00:00Z").getTime();
     expect(new Date(periodStart("1M", now)).getMonth()).toBe(4); // May

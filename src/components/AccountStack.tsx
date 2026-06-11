@@ -16,7 +16,7 @@ const MAX_BANDS = 8; // beyond this, small accounts roll into "Other accounts"
 export function AccountStack() {
   const portfolio = useStore((s) => s.portfolio);
   const visible = useMemo(() => visiblePortfolio(portfolio), [portfolio]);
-  const [period, setPeriod] = useState<Period>("1Y");
+  const [period, setPeriod] = useState<Period>("All"); // the stack's job is the whole story
   const [hover, setHover] = useState<string | null>(null);
 
   const data = useMemo(() => {
