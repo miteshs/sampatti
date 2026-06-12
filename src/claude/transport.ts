@@ -44,6 +44,14 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 // by rotating the secret. Only used in relay mode; BYO talks to Anthropic directly.
 const RELAY_TOKEN = import.meta.env.VITE_RELAY_TOKEN ?? "";
 
+// The x-app-token sent in relay mode. A user-entered relay code (shared by whoever runs the
+// relay) takes precedence over the build-time token — so a public/token-less build can use a
+// friend's relay by pasting the code they gave out. Blank/whitespace → fall back to the build
+// token; if neither is set, returns "" and no header is sent. Exported for tests.
+export function effectiveAppToken(relayCode: string | undefined, buildToken: string): string {
+  return (relayCode ?? "").trim() || buildToken;
+}
+
 // Public builds ship WITHOUT the relay token (so strangers can't spend the relay owner's API
 // credits) — a relay 401/403 then just means "this build has no hosted access": point the
 // user at the BYO-key path instead of showing a bare status code.
@@ -64,11 +72,12 @@ export async function streamClaude(
   onText?: (delta: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const { claudeMode, relayUrl } = useStore.getState().portfolio.settings;
+  const { claudeMode, relayUrl, relayCode } = useStore.getState().portfolio.settings;
+  const appToken = effectiveAppToken(relayCode, RELAY_TOKEN);
 
   if (isTauri()) {
     try {
-      return await streamTauri(req, claudeMode, relayUrl, RELAY_TOKEN, onText);
+      return await streamTauri(req, claudeMode, relayUrl, appToken, onText);
     } catch (e) {
       throw relayHint(claudeMode, e instanceof Error ? e.message : String(e));
     }
@@ -86,7 +95,7 @@ export async function streamClaude(
     headers["anthropic-dangerous-direct-browser-access"] = "true";
   } else {
     url = relayUrl;
-    if (RELAY_TOKEN) headers["x-app-token"] = RELAY_TOKEN;
+    if (appToken) headers["x-app-token"] = appToken;
   }
 
   const res = await fetch(url, {

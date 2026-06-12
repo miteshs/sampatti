@@ -174,6 +174,20 @@ export function Settings() {
                 address. Only use a relay you run or fully trust; https is required.
               </p>
             )}
+            <label style={{ display: "block", marginTop: "0.9rem" }}>
+              Relay access code <span className="muted" style={{ fontWeight: 400 }}>— optional</span>
+            </label>
+            <input
+              type="password"
+              aria-label="Relay access code"
+              placeholder="paste a code someone shared with you"
+              value={s.relayCode ?? ""}
+              onChange={(e) => updateSettings({ relayCode: e.target.value })}
+            />
+            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
+              Only needed if the relay above requires a code. If a friend shared their relay with you,
+              paste the code they gave you here; otherwise leave it blank.
+            </p>
           </div>
         ) : (
           <div>

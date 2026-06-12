@@ -2,7 +2,7 @@
 // your own key" guidance. It must name the RIGHT key store per platform, fire only for
 // relay-mode auth failures, and leave every other error untouched.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { relayHint } from "./transport";
+import { effectiveAppToken, relayHint } from "./transport";
 
 const tauriWindow = () => vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
 
@@ -56,5 +56,29 @@ describe("relayHint", () => {
     expect(relayHint("relay", notFound).message).toBe(notFound);
     const midText = "stream cut after 401 bytes";
     expect(relayHint("relay", midText).message).toBe(midText);
+  });
+});
+
+// A friend on the public (token-less) build pastes the relay code you gave them; it must win
+// over the empty build-time token so their requests carry x-app-token. Blank → build token.
+describe("effectiveAppToken — user relay code vs build token", () => {
+  it("uses the user-entered code when present (the friend's-relay case)", () => {
+    expect(effectiveAppToken("friend-code", "")).toBe("friend-code");
+    expect(effectiveAppToken("friend-code", "BUILT_IN")).toBe("friend-code"); // overrides build token
+  });
+
+  it("trims the entered code", () => {
+    expect(effectiveAppToken("  abc  ", "")).toBe("abc");
+  });
+
+  it("falls back to the build token when the code is blank, whitespace, or unset", () => {
+    expect(effectiveAppToken("", "BUILT_IN")).toBe("BUILT_IN");
+    expect(effectiveAppToken("   ", "BUILT_IN")).toBe("BUILT_IN");
+    expect(effectiveAppToken(undefined, "BUILT_IN")).toBe("BUILT_IN");
+  });
+
+  it("is empty (so no x-app-token header is sent) when neither is set", () => {
+    expect(effectiveAppToken(undefined, "")).toBe("");
+    expect(effectiveAppToken("  ", "")).toBe("");
   });
 });

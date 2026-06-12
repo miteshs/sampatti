@@ -117,6 +117,11 @@ export interface Settings {
   baseCurrency: string; // "INR"
   claudeMode: "relay" | "byo"; // relay (hosted, default) | byo (your own key)
   relayUrl: string;
+  // Optional access code for the relay — whoever runs it may require one (relay APP_TOKEN).
+  // Lets a public/token-less build use someone else's relay by pasting the code they shared;
+  // sent as x-app-token, taking precedence over the build-time token. Persisted in settings
+  // (a low-sensitivity shared code — NOT the Anthropic key, which stays in the keychain).
+  relayCode?: string;
   usdInr: number; // FX used to convert USD holdings into the INR base (v1: manual)
   // The BYO key itself is NOT stored here — it lives in the OS keychain (desktop)
   // or sessionStorage (web fallback). This flag only records whether one is set.
