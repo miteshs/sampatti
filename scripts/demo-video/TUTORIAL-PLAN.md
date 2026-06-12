@@ -51,11 +51,14 @@ the plan of record; update the iteration log as work lands.
       margin-rules via scoped :has(); ground washes audible; cool greys warmed.
       336/336 tests pass. Videos re-recorded against the new UI (the Performance
       scene showed the old rainbow).
-- [ ] **It. 3 — candidates**: a :60 teaser cut for the README (the 4-min tutorial is for
-      committed viewers; the hook needs to be shorter); sync clicks to sentence-cue
+- [x] **It. 3 (partial) — v0.3.1 re-cut**: a user downloaded 0.3.0 and found no Settings
+      tab — the dmg predated the day's commits. release.sh now refuses a dirty tree,
+      wipes stale bundles, and stamps the built-from commit into the release notes.
+- [ ] **Remaining candidates**: a :60 teaser cut for the README (the 4-min tutorial is
+      for committed viewers; the hook needs to be shorter); sync clicks to sentence-cue
       boundaries (makeAudio already returns per-sentence timings — actions could await
-      the cue that names them); re-cut dmg so app matches videos; YouTube upload w/ srt;
-      background music bed (only if it stays subtle).
+      the cue that names them); YouTube upload w/ srt; background music bed (only if it
+      stays subtle).
 
 ## Known limitations (accepted for now)
 

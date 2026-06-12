@@ -44,6 +44,17 @@ DMG="src-tauri/target/release/bundle/dmg/Sampatti_${VERSION}_aarch64.dmg"
 APP="src-tauri/target/release/bundle/macos/Sampatti.app"
 CASK="packaging/homebrew/sampatti.rb"
 
+# A release must be reproducible from a commit: refuse a dirty tree and stamp the commit
+# into the release notes. (0.3.0 shipped a 14:08 dmg for an end-of-day tree — the Settings
+# tab existed in every screenshot and video but not in the binary anyone downloaded.)
+if [ -n "$(git status --porcelain)" ]; then
+  echo "✗ Working tree not clean — commit first; the release must map to a commit."; exit 1
+fi
+BUILT_FROM=$(git rev-parse --short HEAD)
+
+# Thorough clean: a stale bundle must never be mistaken for (or shipped as) this cut.
+rm -rf src-tauri/target/release/bundle dist
+
 # Signing + notarization are fully handled by Tauri when the env vars exist — source them
 # from the gitignored .env.signing (see .env.signing.example). Absent → unsigned, as before.
 SIGNED=0
@@ -110,7 +121,7 @@ if [ "$GH_RELEASE" = "1" ]; then
   gh release create "v${VERSION}" "$DMG" \
     --repo "$RELEASES_REPO" \
     --title "Sampatti ${VERSION}" \
-    --notes "macOS (Apple Silicon): \`brew tap miteshs/sampatti && brew install --cask sampatti\`. Windows (x64): the \`*-setup.exe\` below (SmartScreen → More info → Run anyway). AI analysis needs your own Anthropic API key (Privacy screen → stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device." \
+    --notes "macOS (Apple Silicon): \`brew tap miteshs/sampatti && brew install --cask sampatti\`. Windows (x64): the \`*-setup.exe\` below (SmartScreen → More info → Run anyway). AI analysis needs your own Anthropic API key (Privacy screen → stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device. Built from \`${BUILT_FROM}\`." \
     || gh release upload "v${VERSION}" "$DMG" --repo "$RELEASES_REPO" --clobber
   echo "✓ Release v${VERSION} ready on ${RELEASES_REPO}"
 fi
