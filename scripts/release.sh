@@ -118,10 +118,27 @@ echo "✓ Updated $CASK"
 
 if [ "$GH_RELEASE" = "1" ]; then
   echo "▶ Publishing release v${VERSION} on ${RELEASES_REPO} (public, dmg-only repo)…"
+  # Install instructions assume nothing: machines without Homebrew get the bootstrap
+  # line, and the no-brew path (plain dmg + Gatekeeper dance) is spelled out too.
+  NOTES=$(cat <<NOTES_EOF
+**macOS (Apple Silicon)** — with Homebrew (recommended; updates via \`brew upgrade\`):
+
+    # Only if you don't have Homebrew yet (check with: brew --version):
+    /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    brew tap miteshs/sampatti && brew trust miteshs/sampatti && brew install --cask sampatti
+
+**No Homebrew?** Download the dmg below, drag **Sampatti** into Applications, then right-click → **Open** on first launch (unsigned build; newer macOS may also need System Settings → Privacy & Security → **Open Anyway**).
+
+**Windows (x64)**: \`Sampatti_${VERSION}_x64-setup.exe\` below — SmartScreen will warn: **More info → Run anyway**.
+
+AI analysis is optional: in **Settings**, use the relay or add your own Anthropic API key (stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device. Built from \`${BUILT_FROM}\`.
+NOTES_EOF
+)
   gh release create "v${VERSION}" "$DMG" \
     --repo "$RELEASES_REPO" \
     --title "Sampatti ${VERSION}" \
-    --notes "macOS (Apple Silicon): \`brew tap miteshs/sampatti && brew install --cask sampatti\`. Windows (x64): the \`*-setup.exe\` below (SmartScreen → More info → Run anyway). AI analysis needs your own Anthropic API key (Privacy screen → stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device. Built from \`${BUILT_FROM}\`." \
+    --notes "$NOTES" \
     || gh release upload "v${VERSION}" "$DMG" --repo "$RELEASES_REPO" --clobber
   echo "✓ Release v${VERSION} ready on ${RELEASES_REPO}"
 fi
