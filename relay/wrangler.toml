@@ -4,7 +4,10 @@ compatibility_date = "2025-01-01"
 
 # Secrets (set, never committed):
 #   npx wrangler secret put ANTHROPIC_API_KEY
-#   npx wrangler secret put APP_TOKEN          # optional: a shared token the app sends
+#   npx wrangler secret put APP_TOKEN          # optional: a single shared token the app sends
+#   npx wrangler secret put APP_TOKENS         # optional: comma-separated short codes (one per
+#                                              #   friend); accepted alongside APP_TOKEN, case-
+#                                              #   insensitive. Revoke one by removing it + re-put.
 #
 # This Worker has NO KV, NO D1, NO R2, NO Durable Objects bound on purpose — it has
 # nowhere to persist a request even if it wanted to.

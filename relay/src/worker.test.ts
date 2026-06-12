@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import worker, { readBodyCapped, sanitizeRequest, safeEqual, type Env } from "./worker";
+import worker, { authorized, readBodyCapped, sanitizeRequest, safeEqual, validCodes, type Env } from "./worker";
 
 describe("safeEqual (constant-time token compare)", () => {
   it("matches identical tokens", () => {
@@ -118,5 +118,54 @@ describe("APP_TOKEN gate (fetch handler)", () => {
   it("rejects a non-POST method with 405 before forwarding", async () => {
     const res = await worker.fetch(new Request("https://relay.test/", { method: "GET" }), env({ APP_TOKEN: "secret" }));
     expect(res.status).toBe(405);
+  });
+});
+
+describe("validCodes / authorized (short per-friend access codes)", () => {
+  it("parses APP_TOKENS into a trimmed, upper-cased, blank-free list", () => {
+    expect(validCodes({ ANTHROPIC_API_KEY: "k", APP_TOKENS: "abc123, def456 ,, ghi789" }))
+      .toEqual(["ABC123", "DEF456", "GHI789"]);
+  });
+
+  it("includes the legacy APP_TOKEN alongside APP_TOKENS", () => {
+    expect(validCodes({ ANTHROPIC_API_KEY: "k", APP_TOKEN: "long-legacy", APP_TOKENS: "abc123" }))
+      .toEqual(["LONG-LEGACY", "ABC123"]);
+  });
+
+  it("is empty when neither is set (→ open relay)", () => {
+    expect(validCodes({ ANTHROPIC_API_KEY: "k" })).toEqual([]);
+  });
+
+  it("accepts a code that matches any entry, case-insensitively and trimmed", () => {
+    const codes = validCodes({ ANTHROPIC_API_KEY: "k", APP_TOKENS: "ABC123,DEF456" });
+    expect(authorized("def456", codes)).toBe(true);   // lower-case friend typed
+    expect(authorized("  ABC123  ", codes)).toBe(true); // stray whitespace
+    expect(authorized("XYZ999", codes)).toBe(false);   // unknown code
+  });
+
+  it("is open (accepts anything, even empty) when no codes are configured", () => {
+    expect(authorized("", [])).toBe(true);
+    expect(authorized("whatever", [])).toBe(true);
+  });
+});
+
+describe("APP_TOKENS gate (fetch handler, end to end)", () => {
+  const post = (headers: Record<string, string> = {}) =>
+    new Request("https://relay.test/", { method: "POST", headers: { "content-type": "application/json", ...headers }, body: "{}" });
+
+  it("accepts a friend's code from the APP_TOKENS list (past the gate → 400 on bad body)", async () => {
+    const env: Env = { ANTHROPIC_API_KEY: "sk-test", APP_TOKENS: "ABC123,DEF456" };
+    expect((await worker.fetch(post({ "x-app-token": "abc123" }), env)).status).toBe(400);
+  });
+
+  it("rejects a code not in the list", async () => {
+    const env: Env = { ANTHROPIC_API_KEY: "sk-test", APP_TOKENS: "ABC123,DEF456" };
+    expect((await worker.fetch(post({ "x-app-token": "nope12" }), env)).status).toBe(401);
+  });
+
+  it("still accepts the legacy single APP_TOKEN when both are set", async () => {
+    const env: Env = { ANTHROPIC_API_KEY: "sk-test", APP_TOKEN: "spt_legacy", APP_TOKENS: "ABC123" };
+    expect((await worker.fetch(post({ "x-app-token": "spt_legacy" }), env)).status).toBe(400);
+    expect((await worker.fetch(post({ "x-app-token": "ABC123" }), env)).status).toBe(400);
   });
 });

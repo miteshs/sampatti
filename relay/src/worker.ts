@@ -11,6 +11,10 @@ export interface Env {
   ANTHROPIC_API_KEY: string;
   // Optional shared token so random callers can't burn your quota. If unset, no check.
   APP_TOKEN?: string;
+  // Optional comma-separated list of short, human-shareable access codes (e.g. one per
+  // friend, so any single code can be revoked without disturbing the others). Accepted
+  // alongside APP_TOKEN. Set with: npx wrangler secret put APP_TOKENS
+  APP_TOKENS?: string;
 }
 
 const CORS = {
@@ -63,6 +67,26 @@ export function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+// The access codes this relay accepts as x-app-token: the APP_TOKENS list (short per-friend
+// codes) plus the legacy single APP_TOKEN. Trimmed, blanks dropped, upper-cased so the codes
+// friends type are case-insensitive (a 6-char code shouldn't fail over a stray capital).
+export function validCodes(env: Env): string[] {
+  return [env.APP_TOKEN ?? "", ...(env.APP_TOKENS ?? "").split(",")]
+    .map((c) => c.trim().toUpperCase())
+    .filter((c) => c.length > 0);
+}
+
+// True if the presented token matches any configured code. No codes configured → open relay
+// (same as an unset APP_TOKEN). Checks every code with the constant-time compare and never
+// short-circuits, so timing leaks neither which code matched nor how many exist.
+export function authorized(presented: string, codes: string[]): boolean {
+  if (codes.length === 0) return true;
+  const p = presented.trim().toUpperCase();
+  let ok = false;
+  for (const c of codes) ok = safeEqual(p, c) || ok;
+  return ok;
+}
+
 export type SanitizeResult =
   | { ok: true; body: Record<string, unknown> }
   | { ok: false; status: number; error: string };
@@ -90,7 +114,7 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
 
-    if (env.APP_TOKEN && !safeEqual(request.headers.get("x-app-token") ?? "", env.APP_TOKEN)) {
+    if (!authorized(request.headers.get("x-app-token") ?? "", validCodes(env))) {
       return json({ error: "unauthorized" }, 401);
     }
 
