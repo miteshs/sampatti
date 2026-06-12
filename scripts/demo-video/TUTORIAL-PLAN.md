@@ -45,8 +45,12 @@ the plan of record; update the iteration log as work lands.
         (scrollIntoView), so the camera follows the narration by construction.
       - Measured length: ~4:00 IN / ~3:37 US. Longer than the 2½-min target but
         defensible for a follow-along tutorial; revisit with a tighter script read.
-- [ ] **It. 2 — UI/UX pass**: screenshot every tab in both regions, evaluate with the
-      frontend-design skill, implement enhancements.
+- [x] **It. 2 — UI/UX pass** (commit 70629d9): audit screenshots of all 14 tab views
+      (audit-shots.mjs, kept); curated atlas PALETTE replaces the Tailwind-default
+      rainbow in donut/stack/chips; hero-card grain + indigo→gold hairline; verdict
+      margin-rules via scoped :has(); ground washes audible; cool greys warmed.
+      336/336 tests pass. Videos re-recorded against the new UI (the Performance
+      scene showed the old rainbow).
 - [ ] **It. 3 — candidates**: a :60 teaser cut for the README (the 4-min tutorial is for
       committed viewers; the hook needs to be shorter); sync clicks to sentence-cue
       boundaries (makeAudio already returns per-sentence timings — actions could await
