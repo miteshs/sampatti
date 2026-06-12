@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readBodyCapped, sanitizeRequest, safeEqual } from "./worker";
+import worker, { readBodyCapped, sanitizeRequest, safeEqual, type Env } from "./worker";
 
 describe("safeEqual (constant-time token compare)", () => {
   it("matches identical tokens", () => {
@@ -69,5 +69,54 @@ describe("readBodyCapped (real-stream body limit)", () => {
 
   it("treats a missing body as empty", async () => {
     expect(await readBodyCapped(new Request("https://relay.test/", { method: "POST" }), 1024)).toBe("");
+  });
+});
+
+// The APP_TOKEN gate is the security boundary friends rely on. These drive the real fetch
+// handler. An INVALID body ({}) is used throughout so a request that passes the gate stops at
+// validation (400) — it never forwards to Anthropic, so no test spends Claude credits.
+describe("APP_TOKEN gate (fetch handler)", () => {
+  const env = (extra: Partial<Env> = {}): Env => ({ ANTHROPIC_API_KEY: "sk-test", ...extra });
+  const post = (headers: Record<string, string> = {}) =>
+    new Request("https://relay.test/", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...headers },
+      body: "{}", // invalid app request → 400 at validation, never reaches Anthropic
+    });
+
+  it("401s when APP_TOKEN is set but no x-app-token is sent", async () => {
+    const res = await worker.fetch(post(), env({ APP_TOKEN: "secret" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("401s when APP_TOKEN is set and the wrong token is sent", async () => {
+    const res = await worker.fetch(post({ "x-app-token": "wrong" }), env({ APP_TOKEN: "secret" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("passes the gate with the correct token (then 400 on the bad body — not 401)", async () => {
+    const res = await worker.fetch(post({ "x-app-token": "secret" }), env({ APP_TOKEN: "secret" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("is OPEN when APP_TOKEN is unset — any caller passes the gate (footgun guard)", async () => {
+    const res = await worker.fetch(post(), env()); // no APP_TOKEN configured
+    expect(res.status).toBe(400); // reached validation, i.e. NOT rejected as unauthorized
+    expect(res.status).not.toBe(401);
+  });
+
+  it("a one-char-off token is rejected (constant-time compare wired into the handler)", async () => {
+    const res = await worker.fetch(post({ "x-app-token": "secret1" }), env({ APP_TOKEN: "secret" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("does not gate the CORS preflight (OPTIONS) even with APP_TOKEN set", async () => {
+    const res = await worker.fetch(new Request("https://relay.test/", { method: "OPTIONS" }), env({ APP_TOKEN: "secret" }));
+    expect(res.status).not.toBe(401);
+  });
+
+  it("rejects a non-POST method with 405 before forwarding", async () => {
+    const res = await worker.fetch(new Request("https://relay.test/", { method: "GET" }), env({ APP_TOKEN: "secret" }));
+    expect(res.status).toBe(405);
   });
 });
