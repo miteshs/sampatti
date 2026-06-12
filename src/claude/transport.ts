@@ -6,7 +6,11 @@
 import { isTauri, keyStoreName, webByoKey } from "../platform";
 import { useStore } from "../storage/store";
 
-export const EXTRACT_MODEL = "claude-sonnet-4-6";
+// Statement extraction runs cheapest-first: try Haiku, escalate to Sonnet only when the
+// cheap pass comes back empty or unparseable (see ingest/aiExtract.ts). Output tokens
+// dominate extraction cost, so the cheap first pass is where the saving lives.
+export const EXTRACT_MODEL_CHEAP = "claude-haiku-4-5";
+export const EXTRACT_MODEL_STRONG = "claude-sonnet-4-6";
 
 // User-selectable analysis model (cost vs. quality). Approx cost is for one analysis;
 // output tokens dominate, so the model choice is the real cost lever. Labels speak to a

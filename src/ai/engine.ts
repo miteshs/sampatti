@@ -6,7 +6,7 @@
 // never fetch, never the relay. That is the whole point of the local tier.
 
 import { useStore } from "../storage/store";
-import { callClaude, streamClaude, EXTRACT_MODEL, type ClaudeRequest } from "../claude/transport";
+import { callClaude, streamClaude, type ClaudeRequest } from "../claude/transport";
 import { isTauri } from "../platform";
 import type { AiEngine } from "../domain/types";
 
@@ -88,15 +88,30 @@ export async function localGenerate(
 }
 
 // Statement-extraction text completion. Local mode is grammar-constrained to valid JSON;
-// the caller's extractJson/validateDrafts pipeline shapes and verifies either way.
-export async function generateForExtraction(promptText: string): Promise<string> {
+// the caller's extractJson/validateDrafts pipeline shapes and verifies either way. On the
+// Claude path the static prompt is sent as its own cache_control block, so a batch of
+// statements re-reads it at ~10% input cost; `model` lets the caller pick the cheap/strong
+// tier (aiExtract.ts escalates Haiku → Sonnet). Local ignores `model` — there is one model.
+export async function generateForExtraction(
+  staticPrompt: string,
+  statement: string,
+  model: string,
+): Promise<string> {
   if (engineFor("extraction") === "local") {
-    return localGenerate(promptText, { jsonMode: true, maxTokens: 4000 });
+    return localGenerate(`${staticPrompt}\n\n--- STATEMENT TEXT ---\n${statement}`, { jsonMode: true, maxTokens: 4000 });
   }
   return callClaude({
-    model: EXTRACT_MODEL,
+    model,
     max_tokens: 4000,
-    messages: [{ role: "user", content: [{ type: "text", text: promptText }] }],
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: staticPrompt, cache_control: { type: "ephemeral" } },
+          { type: "text", text: `--- STATEMENT TEXT ---\n${statement}` },
+        ],
+      },
+    ],
   });
 }
 

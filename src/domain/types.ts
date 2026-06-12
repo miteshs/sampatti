@@ -122,6 +122,10 @@ export interface Settings {
   // or sessionStorage (web fallback). This flag only records whether one is set.
   byoKeySet: boolean;
   analysisModel: string; // which Claude model writes the analysis (cost vs. quality)
+  // Optional free-text the client gives about their situation/goals (age, retirement year,
+  // risk appetite…). Appended to the analysis request AFTER the cached brief block so it
+  // tailors the review without touching the guardrails — and without breaking the brief cache.
+  analysisContext?: string;
   ai: AiRouting; // per-task engine choice (default: claude for both)
   // Experimental features live behind this switch (today: the on-device AI engine).
   // Off = the app behaves as if they don't exist; settings.ai is kept but not honored.
@@ -205,6 +209,7 @@ export function emptyPortfolio(): Portfolio {
       usdInr: 95, // fallback; refresh to a live rate in Settings
       byoKeySet: false,
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku in Settings
+      analysisContext: "", // client's own goals/context; tailors the AI review (see Settings type)
       ai: { extraction: "claude", analysis: "claude" }, // per-task engine; local is opt-in
       developerMode: false, // experimental features stay invisible until switched on
     },

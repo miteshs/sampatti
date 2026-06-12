@@ -56,7 +56,7 @@ afterEach(() => {
 describe("local engine = zero network (the promise)", () => {
   it("extraction on local touches only local_generate — no fetch, no claude", async () => {
     setEngines("local", "local");
-    const out = await generateForExtraction("PROMPT + statement text");
+    const out = await generateForExtraction("PROMPT", "statement text", "claude-haiku-4-5");
     expect(out).toBe('{"accounts": []}');
     expect(invokeLog.map((c) => c.cmd)).toEqual(["local_generate"]);
     expect(invokeLog[0].args.jsonMode).toBe(true); // grammar-constrained
@@ -123,7 +123,7 @@ describe("withExtractionEngine — the 'use Claude this time' batch override", (
     setEngines("local", "local");
     // The claude transport may fail in this mocked env — irrelevant; the assertion is the
     // negative: with the override active, extraction must not invoke local_generate.
-    await withExtractionEngine("claude", () => generateForExtraction("text")).catch(() => {});
+    await withExtractionEngine("claude", () => generateForExtraction("PROMPT", "text", "claude-haiku-4-5")).catch(() => {});
     expect(invokeLog.some((c) => c.cmd === "local_generate")).toBe(false);
   });
 });

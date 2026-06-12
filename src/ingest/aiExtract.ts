@@ -5,8 +5,8 @@
 
 import { normAccountType, normAssetClass, normRegion, normTaxTreatment, usTaxFromName } from "../domain/classify";
 import type { ImportDraft } from "../domain/types";
-import { callClaude, EXTRACT_MODEL, type Block } from "../claude/transport";
-import { generateForExtraction } from "../ai/engine";
+import { callClaude, EXTRACT_MODEL_CHEAP, EXTRACT_MODEL_STRONG, type Block } from "../claude/transport";
+import { engineFor, generateForExtraction } from "../ai/engine";
 import { normDate } from "./rows";
 
 const PROMPT = `You extract holdings from an Indian (or foreign) brokerage / mutual-fund / PMS / bank / insurance statement, or a screenshot of one.
@@ -164,25 +164,65 @@ export function focus(text: string): string {
   return hot.slice(0, 160).join("\n");
 }
 
-// Build the message content for a text statement or an image, and call Claude. Returns one
-// draft per account the model finds (usually one; more for a consolidated multi-account export).
+// A pass is "weak" when it found NO holdings in any account — either the cheap model fumbled
+// a messy statement, or the document genuinely has none. Either way it's the signal to spend
+// a stronger model before giving up. A partial multi-account parse (some accounts populated)
+// is NOT weak — we keep it.
+function weak(drafts: ImportDraft[]): boolean {
+  return drafts.every((d) => d.holdings.length === 0);
+}
+
+// One text-extraction attempt with a given model. May throw if the output has no parseable
+// JSON object (the caller treats that the same as a weak pass and escalates).
+async function runText(statement: string, source: string, model: string): Promise<ImportDraft[]> {
+  const out = await generateForExtraction(PROMPT, statement, model);
+  return validateDrafts(extractJson(out), source);
+}
+
+// A text statement → one draft per account the model finds (usually one; more for a
+// consolidated multi-account export). Routed by the user's per-task engine choice
+// (Settings → AI engines). On the Claude path the cost policy is cheapest-first: try Haiku,
+// and escalate to Sonnet only when the cheap pass comes back empty or unparseable. The local
+// on-device engine has a single model, so it runs exactly one pass.
 export async function extractFromText(text: string, source: string): Promise<ImportDraft[]> {
   const focused = focus(text);
   const payload =
     text.length > 6000 && focused
       ? "KEY LINES from the statement (amounts & headers; boilerplate omitted):\n" + focused
       : text;
-  // Routed by the user's per-task engine choice (Settings → AI engines): Claude, or the
-  // embedded on-device model with grammar-constrained JSON. Same prompt either way.
-  const out = await generateForExtraction(`${PROMPT}\n\n--- STATEMENT TEXT ---\n${payload.slice(0, 24000)}`);
-  return validateDrafts(extractJson(out), source);
+  const statement = payload.slice(0, 24000);
+
+  if (engineFor("extraction") === "local") {
+    return runText(statement, source, EXTRACT_MODEL_CHEAP); // model arg ignored by the local path
+  }
+  let first: ImportDraft[] | null = null;
+  try {
+    first = await runText(statement, source, EXTRACT_MODEL_CHEAP);
+  } catch {
+    first = null; // cheap model produced no valid JSON — treat as a weak pass
+  }
+  if (first && !weak(first)) return first;
+  // Empty or unparseable cheap pass — spend the stronger model exactly once.
+  return runText(statement, source, EXTRACT_MODEL_STRONG);
 }
 
+// Image extraction is always Claude (the on-device model is text-only). PROMPT is sent as its
+// own cache_control block; same Haiku → Sonnet escalation as the text path.
 export async function extractFromImage(mediaType: string, base64: string, source: string): Promise<ImportDraft[]> {
-  const content: Block[] = [
-    { type: "text", text: PROMPT },
-    { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-  ];
-  const out = await callClaude({ model: EXTRACT_MODEL, max_tokens: 4000, messages: [{ role: "user", content }] });
-  return validateDrafts(extractJson(out), source);
+  const run = async (model: string): Promise<ImportDraft[]> => {
+    const content: Block[] = [
+      { type: "text", text: PROMPT, cache_control: { type: "ephemeral" } },
+      { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+    ];
+    const out = await callClaude({ model, max_tokens: 4000, messages: [{ role: "user", content }] });
+    return validateDrafts(extractJson(out), source);
+  };
+  let first: ImportDraft[] | null = null;
+  try {
+    first = await run(EXTRACT_MODEL_CHEAP);
+  } catch {
+    first = null;
+  }
+  if (first && !weak(first)) return first;
+  return run(EXTRACT_MODEL_STRONG);
 }

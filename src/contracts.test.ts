@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { buildBrief } from "./domain/brief";
 import { demoPortfolio } from "./demo";
 import { visiblePortfolio, DEFAULT_RELAY_URL } from "./domain/types";
-import { ANALYSIS_MODELS, EXTRACT_MODEL } from "./claude/transport";
+import { ANALYSIS_MODELS, EXTRACT_MODEL_CHEAP, EXTRACT_MODEL_STRONG } from "./claude/transport";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
@@ -116,7 +116,8 @@ describe("model and version consistency", () => {
     const relay = read("relay/src/worker.ts");
     const allowed = new Set([...relay.matchAll(/"(claude-[a-z0-9.-]+)"/g)].map((m) => m[1]));
     for (const m of ANALYSIS_MODELS) expect(allowed.has(m.id), `relay missing ${m.id}`).toBe(true);
-    expect(allowed.has(EXTRACT_MODEL), `relay missing extract model ${EXTRACT_MODEL}`).toBe(true);
+    for (const id of [EXTRACT_MODEL_CHEAP, EXTRACT_MODEL_STRONG])
+      expect(allowed.has(id), `relay missing extract model ${id}`).toBe(true);
   });
 
   it("package.json, tauri.conf.json and Cargo.toml agree on the version", () => {

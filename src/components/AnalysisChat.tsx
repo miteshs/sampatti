@@ -10,8 +10,13 @@ import { Markdown } from "./Markdown";
 
 interface Turn { role: "assistant" | "user"; text: string }
 
+// Areas the client can ask the review to emphasize (#2). These map to the analyst persona's
+// own sections, so a pick deepens that section rather than asking for something off-script.
+const FOCUS_OPTIONS = ["Tax", "Concentration", "Diversification", "Liquidity", "Retirement & income"];
+
 export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const portfolio = useStore((s) => s.portfolio);
+  const updateSettings = useStore((s) => s.updateSettings);
   const brief = useMemo(() => buildBrief(visiblePortfolio(portfolio)), [portfolio]);
   // What actually leaves the device: converted to the region's currency at the model edge.
   const outbound = useMemo(() => briefForModel(visiblePortfolio(portfolio)), [portfolio]);
@@ -21,10 +26,21 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const [question, setQuestion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showBrief, setShowBrief] = useState(false);
+  // Client tailoring: free-text goals/context (#1, persisted) + focus areas (#2, per-run).
+  const [context, setContext] = useState(portfolio.settings.analysisContext ?? "");
+  const [focus, setFocus] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const system = systemPrompt(portfolio.settings.country);
   const ready = analysisReady(portfolio.settings);
   const engine = engineFor("analysis");
+
+  const tailoring = { context: context.trim() || undefined, focus: focus.length ? focus : undefined };
+  // Persist the context only when it actually changed — keystroke writes would thrash the save.
+  const persistContext = () => {
+    if ((portfolio.settings.analysisContext ?? "") !== context) updateSettings({ analysisContext: context });
+  };
+  const toggleFocus = (f: string) =>
+    setFocus((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
 
   const run = async (messages: Msg[], seedTurns: Turn[]) => {
     setError(null);
@@ -49,14 +65,14 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
     }
   };
 
-  const start = () => { setStarted(true); void run(initialMessages(outbound), []); };
+  const start = () => { persistContext(); setStarted(true); void run(initialMessages(outbound, tailoring), []); };
 
   const askText = (q: string) => {
     if (!q || streaming) return;
     setQuestion("");
     const history: Msg[] = turns.map((t) => ({ role: t.role, content: t.text }));
     const seed: Turn[] = [...turns, { role: "user", text: q }];
-    void run(chatMessages(outbound, history, q), seed);
+    void run(chatMessages(outbound, history, q, tailoring), seed);
   };
   const ask = () => askText(question.trim());
 
@@ -109,6 +125,40 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
             </p>
             {ready ? (
               <>
+                <div style={{ maxWidth: 520, margin: "0 auto 1.25rem", textAlign: "left" }}>
+                  <label htmlFor="analysis-context" className="muted" style={{ fontSize: "0.8rem", fontWeight: 600, display: "block", marginBottom: "0.35rem" }}>
+                    Your goals &amp; context <span style={{ fontWeight: 400 }}>— optional, makes the review specific to you</span>
+                  </label>
+                  <textarea
+                    id="analysis-context"
+                    value={context}
+                    onChange={(e) => setContext(e.target.value)}
+                    onBlur={persistContext}
+                    rows={3}
+                    placeholder={profileFor(portfolio.settings).region === "US"
+                      ? "e.g. I'm 45, hoping to retire at 60, two kids' college in 8–10 years, comfortable with moderate risk."
+                      : "e.g. I'm 45, want to retire by 58, child's higher education in ~10 years, prefer low risk on near-term money."}
+                    style={{ width: "100%", resize: "vertical", font: "inherit", padding: "0.55rem 0.65rem", borderRadius: 8, border: "1px solid var(--line-2)", background: "#fff", boxSizing: "border-box" }}
+                  />
+                  <div className="muted" style={{ fontSize: "0.75rem", fontWeight: 600, margin: "0.7rem 0 0.35rem" }}>Focus the review on <span style={{ fontWeight: 400 }}>— optional</span></div>
+                  <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                    {FOCUS_OPTIONS.map((f) => {
+                      const on = focus.includes(f);
+                      return (
+                        <button
+                          key={f}
+                          type="button"
+                          className="qchip"
+                          aria-pressed={on}
+                          onClick={() => toggleFocus(f)}
+                          style={on ? { background: "var(--primary)", color: "#fff", borderColor: "var(--primary)" } : {}}
+                        >
+                          {on ? "✓ " : ""}{f}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.5rem" }} onClick={start}>
                   ✨ Analyze my portfolio
                 </button>

@@ -87,8 +87,34 @@ function briefContent(brief: Brief, trailer: string): Block[] {
   ];
 }
 
+// Optional client-supplied tailoring. `context` is free-text the client wrote about their
+// situation/goals; `focus` is the areas they want emphasized. Both ride in the per-call
+// TRAILER (the uncached block) so they never alter the cached brief or the system guardrails —
+// the model is still bound to ground every claim in the brief and keep the educational caveat.
+export interface AnalysisTailoring {
+  context?: string;
+  focus?: string[];
+}
+
+function contextBlock(context?: string): string {
+  const ctx = context?.trim();
+  if (!ctx) return "";
+  return (
+    "\n\nCLIENT CONTEXT (facts the client gave about their situation and goals — use these " +
+    "throughout, and state any remaining assumptions rather than inventing):\n" + ctx
+  );
+}
+
+function focusBlock(focus?: string[]): string {
+  if (!focus?.length) return "";
+  return (
+    "\n\nThe client especially wants you to focus on: " + focus.join(", ") +
+    ". Give these the most depth, while still covering the other essentials."
+  );
+}
+
 // The opening request that produces the structured written analysis.
-export function initialMessages(brief: Brief): Msg[] {
+export function initialMessages(brief: Brief, tailoring?: AnalysisTailoring): Msg[] {
   return [
     {
       role: "user",
@@ -96,15 +122,21 @@ export function initialMessages(brief: Brief): Msg[] {
         "Write the full portfolio analysis now. Use clear markdown headings for each of " +
         "the areas in your brief (Concentration, Diversification, Tax, Liquidity, Retirement " +
         "& Income), keep it tight and specific to these numbers, and finish with a numbered " +
-        "'Priority actions' list."),
+        "'Priority actions' list." + contextBlock(tailoring?.context) + focusBlock(tailoring?.focus)),
     },
   ];
 }
 
 // A follow-up turn: keep the brief in context (first message), then prior turns + the new q.
-export function chatMessages(brief: Brief, history: Msg[], question: string): Msg[] {
+// The client context (if any) rides along so follow-ups stay grounded in their goals; the
+// focus list is an opening-analysis concern, so it isn't repeated here.
+export function chatMessages(brief: Brief, history: Msg[], question: string, tailoring?: AnalysisTailoring): Msg[] {
   return [
-    { role: "user", content: briefContent(brief, "I'll ask follow-up questions about this portfolio. Acknowledge briefly.") },
+    {
+      role: "user",
+      content: briefContent(brief,
+        "I'll ask follow-up questions about this portfolio. Acknowledge briefly." + contextBlock(tailoring?.context)),
+    },
     { role: "assistant", content: "Understood — I have your portfolio brief in front of me. Ask away." },
     ...history,
     { role: "user", content: question },
