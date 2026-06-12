@@ -17,8 +17,8 @@
 #      quarantine flag so it still launches, but the proper fix is an Apple Developer ID
 #      signature + notarization (then the postflight can be removed).
 cask "sampatti" do
-  version "0.4.0"
-  sha256 "5276820ebfafaaa0b796e7532ca716b93ab25bec51479b5dcf32caf2f86ec4a8" # set per-release by scripts/release.sh
+  version "0.5.0"
+  sha256 "723d6d8ee838769b1e988d468be2e8681f623704439757a2e7d6567152f8e174" # set per-release by scripts/release.sh
 
   url "https://github.com/miteshs/sampatti-releases/releases/download/v#{version}/Sampatti_#{version}_aarch64.dmg"
   name "Sampatti"
