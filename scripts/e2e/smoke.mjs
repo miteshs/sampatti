@@ -201,8 +201,8 @@ try {
     await auditA11y(page, "Performance");
   });
 
-  await step("Manage and AI Analysis render their key affordances", async () => {
-    await clickText(page, "Manage");
+  await step("Holdings (Manage + Add) and AI Analysis render their key affordances", async () => {
+    await clickText(page, "Holdings");
     await waitFor(page, () => bodyHas(page, "Edit, include"), "manage header");
     await clickText(page, "AI Analysis");
     await waitFor(page, () => bodyHas(page, "Analyze my portfolio"), "analyze CTA");
@@ -281,8 +281,8 @@ try {
   });
 
   await step("US mode: demo figures agree across hero, loans line and brief (unit rule)", async () => {
-    // Post-erase we're back on the welcome — run the US first-run experience for real.
-    await clickText(page, "Add data");
+    // Post-erase: open Holdings — with no data it shows the welcome (run the US first-run for real).
+    await clickText(page, "Holdings");
     await waitFor(page, () => bodyHas(page, "Where do you manage your money?"), "welcome after erase");
     await clickText(page, "United States");
     await sleep(300);
@@ -302,8 +302,8 @@ try {
     if (!(await bodyHas(page, "$2.28M"))) throw new Error("facts panel disagrees with the hero");
     if (!(await bodyHas(page, "A top US financial analyst"))) throw new Error("analyst pitch still Indian");
     if (await bodyHas(page, "SEBI")) throw new Error("SEBI caveat leaked into US mode");
-    // The user-reported repro: with US data loaded, Add data must offer the US demo.
-    await clickText(page, "Add data");
+    // The user-reported repro: with US data loaded, Holdings → Add more must offer the US demo.
+    await clickText(page, "Holdings");
     await waitFor(page, () => bodyHas(page, "Load demo portfolio ($2.3M)"), "US demo re-load button");
     if (await bodyHas(page, "₹14 Cr")) throw new Error("India demo label leaked into US mode");
   });

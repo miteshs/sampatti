@@ -78,6 +78,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
   }, [extractionEngine]);
 
   const hasData = portfolio.holdings.length > 0 || portfolio.accounts.length > 0;
+  const [showHow, setShowHow] = useState(false); // "How it works" modal (when data already exists)
 
   // The folder picker is a plain file input with the (non-standard) webkitdirectory
   // attribute — supported by the desktop webview and browsers, no extra permissions.
@@ -227,11 +228,19 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
   return (
     <div className="grid" style={{ gap: "1.25rem" }}>
       {!hasData && <Welcome onDemo={loadDemo} onImport={() => folderRef.current?.click()} />}
-      <GettingStarted />
+      {!hasData && <GettingStarted />}
 
       {/* Demo + import */}
       <div className="card">
-        <div className="eyebrow">{hasData ? "Add more" : "Get started"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div className="eyebrow" style={{ flex: 1 }}>{hasData ? "Add more" : "Get started"}</div>
+          {hasData && (
+            <button onClick={() => setShowHow(true)}
+              style={{ background: "none", border: "none", padding: 0, color: "var(--primary)", cursor: "pointer", font: "inherit", fontSize: "0.8rem" }}>
+              📖 How it works
+            </button>
+          )}
+        </div>
         <h2 style={{ fontSize: "1.3rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
           {hasData && <button className="btn" onClick={loadDemo}>▶ Load demo portfolio ({currentProfile().region === "US" ? "$2.3M" : "₹14 Cr"})</button>}
@@ -434,6 +443,18 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
       }} />
 
       <IncomeForm onAdd={addIncome} />
+
+      {showHow && (
+        <div className="modal-backdrop" onClick={() => setShowHow(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="How it works" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
+              <h3 style={{ fontSize: "1.15rem", margin: 0 }}>How it works, step by step</h3>
+              <button className="btn btn-ghost" aria-label="Close" onClick={() => setShowHow(false)}>✕</button>
+            </div>
+            <GettingStarted expanded />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -485,7 +506,7 @@ function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => voi
 // this is the in-app version, self-contained because the webview doesn't open external links.
 // Plain words on purpose: the reader may have never used anything beyond WhatsApp and
 // net banking. Collapsed by default — the Welcome card above carries the first ask.
-function GettingStarted() {
+function GettingStarted({ expanded = false }: { expanded?: boolean }) {
   const [open, setOpen] = useState(false);
   const Step = ({ n, title, children }: { n: number; title: string; children: React.ReactNode }) => (
     <div style={{ display: "flex", gap: "0.7rem", alignItems: "baseline" }}>
@@ -500,13 +521,8 @@ function GettingStarted() {
       </div>
     </div>
   );
-  return (
-    <details className="card" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-        <span className="eyebrow" style={{ flex: 1 }}>📖 How it works, step by step</span>
-        <span className="muted" style={{ fontSize: "0.78rem" }}>{open ? "hide" : "show"}</span>
-      </summary>
-      <div className="grid" style={{ gap: "0.65rem", marginTop: "0.9rem" }}>
+  const steps = (
+    <div className="grid" style={{ gap: "0.65rem", marginTop: expanded ? 0 : "0.9rem" }}>
         <Step n={1} title="Collect a statement from each place your money lives.">
           {currentProfile().region === "US" ? (
             <><strong>Fastest start:</strong> download the positions CSV from each brokerage
@@ -527,15 +543,15 @@ function GettingStarted() {
           {currentProfile().region === "US"
             ? "Your house, 401(k)/IRA balances, CDs, insurance — and any loans, so the total is honest."
             : "Your house, PF, FDs, insurance, gold — and any loans, so the total is honest."}{" "}
-          There's a simple form below; everything can be edited later on the Manage tab.
+          There's a simple form below; everything can be edited later, right here on Holdings.
         </Step>
         <Step n={4} title="Bring values up to today.">
-          Manage → Refresh live prices. The app also quietly records your net worth every day
+          Use “Refresh live prices” here on Holdings. The app also quietly records your net worth every day
           you open it, so a personal history chart builds itself.
         </Step>
-        <Step n={5} title="Connect Claude for the AI review (Privacy tab).">
-          Paste your Claude key there once — the screen shows where to get it. It's stored in
-          the {keyStoreName()} on this computer and used only when you ask for an analysis.
+        <Step n={5} title="Connect Claude for the AI review (Settings tab).">
+          During alpha, paste the access code you were given (Settings → AI analysis), or use your
+          own Anthropic key under developer mode — stored in the {keyStoreName()} on this computer.
         </Step>
         <Step n={6} title="Ask anything, in your own words.">
           Run the analysis, then ask questions like “am I too dependent on one stock?” —
@@ -543,6 +559,15 @@ function GettingStarted() {
           You can preview exactly what goes before anything is sent.
         </Step>
       </div>
+  );
+  if (expanded) return steps;
+  return (
+    <details className="card" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <span className="eyebrow" style={{ flex: 1 }}>📖 How it works, step by step</span>
+        <span className="muted" style={{ fontSize: "0.78rem" }}>{open ? "hide" : "show"}</span>
+      </summary>
+      {steps}
     </details>
   );
 }
