@@ -13,7 +13,7 @@ import { flowsInWindow, incomeOverWindow } from "../domain/flows";
 import { fmtMoney } from "../regions/profile";
 import { TrendChart } from "./TrendChart";
 
-const GREEN = "#137a52", RED = "#c22f4c"; // text-grade (≥4.5:1)
+const GREEN = "var(--up-ink)", RED = "var(--down-ink)"; // theme tokens (light/dark, text-grade ≥4.5:1)
 const signedInr = (n: number) => `${n >= 0 ? "+" : "−"}${fmtMoney(Math.abs(n))}`;
 
 export function NetWorthTrend() {

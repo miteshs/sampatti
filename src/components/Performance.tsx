@@ -11,7 +11,7 @@ import { currentProfile, fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { AccountStack } from "./AccountStack";
 
-const GREEN = "#137a52", RED = "#c22f4c"; // text-grade (≥4.5:1)
+const GREEN = "var(--up-ink)", RED = "var(--down-ink)"; // theme tokens (light/dark, text-grade ≥4.5:1)
 const signColor = (n: number) => (n >= 0 ? GREEN : RED);
 const signed = (n: number) => `${n >= 0 ? "+" : "−"}${fmtMoney(Math.abs(n))}`;
 const signedPct = (n: number) => `${n >= 0 ? "+" : ""}${n}%`;

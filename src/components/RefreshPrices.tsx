@@ -96,7 +96,7 @@ export function RefreshPrices() {
             <>
               <div style={{ display: "flex", alignItems: "baseline", gap: "0.8rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
                 <span style={{ fontWeight: 700 }}>{revals.length} holding{revals.length === 1 ? "" : "s"} will update</span>
-                <span style={{ fontWeight: 700, color: deltaBase >= 0 ? "#1a9e6b" : "#d6455d" }}>
+                <span style={{ fontWeight: 700, color: deltaBase >= 0 ? "var(--up-ink)" : "var(--down-ink)" }}>
                   net {deltaBase >= 0 ? "+" : "−"}{fmtMoney(Math.abs(deltaBase))}
                 </span>
               </div>
@@ -113,7 +113,7 @@ export function RefreshPrices() {
                         <tr key={r.holdingId}>
                           <td>{h?.name ?? "—"}</td>
                           <td className="num muted">{f(r.oldValue)}</td>
-                          <td className="num" style={{ fontWeight: 600, color: upd ? "#1a9e6b" : "#d6455d" }}>{f(r.newValue)}</td>
+                          <td className="num" style={{ fontWeight: 600, color: upd ? "var(--up-ink)" : "var(--down-ink)" }}>{f(r.newValue)}</td>
                         </tr>
                       );
                     })}

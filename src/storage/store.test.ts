@@ -282,6 +282,23 @@ describe("appearance preference survives data actions", () => {
   });
 });
 
+describe("save-compat — optional settings added later default safely on an old file", () => {
+  it("a pre-theme/insights save loads with dark OFF (light) and insights OFF", async () => {
+    const legacy = emptyPortfolio();
+    delete legacy.settings.theme; // saved before opt-in dark mode existed
+    delete legacy.settings.insights; // saved before optional insights existed
+    localStorage.setItem("sampatti.portfolio", JSON.stringify(legacy));
+    useStore.setState({ loaded: false });
+
+    await useStore.getState().load();
+
+    const s = useStore.getState().portfolio.settings;
+    expect(s.theme ?? "light").toBe("light"); // dark must never arrive 'on' from an old file
+    expect(!!s.insights?.healthScore).toBe(false); // insights stay opt-in across an upgrade
+    expect(!!s.insights?.goals).toBe(false);
+  });
+});
+
 describe("store persistence across a restart", () => {
   it("saves committed data to disk and reloads it on next boot", async () => {
     const id = useStore.getState().addAccount({

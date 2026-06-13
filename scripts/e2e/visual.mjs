@@ -133,6 +133,15 @@ try {
     await shoot(name);
   }
 
+  // Dark-mode baseline: opt into dark (Settings → Appearance), capture the Overview. Catches
+  // dark-palette / token regressions the light baselines can't see. (Cleared before US-mode.)
+  await clickText(page, "Settings");
+  await sleep(300);
+  await clickText(page, "Dark");
+  await sleep(300);
+  await clickText(page, "Overview");
+  await shoot("overview-dark");
+
   // US-mode Overview: same frozen clock, fresh store → region chip → US demo. Catches
   // gross $-formatting/unit breakage that India-only baselines can't (the $24K-hero class).
   await page.evaluate(() => localStorage.clear());
