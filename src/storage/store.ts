@@ -324,6 +324,9 @@ export const useStore = create<State>((set, get) => ({
   updateSettings: (patch) => commit(set, get, (p) => Object.assign(p.settings, patch)),
 
   replaceAll: (p) => {
+    // Appearance is a device/UI preference, not portfolio data — carry the current choice across
+    // a wholesale replace (load demo, import) so dark mode isn't reset to the incoming default.
+    p.settings.theme = get().portfolio.settings.theme ?? p.settings.theme;
     ensureBasis(p);
     recordSnapshot(p);
     persist(p);
@@ -331,9 +334,12 @@ export const useStore = create<State>((set, get) => ({
   },
 
   wipe: async () => {
+    const theme = get().portfolio.settings.theme; // keep the appearance choice through an erase
     await clearPortfolioRaw();
     clearLocalCaches(); // also drop the net-worth price-history cache + any other local caches
-    set(() => ({ portfolio: emptyPortfolio() }));
+    const fresh = emptyPortfolio();
+    fresh.settings.theme = theme;
+    set(() => ({ portfolio: fresh }));
   },
 }));
 
