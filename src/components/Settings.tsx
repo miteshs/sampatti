@@ -6,7 +6,7 @@
 //   5. Developer mode — experimental toggle… which reveals
 //   6. AI engines     — the on-device engine (only when developer mode is on)
 // The Privacy tab stays a pure explainer + data controls — the two are deliberately not mixed.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
 import { DEFAULT_RELAY_URL } from "../domain/types";
 import { clearByoKey, hasByoKey, keyStoreName, setByoKey, isTauri } from "../platform";
@@ -20,7 +20,8 @@ import { PrivacyExplainer } from "./Privacy";
 const H3 = { fontSize: "1.05rem", marginBottom: "0.3rem" } as const;
 
 export function Settings() {
-  const { portfolio, updateSettings, wipe } = useStore();
+  const { portfolio, updateSettings, wipe, importBackup } = useStore();
+  const backupRef = useRef<HTMLInputElement>(null);
   const s = portfolio.settings;
   const [keyInput, setKeyInput] = useState("");
   const [keySet, setKeySet] = useState(false);
@@ -35,6 +36,15 @@ export function Settings() {
       if (dest) setExportNote(`Saved to ${dest}`);
     } catch (e) {
       setExportNote(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+  const doImportBackup = async (file?: File) => {
+    if (!file) return;
+    try {
+      importBackup(await file.text());
+      setExportNote(`Restored backup · ${file.name}`);
+    } catch (e) {
+      setExportNote(`Import failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
   const [fxBusy, setFxBusy] = useState(false);
@@ -322,6 +332,9 @@ export function Settings() {
         </p>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <button className="btn" onClick={() => void doExport()}>⬇ Export everything (JSON)</button>
+          <button className="btn" onClick={() => backupRef.current?.click()}>⬆ Import a backup (.json)</button>
+          <input ref={backupRef} type="file" hidden accept=".json,application/json"
+            onChange={(e) => { void doImportBackup(e.target.files?.[0]); e.target.value = ""; }} />
           {confirmWipe ? (
             <>
               <button className="btn btn-danger" onClick={() => { void wipe(); setConfirmWipe(false); }}>Yes, erase all data</button>

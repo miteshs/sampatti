@@ -72,6 +72,7 @@ interface State {
   removeIncome: (id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   replaceAll: (p: Portfolio) => void;
+  importBackup: (text: string) => void; // restore a full exported portfolio (.json), incl. history
   wipe: () => Promise<void>;
 }
 
@@ -168,6 +169,25 @@ function pushEdit(p: Portfolio, entity: "account" | "holding", entityId: string,
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
+// Bring a parsed portfolio (from disk OR an imported backup) up to the current shape:
+// forward-compatible setting defaults, deep-merge of nested settings, array backfills, and the
+// current version stamp. Mutates and returns the same object.
+function migrate(p: Portfolio): Portfolio {
+  const defaults = emptyPortfolio().settings;
+  p.settings = { ...defaults, ...p.settings };
+  // A portfolio saved before a relay was configured stores relayUrl:"" which would otherwise
+  // win the merge above and leave relay mode unconfigured on upgrade.
+  if (!p.settings.relayUrl) p.settings.relayUrl = defaults.relayUrl;
+  // Nested settings added later deep-merge (the shallow spread only covers the top level).
+  p.settings.ai = { ...defaults.ai, ...(p.settings.ai ?? {}) };
+  p.settings.insights = { ...defaults.insights, ...(p.settings.insights ?? {}) };
+  for (const k of ["accounts", "holdings", "income", "edits", "snapshots", "flows"] as const) {
+    if (!Array.isArray(p[k])) (p as unknown as Record<string, unknown[]>)[k] = [];
+  }
+  p.version = CURRENT_VERSION;
+  return p;
+}
+
 function persist(p: Portfolio) {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -195,20 +215,7 @@ export const useStore = create<State>((set, get) => ({
     try {
       const raw = await readPortfolioRaw();
       if (raw) {
-        const p = JSON.parse(raw) as Portfolio;
-        // Forward-compatible defaults for any setting added after the file was written.
-        const defaults = emptyPortfolio().settings;
-        p.settings = { ...defaults, ...p.settings };
-        // Backfill an empty relay URL with the current default. A portfolio saved before
-        // a relay was configured stores relayUrl:"" which would otherwise win the merge
-        // above and leave relay mode unconfigured on upgrade.
-        if (!p.settings.relayUrl) p.settings.relayUrl = defaults.relayUrl;
-        // Nested settings added later deep-merge (the shallow spread above only covers top level).
-        p.settings.ai = { ...defaults.ai, ...(p.settings.ai ?? {}) };
-        if (!Array.isArray(p.edits)) p.edits = []; // added after some files were written
-        if (!Array.isArray(p.snapshots)) p.snapshots = []; // ditto
-        if (!Array.isArray(p.flows)) p.flows = []; // ditto
-        p.version = CURRENT_VERSION;
+        const p = migrate(JSON.parse(raw) as Portfolio);
         // Migrate basis-less holdings + record today's snapshot (opening the app daily is what
         // builds the recorded history) — persist only when something actually changed.
         const migrated = ensureBasis(p);
@@ -331,6 +338,17 @@ export const useStore = create<State>((set, get) => ({
     recordSnapshot(p);
     persist(p);
     set(() => ({ portfolio: p, loaded: true }));
+  },
+
+  // Restore a full exported portfolio (.json) — accounts, holdings, income, AND the recorded
+  // snapshots/flows, so the trend history comes back too. Migrated through the same path as a
+  // disk load; replaceAll keeps the device's current theme.
+  importBackup: (text) => {
+    const parsed = JSON.parse(text) as Partial<Portfolio> | null;
+    const looksValid = !!parsed && typeof parsed === "object"
+      && Array.isArray(parsed.accounts) && Array.isArray(parsed.holdings) && typeof parsed.settings === "object";
+    if (!looksValid) throw new Error("That doesn't look like a Sampatti backup (use a .json file exported from Sampatti).");
+    get().replaceAll(migrate(parsed as Portfolio));
   },
 
   wipe: async () => {

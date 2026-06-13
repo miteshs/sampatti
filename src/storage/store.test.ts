@@ -299,6 +299,32 @@ describe("save-compat — optional settings added later default safely on an old
   });
 });
 
+describe("importBackup — restore a full exported portfolio", () => {
+  it("restores accounts, holdings AND recorded history; rejects junk", () => {
+    const src = emptyPortfolio();
+    src.accounts.push({
+      id: "a", name: "X", institution: "Y", accountType: "demat",
+      taxTreatment: "taxable", region: "India", currency: "INR",
+    });
+    src.holdings.push({ id: "h", accountId: "a", name: "Stock", assetClass: "indian_equity", marketValue: 100000, currency: "INR" });
+    src.snapshots.push({ date: "2026-01-01", accounts: { a: 100000 } }); // recorded history
+    const json = JSON.stringify(src);
+
+    useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
+    useStore.getState().importBackup(json);
+
+    const r = useStore.getState().portfolio;
+    expect(r.accounts).toHaveLength(1);
+    expect(r.holdings).toHaveLength(1);
+    expect(r.snapshots.some((s) => s.date === "2026-01-01" && s.accounts.a === 100000)).toBe(true);
+
+    // Not a Sampatti export → rejected, store untouched.
+    expect(() => useStore.getState().importBackup("{}")).toThrow(/Sampatti backup/);
+    expect(() => useStore.getState().importBackup("definitely not json")).toThrow();
+    expect(useStore.getState().portfolio.accounts).toHaveLength(1); // still the restored data
+  });
+});
+
 describe("store persistence across a restart", () => {
   it("saves committed data to disk and reloads it on next boot", async () => {
     const id = useStore.getState().addAccount({

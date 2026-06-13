@@ -16,6 +16,9 @@ src-tauri/gen/
 # locally, never committed). The README is kept so the folder + instructions exist.
 samples/*
 !samples/README.md
+# Synthetic demo backups/statements ARE committed (so the demo is reproducible from a file).
+!samples/demo-statements/
+!samples/demo-statements/**
 
 # Scratch dir for real exports under active debugging — never committed.
 testfiles/
