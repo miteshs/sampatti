@@ -54,6 +54,14 @@ const clickText = (page, text) =>
     return true;
   }, text);
 const store = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("sampatti.portfolio") ?? "null"));
+// Click a button by its exact aria-label (the Insights toggles share "On"/"Off" text, so
+// plain clickText is ambiguous; the labels are unique).
+const clickAria = (page, label) =>
+  page.evaluate((label) => {
+    const el = [...document.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === label);
+    if (el) el.click();
+    return !!el;
+  }, label);
 
 // Find an engine chip on the Privacy "AI engines" card by its row label + chip label.
 // Rows are <div><span>{row label}</span><button/><button/></div>; two rows share chip text,
@@ -292,6 +300,35 @@ try {
     await clickText(page, "Add data");
     await waitFor(page, () => bodyHas(page, "Load demo portfolio ($2.3M)"), "US demo re-load button");
     if (await bodyHas(page, "₹14 Cr")) throw new Error("India demo label leaked into US mode");
+  });
+
+  await step("optional insights render; dark mode stays accessible", async () => {
+    // Both insight features are opt-in (off by default) — turn them on and verify they render.
+    await clickText(page, "Settings");
+    await waitFor(page, () => bodyHas(page, "Insights"), "insights settings");
+    if (!(await clickAria(page, "Portfolio health score"))) throw new Error("health-score toggle not found");
+    await sleep(150);
+    if (!(await clickAria(page, "Goals & retirement"))) throw new Error("goals toggle not found");
+    await sleep(300);
+    await clickText(page, "Overview");
+    await waitFor(page, () => bodyHas(page, "Portfolio health"), "health card");
+    if (!(await bodyHas(page, "/ 100"))) throw new Error("health score figure missing");
+    await waitFor(page, () => bodyHas(page, "Are you on track?"), "retirement outlook card");
+    if (!(await bodyHas(page, "your corpus could reach"))) throw new Error("retirement projection text missing");
+    await auditA11y(page, "Overview-insights");
+
+    // Opt-in dark mode — enable it and re-audit (axe otherwise only ever sees the light theme).
+    await clickText(page, "Settings");
+    await waitFor(page, () => bodyHas(page, "Appearance"), "appearance control");
+    await clickText(page, "Dark");
+    await sleep(250);
+    if (!(await page.evaluate(() => document.documentElement.dataset.theme === "dark"))) {
+      throw new Error("dark theme not applied to <html data-theme>");
+    }
+    await auditA11y(page, "Settings-dark");
+    await clickText(page, "Overview");
+    await sleep(250);
+    await auditA11y(page, "Overview-dark");
   });
 
   await step("accessibility: no serious/critical WCAG A/AA violations", async () => {

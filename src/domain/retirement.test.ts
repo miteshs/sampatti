@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import fc from "fast-check";
 import { projectRetirement } from "./retirement";
 
 // A baseline mid-career case we can reason about by hand.
@@ -54,5 +55,43 @@ describe("projectRetirement", () => {
     const p = projectRetirement({ ...base, currentAge: 60, retireAge: 60, inflationPct: 0 });
     // desired ₹1L/mo → ₹12L/yr → /4% = ₹3 Cr required, no inflation, no growth.
     expect(p.requiredCorpus).toBeCloseTo(3_00_00_000, -3);
+  });
+});
+
+describe("projectRetirement — invariants (fuzzed, seeded)", () => {
+  const arb = fc.record({
+    currentAge: fc.integer({ min: 18, max: 80 }),
+    retireAge: fc.integer({ min: 18, max: 90 }),
+    currentCorpus: fc.integer({ min: 0, max: 100_00_00_000 }),
+    monthlyContribution: fc.integer({ min: 0, max: 10_00_000 }),
+    expectedReturnPct: fc.double({ min: 0, max: 20, noNaN: true }),
+    inflationPct: fc.double({ min: 0, max: 15, noNaN: true }),
+    desiredMonthlyIncome: fc.integer({ min: 0, max: 50_00_000 }),
+  });
+
+  it("always produces finite, non-negative figures with years ≥ 0", () => {
+    fc.assert(fc.property(arb, (i) => {
+      const p = projectRetirement(i);
+      expect(Number.isFinite(p.projectedCorpus) && p.projectedCorpus >= 0).toBe(true);
+      expect(Number.isFinite(p.requiredCorpus) && p.requiredCorpus >= 0).toBe(true);
+      expect(p.years).toBeGreaterThanOrEqual(0);
+    }), { seed: 1991 });
+  });
+
+  it("more monthly contribution never lowers the projected corpus", () => {
+    fc.assert(fc.property(arb, fc.integer({ min: 1, max: 5_00_000 }), (i, extra) => {
+      const a = projectRetirement(i);
+      const b = projectRetirement({ ...i, monthlyContribution: i.monthlyContribution + extra });
+      expect(b.projectedCorpus).toBeGreaterThanOrEqual(a.projectedCorpus);
+    }), { seed: 1991 });
+  });
+
+  it("the tone always agrees with the coverage ratio", () => {
+    fc.assert(fc.property(arb, (i) => {
+      const p = projectRetirement(i);
+      if (p.coverageRatio >= 1) expect(p.tone).toBe("good");
+      else if (p.coverageRatio >= 0.8) expect(p.tone).toBe("ok");
+      else expect(p.tone).toBe("watch");
+    }), { seed: 1991 });
   });
 });
