@@ -1,0 +1,3 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Bank & Deposits,HDFC Bank,bank,taxable,India,INR,,HDFC Fixed Deposit,fd_rd,,4000000,,,2026-05-31
+Bank & Deposits,HDFC Bank,bank,taxable,India,INR,,Savings account,cash,,1500000,,,2026-05-31

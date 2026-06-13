@@ -1,0 +1,3 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Vanguard Roth IRA,Vanguard,mutual_fund,us_roth,US,USD,VTI,Vanguard Total Stock Market ETF,index_etf,480,150000,92000,2019-04-01,2026-05-31
+Vanguard Roth IRA,Vanguard,mutual_fund,us_roth,US,USD,VXUS,Vanguard Total International ETF,index_etf,640,45000,41000,2022-07-01,2026-05-31

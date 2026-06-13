@@ -1,0 +1,3 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Real Estate,—,real_estate,taxable,India,INR,,Primary residence — Mumbai,real_estate,,27500000,,,2026-01-01
+Real Estate,—,real_estate,taxable,India,INR,,Rented flat — Pune,real_estate,,11000000,,,2026-01-01

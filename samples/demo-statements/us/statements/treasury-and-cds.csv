@@ -1,0 +1,3 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Treasury & CDs,TreasuryDirect / Marcus,bank,taxable,US,USD,,US Treasury Bills 4.8% 2026,fd_rd,,130000,128000,2026-05-14,2026-06-13
+Treasury & CDs,TreasuryDirect / Marcus,bank,taxable,US,USD,,Marcus CD 5.0% 2026,fd_rd,,50000,50000,2026-05-14,2026-06-13

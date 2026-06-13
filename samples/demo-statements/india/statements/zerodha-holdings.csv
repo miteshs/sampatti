@@ -1,0 +1,12 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Zerodha Demat,Zerodha,demat,taxable,India,INR,RELIANCE,Reliance Industries,indian_equity,2770,3500000,2100000,2019-07-12,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,HDFCBANK,HDFC Bank,indian_equity,3790,2800000,1700000,2020-03-20,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,INFY,Infosys,indian_equity,1850,2200000,900000,2018-11-05,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,TCS,TCS,indian_equity,835,1800000,1200000,2021-01-18,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,ICICIBANK,ICICI Bank,indian_equity,1280,1600000,750000,2020-09-10,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,BAJFINANCE,Bajaj Finance,indian_equity,1720,1500000,1100000,2022-06-01,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,EMBASSY,Embassy Office Parks REIT,reit_invit,3290,1400000,1100000,2021-10-05,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,LT,Larsen & Toubro,indian_equity,310,1200000,650000,2021-08-22,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,ASIANPAINT,Asian Paints,indian_equity,376,1000000,1150000,2023-01-09,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,TITAN,Titan Company,indian_equity,215,900000,400000,2020-05-15,2026-05-31
+Zerodha Demat,Zerodha,demat,taxable,India,INR,TRENT,Trent,indian_equity,220,600000,660000,2025-11-20,2026-05-31

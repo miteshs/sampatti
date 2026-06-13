@@ -1,0 +1,3 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Zerodha (NRI demat),Zerodha,demat,taxable,India,INR,RELIANCE,Reliance Industries,indian_equity,1110,1400000,900000,2019-07-12,2026-05-31
+Zerodha (NRI demat),Zerodha,demat,taxable,India,INR,ITC,ITC,indian_equity,2150,600000,450000,2020-12-01,2026-05-31
