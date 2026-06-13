@@ -41,6 +41,13 @@ export default function App() {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Opt-in dark mode: reflect the saved theme onto <html data-theme>. Default/absent ⇒ light,
+  // so the app only goes dark when the user chooses it (never from the OS preference).
+  const theme = useStore((s) => s.portfolio.settings.theme);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+  }, [theme]);
+
   // Refresh the USD→INR rate once per launch so US holdings are never valued on a stale
   // rate. Silent and best-effort: offline → keep the stored rate; only a public exchange
   // rate is requested, nothing about the user is sent.

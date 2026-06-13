@@ -131,6 +131,10 @@ export interface Settings {
   // risk appetite…). Appended to the analysis request AFTER the cached brief block so it
   // tailors the review without touching the guardrails — and without breaking the brief cache.
   analysisContext?: string;
+  // Visual theme. Opt-in dark mode — applied via a data-theme attribute, NOT
+  // prefers-color-scheme, so the app never switches unless the user chooses it. Optional for
+  // save-file compat; absent/unknown ⇒ light.
+  theme?: "light" | "dark";
   ai: AiRouting; // per-task engine choice (default: claude for both)
   // Experimental features live behind this switch (today: the on-device AI engine).
   // Off = the app behaves as if they don't exist; settings.ai is kept but not honored.
@@ -215,6 +219,7 @@ export function emptyPortfolio(): Portfolio {
       byoKeySet: false,
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku in Settings
       analysisContext: "", // client's own goals/context; tailors the AI review (see Settings type)
+      theme: "light", // opt-in dark mode; light is the default everywhere
       ai: { extraction: "claude", analysis: "claude" }, // per-task engine; local is opt-in
       developerMode: false, // experimental features stay invisible until switched on
     },
