@@ -359,7 +359,12 @@ tr:last-child td { border-bottom: none; }
     padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 1.25rem);
     padding-left: max(var(--gutter), env(safe-area-inset-left));
     padding-right: max(var(--gutter), env(safe-area-inset-right));
+    overflow-x: hidden; /* belt: never let the page scroll sideways on a phone */
   }
+  /* Let grid/flex children shrink below their intrinsic content width so a long figure or
+     label wraps instead of blowing the track out to two cramped, clipped columns. The default
+     min-width:auto on grid/flex items is what made the Overview stat cards render 2-up. */
+  .view :where(.grid, .card, .grid > *) { min-width: 0; }
 
   /* the desktop pill nav lives in the topbar — hide it; the tab bar takes over */
   .topbar .nav { display: none; }
@@ -382,6 +387,7 @@ tr:last-child td { border-bottom: none; }
     border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
   }
   .tabbar button {
+    position: relative;
     appearance: none; border: none; background: transparent; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
     min-height: var(--tabbar-h); padding: 4px 2px; border-radius: 12px;
@@ -389,9 +395,15 @@ tr:last-child td { border-bottom: none; }
     letter-spacing: -0.01em; line-height: 1;
     transition: color 0.15s ease, background 0.15s ease;
   }
-  .tabbar button svg { width: 23px; height: 23px; stroke-width: 1.9; }
+  .tabbar button svg { width: 23px; height: 23px; stroke-width: 1.9; transition: transform 0.15s ease; }
   .tabbar button.active { color: var(--primary); }
-  .tabbar button.active svg { stroke-width: 2.3; }
+  .tabbar button.active svg { stroke-width: 2.3; transform: translateY(-1px); }
+  /* a small indigo pill above the active tab — the one bit of motion the bar gets */
+  .tabbar button.active::after {
+    content: ""; position: absolute; top: 3px; width: 20px; height: 3px;
+    border-radius: 99px; background: var(--primary);
+  }
+  @media (prefers-reduced-motion: reduce) { .tabbar button svg { transition: none; } }
   .tabbar button:active { background: var(--line-2); }
   .tabbar button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 
