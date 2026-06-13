@@ -135,6 +135,19 @@ export interface Settings {
   // prefers-color-scheme, so the app never switches unless the user chooses it. Optional for
   // save-file compat; absent/unknown ⇒ light.
   theme?: "light" | "dark";
+  // Optional, opt-in insight features — OFF by default so the default app stays minimal; each
+  // is toggled on under Settings → Insights. Absent ⇒ all off.
+  insights?: { healthScore?: boolean; goals?: boolean };
+  // Saved assumptions for the (optional) retirement-outlook card, so they're remembered. All
+  // optional — the UI supplies India-typical defaults (10% return, 6% inflation) when absent.
+  retirement?: {
+    currentAge?: number;
+    retireAge?: number;
+    monthlyContribution?: number; // base currency
+    expectedReturnPct?: number;
+    inflationPct?: number;
+    desiredMonthlyIncome?: number; // today's money, base currency
+  };
   ai: AiRouting; // per-task engine choice (default: claude for both)
   // Experimental features live behind this switch (today: the on-device AI engine).
   // Off = the app behaves as if they don't exist; settings.ai is kept but not honored.
@@ -220,6 +233,7 @@ export function emptyPortfolio(): Portfolio {
       analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku in Settings
       analysisContext: "", // client's own goals/context; tailors the AI review (see Settings type)
       theme: "light", // opt-in dark mode; light is the default everywhere
+      insights: {}, // optional insight features are all off until the user opts in
       ai: { extraction: "claude", analysis: "claude" }, // per-task engine; local is opt-in
       developerMode: false, // experimental features stay invisible until switched on
     },
