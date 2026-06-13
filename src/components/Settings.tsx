@@ -29,6 +29,7 @@ export function Settings() {
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [pendingImport, setPendingImport] = useState<{ text: string; name: string } | null>(null);
 
   const doExport = async () => {
     try {
@@ -38,14 +39,22 @@ export function Settings() {
       setExportNote(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
-  const doImportBackup = async (file?: File) => {
+  // Importing a backup REPLACES the current portfolio — confirm first when there's data to lose.
+  const onPickBackup = async (file?: File) => {
     if (!file) return;
+    const text = await file.text();
+    const hasData = portfolio.holdings.length > 0 || portfolio.accounts.length > 0;
+    if (hasData) { setPendingImport({ text, name: file.name }); return; }
+    runImport(text, file.name);
+  };
+  const runImport = (text: string, name: string) => {
     try {
-      importBackup(await file.text());
-      setExportNote(`Restored backup · ${file.name}`);
+      importBackup(text);
+      setExportNote(`Restored backup · ${name}`);
     } catch (e) {
       setExportNote(`Import failed: ${e instanceof Error ? e.message : String(e)}`);
     }
+    setPendingImport(null);
   };
   const [fxBusy, setFxBusy] = useState(false);
   const [fxNote, setFxNote] = useState<string | null>(null);
@@ -334,7 +343,7 @@ export function Settings() {
           <button className="btn" onClick={() => void doExport()}>⬇ Export everything (JSON)</button>
           <button className="btn" onClick={() => backupRef.current?.click()}>⬆ Import a backup (.json)</button>
           <input ref={backupRef} type="file" hidden accept=".json,application/json"
-            onChange={(e) => { void doImportBackup(e.target.files?.[0]); e.target.value = ""; }} />
+            onChange={(e) => { void onPickBackup(e.target.files?.[0]); e.target.value = ""; }} />
           {confirmWipe ? (
             <>
               <button className="btn btn-danger" onClick={() => { void wipe(); setConfirmWipe(false); }}>Yes, erase all data</button>
@@ -344,6 +353,16 @@ export function Settings() {
             <button className="btn btn-danger" onClick={() => setConfirmWipe(true)}>🗑 Erase all data</button>
           )}
         </div>
+        {pendingImport && (
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", marginTop: "0.7rem" }}>
+            <span style={{ fontSize: "0.82rem" }}>
+              Replace your current portfolio with <strong>{pendingImport.name}</strong>? This overwrites
+              what's on this device now (export first if you want to keep it).
+            </span>
+            <button className="btn btn-danger" onClick={() => runImport(pendingImport.text, pendingImport.name)}>Yes, replace</button>
+            <button className="btn btn-ghost" onClick={() => setPendingImport(null)}>Cancel</button>
+          </div>
+        )}
         {exportNote && (
           <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>{exportNote}</p>
         )}
