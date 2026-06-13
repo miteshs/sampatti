@@ -7,6 +7,7 @@ import { fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { bucketSegments } from "../domain/buckets";
 import { concentrationVerdict, equityVerdict, liquidityVerdict, type Verdict } from "../domain/verdicts";
+import { portfolioHealth } from "../domain/health";
 import { snapshotSeries } from "../domain/snapshots";
 import { visiblePortfolio, type Account, type AssetClass, type Holding } from "../domain/types";
 import { Donut } from "./Donut";
@@ -126,6 +127,8 @@ export function Overview() {
   const top10Value = brief.concentration.topHoldings.reduce((s, h) => s + h.value, 0);
   const top10Pct = pct(top10Value, brief.totalAssets);
   const top10Count = brief.concentration.topHoldings.length;
+  // One-glance health read, built from the same three verdicts shown in the cards below.
+  const health = portfolioHealth({ equityPct, top10Pct, liquidPct: brief.liquidPct });
 
   // Yesterday-vs-today (recorded snapshots of the visible accounts) for the hero delta.
   const delta = useMemo(() => {
@@ -167,6 +170,20 @@ export function Overview() {
           <span className="muted" style={{ fontSize: "0.84rem" }}>
             {fmtMoney(brief.totalAssets)} you own · {fmtMoney(brief.totalLiabilities)} in loans
           </span>
+        </div>
+      </div>
+
+      {/* One-glance health read — a summary of the three cards below (verdicts.ts → health.ts). */}
+      <div className="card" style={{ display: "flex", alignItems: "center", gap: "1.1rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem" }}>
+          <span className="hero-figure" style={{ fontSize: "2rem" }}>{health.score}</span>
+          <span className="muted" style={{ fontSize: "0.95rem" }}>/ 100</span>
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div className="eyebrow">Portfolio health · {health.band.label}</div>
+          <div className={`verdict ${health.band.tone}`} style={{ marginTop: "0.1rem" }}>
+            <span className="dot" /> A one-glance read across your exposure, concentration and liquidity below.
+          </div>
         </div>
       </div>
 
