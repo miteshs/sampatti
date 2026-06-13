@@ -11,7 +11,7 @@ import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/clas
 import { snapshotOf, todayLocal, upsertSnapshot } from "../domain/snapshots";
 import { decomposeReplace } from "../domain/flows";
 import { holdingBase } from "../domain/format";
-import { clearLocalCaches, clearPortfolioRaw, isTauri, readPortfolioRaw, writePortfolioRaw } from "../platform";
+import { clearLocalCaches, clearPortfolioRaw, isIOS, isTauri, readPortfolioRaw, writePortfolioRaw } from "../platform";
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
@@ -345,13 +345,28 @@ export const useStore = create<State>((set, get) => ({
 export async function exportPortfolio(p: Portfolio): Promise<string | null> {
   const json = JSON.stringify(p, null, 2);
   const name = `sampatti-portfolio-${new Date().toISOString().slice(0, 10)}.json`;
-  if (isTauri()) {
+  // Desktop: native Save dialog + fs write.
+  if (isTauri() && !isIOS()) {
     const { save } = await import("@tauri-apps/plugin-dialog");
     const path = await save({ defaultPath: name, filters: [{ name: "JSON", extensions: ["json"] }] });
     if (!path) return null;
     const { writeTextFile } = await import("@tauri-apps/plugin-fs");
     await writeTextFile(path, json);
     return path;
+  }
+  // iOS has no save panel — use the native share sheet via the Web Share API (supported in the
+  // iOS WKWebView). The user picks Files / Mail / AirDrop. Cancel → AbortError → null.
+  if (isIOS() && typeof navigator !== "undefined" && typeof navigator.canShare === "function") {
+    const file = new File([json], name, { type: "application/json" });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: "Sampatti export" });
+        return name;
+      } catch (e) {
+        if ((e as { name?: string })?.name === "AbortError") return null;
+        // Sharing failed for another reason — fall through to the blob download below.
+      }
+    }
   }
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
