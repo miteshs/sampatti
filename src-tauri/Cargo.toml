@@ -25,10 +25,15 @@ futures-util = "0.3"
 # silently falls back to the in-memory mock store and the saved key dies with the process.
 keyring = { version = "3", features = ["apple-native", "windows-native"] }
 sha2 = "0.10"
-# Embedded on-device inference (llama.cpp). On Apple silicon llama.cpp defaults to FULL
-# Metal offload (verified in the Phase-2 eval logs: every layer assigned to MTL0); elsewhere
-# it runs on CPU. Windows GPU offload remains a Phase-4 item in docs/local-ai.md.
-llama-cpp-2 = "0.1"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
+# Embedded on-device inference (llama.cpp) — DESKTOP ONLY. On Apple silicon llama.cpp defaults
+# to FULL Metal offload (verified in the Phase-2 eval logs: every layer assigned to MTL0);
+# elsewhere it runs on CPU. Excluded on mobile by this target cfg so llama.cpp's C++ never has
+# to cross-compile to the iOS simulator/device — and because on-device AI is gated off on iOS
+# by the RAM floor anyway (SPEC §6.10 / docs/local-ai.md Phase 4). The `local_llm` module and
+# its Tauri commands are correspondingly `#[cfg(desktop)]` in lib.rs.
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+llama-cpp-2 = "0.1"
