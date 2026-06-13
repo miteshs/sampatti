@@ -7,11 +7,10 @@ import { Performance } from "./components/Performance";
 import { Manage } from "./components/Manage";
 import { AnalysisChat } from "./components/AnalysisChat";
 import { AddData } from "./components/AddData";
-import { Privacy } from "./components/Privacy";
 import { Settings } from "./components/Settings";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-type View = "overview" | "performance" | "manage" | "analysis" | "add" | "privacy" | "settings";
+type View = "overview" | "performance" | "manage" | "analysis" | "add" | "settings";
 
 type NavItem = { key: View; label: string; short?: string; aria?: string };
 
@@ -21,7 +20,6 @@ const NAV: NavItem[] = [
   { key: "manage", label: "Manage" },
   { key: "analysis", label: "AI Analysis", short: "AI" },
   { key: "add", label: "Add data", short: "Add" },
-  { key: "privacy", label: "Privacy" },
   { key: "settings", label: "Settings" },
 ];
 const byKey = (k: View) => NAV.find((n) => n.key === k)!;
@@ -30,7 +28,7 @@ const byKey = (k: View) => NAV.find((n) => n.key === k)!;
 // so four primary tabs sit on the bar and the rest live behind a "More" sheet. Desktop keeps
 // all seven in the top pill nav. One source of truth (NAV) feeds both.
 const PRIMARY: View[] = ["overview", "performance", "analysis", "add"];
-const MORE: View[] = ["manage", "privacy", "settings"];
+const MORE: View[] = ["manage", "settings"];
 
 export default function App() {
   const load = useStore((s) => s.load);
@@ -103,7 +101,6 @@ export default function App() {
               ? <AnalysisChat onConfigure={() => go("settings")} />
               : <Empty onAdd={() => go("add")} />)}
             {view === "add" && <AddData onConfigure={() => go("settings")} />}
-            {view === "privacy" && <Privacy />}
             {view === "settings" && <Settings />}
           </ErrorBoundary>
         </main>
@@ -184,8 +181,6 @@ function NavIcon({ name }: { name: View | "more" }) {
       return (<svg {...base} stroke="none"><circle cx="5" cy="12" r="1.7" fill="currentColor" /><circle cx="12" cy="12" r="1.7" fill="currentColor" /><circle cx="19" cy="12" r="1.7" fill="currentColor" /></svg>);
     case "manage":
       return (<svg {...base}><path d="M4 7h9M19 7h1M4 12h1M11 12h9M4 17h6M16 17h4" /><circle cx="16" cy="7" r="2.1" /><circle cx="8" cy="12" r="2.1" /><circle cx="13" cy="17" r="2.1" /></svg>);
-    case "privacy":
-      return (<svg {...base}><path d="M12 3.2l7 2.8v5.2c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /><path d="M9.3 12l1.9 1.9 3.6-3.8" /></svg>);
     case "settings":
       return (<svg {...base}><circle cx="12" cy="12" r="3" /><path d="M19.4 13a7.8 7.8 0 000-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-1.7-1L15 2.6h-4l-.3 2.4a7.6 7.6 0 00-1.7 1l-2.4-1-2 3.4 2 1.6a7.8 7.8 0 000 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 001.7 1l.3 2.4h4l.3-2.4a7.6 7.6 0 001.7-1l2.4 1 2-3.4z" /></svg>);
   }

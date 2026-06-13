@@ -210,12 +210,17 @@ try {
     await auditA11y(page, "Manage+Analysis");
   });
 
-  await step("Privacy: export gives visible feedback (the silent-export regression)", async () => {
-    await clickText(page, "Privacy");
-    await waitFor(page, () => bodyHas(page, "Where your data lives"), "privacy header");
+  await step("Settings → Privacy & data: export feedback + explainer modal (the silent-export regression)", async () => {
+    await clickText(page, "Settings");
+    await waitFor(page, () => bodyHas(page, "Privacy & data"), "privacy & data section");
     await clickText(page, "Export everything");
     await waitFor(page, () => bodyHas(page, "Saved to sampatti-portfolio"), "export confirmation note");
-    await auditA11y(page, "Privacy");
+    await auditA11y(page, "Settings");
+    // The transparency explainer is one click away, in a modal — audit it (it replaced the tab).
+    await clickText(page, "How Sampatti handles your data");
+    await waitFor(page, () => bodyHas(page, "Where your data lives"), "privacy explainer modal");
+    await auditA11y(page, "PrivacyModal");
+    await clickText(page, "✕"); // close the modal
   });
 
   await step("Developer mode gates AI engines; local gated off in web; toggle persists", async () => {
@@ -263,8 +268,8 @@ try {
   });
 
   await step("erase wipes the store completely", async () => {
-    await clickText(page, "Privacy");
-    await waitFor(page, () => bodyHas(page, "Erase all data"), "privacy data controls");
+    await clickText(page, "Settings");
+    await waitFor(page, () => bodyHas(page, "Erase all data"), "erase control in settings");
     await clickText(page, "Erase all data");
     await sleep(150);
     await clickText(page, "Yes, erase all data");

@@ -1,104 +1,121 @@
 // @vitest-environment jsdom
-// The Privacy screen is where the app makes its security promises — these tests pin that
-// the promises match the OS the build is actually running on (Keychain/FileVault on a Mac,
-// Credential Manager/BitLocker on Windows) and that the shown data path is join()ed, not
-// string-concatenated.
+// The privacy promises are split now: the at-rest / what-leaves EXPLAINER lives in
+// <PrivacyExplainer/> (shown in the Settings "How Sampatti handles your data" modal); the
+// key/relay copy lives in <Settings/> under developer mode; and the data controls (export /
+// erase) live in the Settings "Privacy & data" section. These tests pin each promise to the
+// OS the build runs on and that the controls are where they should be.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useStore } from "../storage/store";
 import { emptyPortfolio } from "../domain/types";
 
-// Privacy (via the platform layer) reaches for the Tauri APIs when it thinks it's on
-// desktop — give it inert stand-ins. join("|") makes separator handling observable.
+// The privacy/settings copy reaches for Tauri APIs when it thinks it's on desktop — give it
+// inert stand-ins. join("|") makes separator handling observable.
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue(false) }));
 vi.mock("@tauri-apps/api/path", () => ({
   appDataDir: vi.fn().mockResolvedValue("APPDATA"),
   join: vi.fn(async (...parts: string[]) => parts.join("|")),
 }));
 
-import { Privacy } from "./Privacy";
+import { PrivacyExplainer } from "./Privacy";
 import { Settings } from "./Settings";
 
 const UA = {
   windows: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Edg/130.0",
   macos: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15",
 };
-
 function desktopOn(ua: string) {
   (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
   Object.defineProperty(window.navigator, "userAgent", { value: ua, configurable: true });
 }
-
-// The split screens are tested together where a promise spans both: the key copy lives
-// on Settings (⚙), the at-rest/disk advice on Privacy.
-function renderByoPrivacy() {
-  const p = emptyPortfolio();
-  p.settings.claudeMode = "byo";
-  useStore.setState({ portfolio: p, loaded: true });
-  return render(<><Privacy /><Settings /></>);
-}
-
 afterEach(() => {
   cleanup();
   delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
   useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
 });
 
-describe("Privacy screen names the right OS facilities", () => {
-  it("Windows desktop: Credential Manager + BitLocker, and no Keychain talk", async () => {
+describe("the privacy explainer names the right at-rest facility for the OS", () => {
+  it("Windows: BitLocker, not FileVault", async () => {
     desktopOn(UA.windows);
-    renderByoPrivacy();
-    expect(await screen.findByText(/Stored in the Windows Credential Manager/)).toBeTruthy();
-    expect(screen.getByText(/BitLocker/)).toBeTruthy();
-    expect(screen.queryByText(/Keychain/)).toBeNull();
+    render(<PrivacyExplainer />);
+    expect(await screen.findByText(/BitLocker/)).toBeTruthy();
     expect(screen.queryByText(/FileVault/)).toBeNull();
   });
 
-  it("macOS desktop: Keychain + FileVault", async () => {
+  it("macOS: FileVault, not BitLocker", async () => {
     desktopOn(UA.macos);
-    renderByoPrivacy();
-    expect(await screen.findByText(/Stored in the macOS Keychain/)).toBeTruthy();
-    expect(screen.getByText(/FileVault/)).toBeTruthy();
-    expect(screen.queryByText(/Credential Manager/)).toBeNull();
+    render(<PrivacyExplainer />);
+    expect(await screen.findByText(/FileVault/)).toBeTruthy();
+    expect(screen.queryByText(/BitLocker/)).toBeNull();
   });
 
   it("desktop: shows the data file path assembled with join(), not concatenation", async () => {
     desktopOn(UA.windows);
-    renderByoPrivacy();
+    render(<PrivacyExplainer />);
     // appDataDir + separator + file — our join() stub uses "|" so concat would show "APPDATAportfolio.json".
     expect(await screen.findByText("APPDATA|portfolio.json")).toBeTruthy();
   });
 
+  it("web preview: the file-on-your-computer note (no OS encryption to enable)", async () => {
+    render(<PrivacyExplainer />);
+    expect(await screen.findByText(/file on your computer instead/)).toBeTruthy();
+  });
+});
+
+// The relay/own-key controls live under developer mode now — render Settings with it on.
+function renderByoSettings() {
+  const p = emptyPortfolio();
+  p.settings.claudeMode = "byo";
+  p.settings.developerMode = true;
+  useStore.setState({ portfolio: p, loaded: true });
+  return render(<Settings />);
+}
+
+describe("Settings names the right key store (relay/own-key under developer mode)", () => {
+  it("Windows desktop: Credential Manager, no Keychain talk", async () => {
+    desktopOn(UA.windows);
+    renderByoSettings();
+    expect(await screen.findByText(/Stored in the Windows Credential Manager/)).toBeTruthy();
+    expect(screen.queryByText(/macOS Keychain/)).toBeNull();
+  });
+
+  it("macOS desktop: Keychain", async () => {
+    desktopOn(UA.macos);
+    renderByoSettings();
+    expect(await screen.findByText(/Stored in the macOS Keychain/)).toBeTruthy();
+    expect(screen.queryByText(/Credential Manager/)).toBeNull();
+  });
+
   it("web preview: tab-only key, no OS store named", async () => {
-    renderByoPrivacy();
+    renderByoSettings();
     expect(await screen.findByText(/kept in this tab's memory only/)).toBeTruthy();
-    expect(screen.getByText(/file on your computer instead/)).toBeTruthy();
     expect(screen.queryByText(/Stored in the macOS Keychain/)).toBeNull();
   });
 });
 
-describe("custom-relay warning (the brief goes wherever relayUrl points)", () => {
-  function renderRelayPrivacy(relayUrl: string) {
+describe("custom-relay warning (relay controls under developer mode)", () => {
+  function renderRelaySettings(relayUrl: string) {
     const p = emptyPortfolio();
     p.settings.claudeMode = "relay";
+    p.settings.developerMode = true;
     p.settings.relayUrl = relayUrl;
     useStore.setState({ portfolio: p, loaded: true });
     return render(<Settings />);
   }
 
   it("no warning on the official default relay", () => {
-    renderRelayPrivacy(emptyPortfolio().settings.relayUrl);
+    renderRelaySettings(emptyPortfolio().settings.relayUrl);
     expect(screen.queryByText(/Custom relay/)).toBeNull();
   });
 
   it("warns when the relay URL is changed to anything else", () => {
-    renderRelayPrivacy("https://totally-legit-relay.example.workers.dev");
+    renderRelaySettings("https://totally-legit-relay.example.workers.dev");
     expect(screen.getByText(/Custom relay/)).toBeTruthy();
     expect(screen.getByText(/Only use a relay you run or fully trust/)).toBeTruthy();
   });
 
   it("no warning when the URL is empty (the not-configured note shows instead)", () => {
-    renderRelayPrivacy("");
+    renderRelaySettings("");
     expect(screen.queryByText(/Custom relay/)).toBeNull();
     expect(screen.getByText(/No relay is set yet/)).toBeTruthy();
   });
@@ -116,7 +133,6 @@ describe("developer mode gates the experimental AI-engines card", () => {
     useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
     render(<Settings />);
     fireEvent.click(screen.getByText(/Turn on developer mode/));
-    // Risk notice shown; nothing unlocked yet.
     expect(screen.getByText(/heads-up before you switch this on/)).toBeTruthy();
     expect(screen.queryByText(/AI engines/)).toBeNull();
     fireEvent.click(screen.getByText(/I understand — turn it on/));
@@ -144,5 +160,17 @@ describe("developer mode gates the experimental AI-engines card", () => {
     expect(s.developerMode).toBe(false);
     expect(s.ai).toEqual({ extraction: "claude", analysis: "claude" });
     expect(screen.queryByText(/AI engines/)).toBeNull();
+  });
+});
+
+describe("Privacy & data lives in Settings", () => {
+  it("export + erase controls are present, and the explainer opens in a modal", async () => {
+    useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
+    render(<Settings />);
+    expect(screen.getByText(/Export everything/)).toBeTruthy();
+    expect(screen.getByText(/Erase all data/)).toBeTruthy();
+    // The transparency explainer is one click away, in a modal.
+    fireEvent.click(screen.getByText(/How Sampatti handles your data/));
+    expect(await screen.findByText(/Where your data lives, and what leaves/)).toBeTruthy();
   });
 });

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 // App refreshes the USD→INR rate on launch — tests must never hit the real network.
 const { fxMock } = vi.hoisted(() => ({ fxMock: vi.fn(async () => null as number | null) }));
@@ -61,14 +61,16 @@ describe("App integration (demo flow)", () => {
     expect(useStore.getState().portfolio.holdings.length).toBe(before + 1);
   });
 
-  it("shows the privacy transparency screen", async () => {
+  it("privacy controls + explainer live under Settings (no separate tab)", async () => {
     render(<App />);
-    fireEvent.click(await screen.findByRole("button", { name: "Privacy" }));
-    const heading = await screen.findByText(/Where your data lives/i);
-    expect(heading).toBeTruthy();
-    // The export/erase controls are present.
-    const root = heading.closest(".app") as HTMLElement;
-    expect(within(root).getByText(/Erase all data/i)).toBeTruthy();
+    await screen.findByText(/All your money, in one private picture/i); // first-run welcome = loaded
+    fireEvent.click(screen.getAllByRole("button", { name: "Settings" })[0]);
+    // Privacy & data section in Settings: export + erase controls.
+    expect(await screen.findByText(/Erase all data/i)).toBeTruthy();
+    expect(screen.getByText(/Export everything/i)).toBeTruthy();
+    // The transparency explainer is one click away, in a modal.
+    fireEvent.click(screen.getByText(/How Sampatti handles your data/i));
+    expect(await screen.findByText(/Where your data lives/i)).toBeTruthy();
   });
 
   it("saves a manual account even when the holding row wasn't explicitly added", async () => {

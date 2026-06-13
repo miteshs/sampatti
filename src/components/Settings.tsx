@@ -7,7 +7,7 @@
 //   6. AI engines     — the on-device engine (only when developer mode is on)
 // The Privacy tab stays a pure explainer + data controls — the two are deliberately not mixed.
 import { useEffect, useState } from "react";
-import { useStore } from "../storage/store";
+import { useStore, exportPortfolio } from "../storage/store";
 import { DEFAULT_RELAY_URL } from "../domain/types";
 import { clearByoKey, hasByoKey, keyStoreName, setByoKey, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
@@ -15,15 +15,28 @@ import { localModelDownload, localModelRemove, localModelStatus, type LocalModel
 import type { AiEngine } from "../domain/types";
 import { fetchUsdInr } from "../domain/fx";
 import { profileFor } from "../regions/profile";
+import { PrivacyExplainer } from "./Privacy";
 
 const H3 = { fontSize: "1.05rem", marginBottom: "0.3rem" } as const;
 
 export function Settings() {
-  const { portfolio, updateSettings } = useStore();
+  const { portfolio, updateSettings, wipe } = useStore();
   const s = portfolio.settings;
   const [keyInput, setKeyInput] = useState("");
   const [keySet, setKeySet] = useState(false);
   const [confirmDev, setConfirmDev] = useState(false);
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const [exportNote, setExportNote] = useState<string | null>(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+
+  const doExport = async () => {
+    try {
+      const dest = await exportPortfolio(portfolio);
+      if (dest) setExportNote(`Saved to ${dest}`);
+    } catch (e) {
+      setExportNote(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
   const [fxBusy, setFxBusy] = useState(false);
   const [fxNote, setFxNote] = useState<string | null>(null);
   const [model, setModel] = useState<LocalModelStatus | null>(null);
@@ -183,7 +196,7 @@ export function Settings() {
             />
             <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem", maxWidth: 600 }}>
               Your analysis runs through Sampatti's relay, which is invite-only during alpha — paste
-              the access code you were given. (Prefer your own Anthropic key? Turn on developer mode below.)
+              the access code you were given. (Prefer your own Anthropic key? Enable developer mode below.)
             </p>
           </>
         )}
@@ -295,7 +308,40 @@ export function Settings() {
         })}
       </div>
 
-      {/* ── 5. Developer mode (the toggle that reveals the on-device engine below) ── */}
+      {/* ── 5. Privacy & data — the explainer (modal) + your-data controls ── */}
+      <div className="card">
+        <h3 style={H3}>Privacy &amp; data</h3>
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.7rem", maxWidth: 600 }}>
+          Everything stays on this device — no account, no cloud database.{" "}
+          <button
+            onClick={() => setShowPrivacy(true)}
+            style={{ background: "none", border: "none", padding: 0, color: "var(--primary)", cursor: "pointer", font: "inherit", textDecoration: "underline" }}
+          >
+            How Sampatti handles your data
+          </button>
+        </p>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button className="btn" onClick={() => void doExport()}>⬇ Export everything (JSON)</button>
+          {confirmWipe ? (
+            <>
+              <button className="btn btn-danger" onClick={() => { void wipe(); setConfirmWipe(false); }}>Yes, erase all data</button>
+              <button className="btn btn-ghost" onClick={() => setConfirmWipe(false)}>Cancel</button>
+            </>
+          ) : (
+            <button className="btn btn-danger" onClick={() => setConfirmWipe(true)}>🗑 Erase all data</button>
+          )}
+        </div>
+        {exportNote && (
+          <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>{exportNote}</p>
+        )}
+        <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem", maxWidth: 560 }}>
+          Erasing removes your entire portfolio (accounts, holdings, income, edit history) and every
+          local cache — nothing is left on this device, and Sampatti keeps no server copy. Your
+          Anthropic key, if set, is a separate credential (managed under AI analysis above).
+        </p>
+      </div>
+
+      {/* ── 6. Developer mode (the toggle that reveals the on-device engine below) ── */}
       <div className="card">
         <h3 style={H3}>Developer mode</h3>
         <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
@@ -390,6 +436,16 @@ export function Settings() {
               The on-device model is available in the desktop app (this is the web preview).
             </p>
           )}
+        </div>
+      )}
+
+      {showPrivacy && (
+        <div className="modal-backdrop" onClick={() => setShowPrivacy(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="How Sampatti handles your data" onClick={(e) => e.stopPropagation()}>
+            <button className="btn btn-ghost" aria-label="Close" onClick={() => setShowPrivacy(false)}
+              style={{ position: "absolute", top: "0.5rem", right: "0.5rem" }}>✕</button>
+            <PrivacyExplainer />
+          </div>
         </div>
       )}
     </div>
