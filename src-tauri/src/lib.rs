@@ -188,6 +188,31 @@ async fn market_fetch(url: String) -> Result<String, String> {
     resp.text().await.map_err(|e| e.to_string())
 }
 
+// iOS: exclude a path (the app-data directory holding the portfolio file) from iCloud / device
+// backups, so the user's financial data never leaves the device via a backup — keeping the
+// "nothing leaves the device" promise literally true (SPEC §4 principle 1 / §10). The supported
+// backup path is the in-app Export. No-op on Android (no iCloud backup concept).
+#[cfg(mobile)]
+#[tauri::command]
+fn exclude_from_backup(path: String) -> Result<(), String> {
+    #[cfg(target_os = "ios")]
+    {
+        use objc2_foundation::{NSNumber, NSString, NSURL};
+        let ns_path = NSString::from_str(&path);
+        let url = NSURL::fileURLWithPath(&ns_path);
+        let yes = NSNumber::numberWithBool(true);
+        unsafe {
+            url.setResourceValue_forKey_error(Some(&yes), objc2_foundation::NSURLIsExcludedFromBackupKey)
+                .map_err(|e| format!("could not exclude {path} from backup: {e}"))
+        }
+    }
+    #[cfg(not(target_os = "ios"))]
+    {
+        let _ = path; // Android has no iCloud backup to exclude from
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -302,7 +327,8 @@ pub fn run() {
         has_api_key,
         clear_api_key,
         claude_stream,
-        market_fetch
+        market_fetch,
+        exclude_from_backup
     ]);
 
     builder

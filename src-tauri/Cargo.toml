@@ -37,3 +37,9 @@ custom-protocol = ["tauri/custom-protocol"]
 # its Tauri commands are correspondingly `#[cfg(desktop)]` in lib.rs.
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 llama-cpp-2 = "0.1"
+
+# iOS-only: set the iCloud-backup-exclusion flag on the data directory so the portfolio never
+# rides a device backup off the phone (SPEC §4 principle 1 / §10). objc2-foundation gives the
+# NSURL resource-value API; scoped to iOS so desktop/Windows builds are untouched.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2-foundation = { version = "0.3", features = ["NSURL", "NSString", "NSValue", "NSError"] }
