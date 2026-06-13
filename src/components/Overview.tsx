@@ -170,7 +170,7 @@ export function Overview() {
         </div>
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))" }}>
         <StatCard label="In the stock market" value={`${equityPct}%`}
           sub={`${fmtMoney(equityBase)} in shares & equity funds`} verdict={equityVerdict(equityPct)} />
         <StatCard label="Easy to reach (liquid)" value={fmtMoney(brief.liquidAssets)}

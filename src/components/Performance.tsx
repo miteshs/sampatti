@@ -209,7 +209,7 @@ export function Performance() {
 
   return (
     <div className="grid" style={{ gap: "1.25rem" }}>
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))" }}>
         <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
           <div className="eyebrow">Profit so far (on paper)</div>
           <div style={{ fontSize: "1.95rem", fontWeight: 750, marginTop: "0.25rem", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: signColor(totals.gain) }}>

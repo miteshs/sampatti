@@ -85,7 +85,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
       </div>
 
       {/* Account-level fields */}
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))" }}>
         <div><label>Account name</label><input value={account.name} onChange={(e) => set({ name: e.target.value })} /></div>
         <div><label>Institution</label><input value={account.institution} onChange={(e) => set({ institution: e.target.value })} /></div>
         <div><label>Type</label>

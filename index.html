@@ -2,7 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover lets the app paint under the iOS notch/home-indicator; the CSS
+         then pads content back in with env(safe-area-inset-*). Zoom is left enabled (no
+         maximum-scale / user-scalable=no) so the a11y pinch-zoom requirement holds. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <!-- Tints the iOS status bar / PWA chrome to the warm paper ground. -->
+    <meta name="theme-color" content="#f7f5f0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Sampatti" />
     <title>Sampatti — private portfolio analysis</title>
   </head>
   <body>
