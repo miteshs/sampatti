@@ -256,7 +256,7 @@ function StackSvg({ times, bands, hover, splitIndex = 0, onBrush, onResetZoom }:
         {layers.map((l) =>
           l.segs.map((s, i) => (
             <path
-              key={`${l.key}-${i}`} d={s.d} fill={l.color} stroke="#ffffff" strokeWidth="0.6"
+              key={`${l.key}-${i}`} d={s.d} fill={l.color} stroke="var(--card)" strokeWidth="0.6"
               fillOpacity={baseOpacity(l.key) * (s.estimated ? 0.45 : 1)}
               style={{ transition: "fill-opacity 0.15s ease" }}
             />

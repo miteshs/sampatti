@@ -18,6 +18,7 @@
   --primary-down: #3a38c8;
   --primary-2: #7c6cf6; /* gradient partner — logo only */
   --primary-soft: #edeefe;
+  --on-primary: #fff; /* text/glyphs on a --primary fill (indigo is dark in light mode) */
   --emerald: #0e9f6e;
   --emerald-soft: #e6f7f0;
   --amber: #d98324;
@@ -39,6 +40,7 @@
   --font: "Inter Variable", "InterVariable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", sans-serif;
   --font-display: "Fraunces Variable", Fraunces, Georgia, "Times New Roman", serif;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -447,3 +449,62 @@ tr:last-child td { border-bottom: none; }
 @media (max-width: 520px) {
   .hero-figure { font-size: clamp(2rem, 9vw, 2.6rem); }
 }
+
+/* ======================================================================
+   Optional dark mode — opt-in via Settings (sets data-theme="dark" on
+   <html>), NEVER from the OS preference. A warm, editorial dark: charcoal-
+   brown surfaces, the same indigo + serif identity, contrast tuned for AA.
+   Kept entirely in this block so the light theme stays byte-identical.
+   ====================================================================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #16140f;
+  --bg-grad:
+    radial-gradient(1100px 420px at 85% -8%, rgba(124, 108, 246, 0.12) 0%, rgba(124, 108, 246, 0) 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(217, 165, 20, 0.07) 0%, rgba(217, 165, 20, 0) 55%),
+    #16140f;
+  --card: #211e18;
+  --surface-2: #2a261e;
+  --ink: #f2eee4;
+  --ink-2: #cdc6b6;
+  --ink-3: #a39c8b; /* ~6.9:1 on --bg — muted but AA */
+  --line: #38332b;
+  --line-2: #2c281f;
+  --primary: #9b97ff; /* indigo lightened for a dark ground */
+  --primary-down: #b3afff;
+  --primary-2: #c3b9ff;
+  --primary-soft: #2a2740;
+  --on-primary: #15130f; /* dark text on the light indigo accent */
+  --emerald: #2fbd83;
+  --emerald-soft: #16332a;
+  --amber: #e0a83c;
+  --amber-soft: #352a14;
+  --rose: #f56b80;
+  --rose-soft: #3a1e23;
+  --up: #34c98a;
+  --down: #f56b80;
+  --up-ink: #57d59c; /* text-grade up/down on dark */
+  --down-ink: #ff8b9c;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+/* surfaces that hardcode white in light mode → the dark card surface */
+:root[data-theme="dark"] :is(.btn, .chip, .qchip, input, select, textarea) { background: var(--card); }
+:root[data-theme="dark"] .nav { background: color-mix(in srgb, var(--card) 86%, transparent); }
+:root[data-theme="dark"] .btn:hover { background: var(--surface-2); border-color: var(--line); }
+/* the indigo accent is LIGHT in dark mode, so glyphs/text on it go dark, not white */
+:root[data-theme="dark"] :is(.nav button.active, .chip.active) {
+  background: var(--primary); color: #15130f; border-color: var(--primary);
+}
+:root[data-theme="dark"] .btn-primary { color: #15130f; }
+/* tones whose text colour was hardcoded for a light ground */
+:root[data-theme="dark"] .badge-amber { background: var(--amber-soft); color: var(--amber); }
+:root[data-theme="dark"] .badge-rose { background: var(--rose-soft); color: var(--down-ink); }
+:root[data-theme="dark"] .delta-chip.up { color: var(--up-ink); }
+:root[data-theme="dark"] .delta-chip.down { color: var(--down-ink); }
+:root[data-theme="dark"] .verdict.good { color: var(--up-ink); }
+:root[data-theme="dark"] .verdict.watch { color: var(--amber); }
+/* the paper-grain wash multiplies to mud on a dark ground — drop it (the hairline rule stays) */
+:root[data-theme="dark"] .hero-card::before { display: none; }
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--line); }
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #4a4438; }

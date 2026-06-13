@@ -289,7 +289,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
 
       {/* Password-protected PDFs (usually a CAS) — unlock & parse on this device */}
       {lockedPdfs.map(({ file, engine, error }, i) => (
-        <div key={`lock-${i}`} className="card" style={{ borderLeft: "3px solid var(--primary)", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
+        <div key={`lock-${i}`} className="card" style={{ borderLeft: "3px solid var(--primary)", background: "var(--primary-soft)" }}>
           <h3 style={{ fontSize: "0.98rem" }}>🔒 {file.name} is password-protected</h3>
           <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem", maxWidth: 560 }}>
             For a CAS this is usually <strong>your PAN in capital letters</strong> or the password
@@ -315,7 +315,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
       {needsClaude.map(({ file, reason }, i) => {
         const localBlocked = extractionEngine === "local" && !localReady;
         return (
-          <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "linear-gradient(135deg,#fff8ec,#fff)" }}>
+          <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "var(--amber-soft)" }}>
             <h3 style={{ fontSize: "0.98rem" }}>Couldn't auto-read {file.name}</h3>
             <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
               {reason}{" "}
@@ -346,7 +346,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
         const localCount = files.length - claudeFiles.length;
         const n = files.length;
         return (
-          <div className="card" style={{ borderColor: "#e0e0ff", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
+          <div className="card" style={{ borderColor: "var(--line)", background: "var(--primary-soft)" }}>
             <h3 style={{ fontSize: "1rem" }}>Import {n} file{n > 1 ? "s" : ""}?</h3>
             <ul className="muted" style={{ fontSize: "0.84rem", margin: "0.4rem 0 0.8rem", paddingLeft: "1.1rem", lineHeight: 1.7 }}>
               {localCount > 0 && (
@@ -388,7 +388,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
       {modelGate && (() => {
         const aiCount = modelGate.filter((f) => classifyFile(f) !== "local").length;
         return (
-          <div className="card" style={{ borderLeft: "3px solid var(--primary)", background: "linear-gradient(135deg,#f3f1ff,#fff)" }}>
+          <div className="card" style={{ borderLeft: "3px solid var(--primary)", background: "var(--primary-soft)" }}>
             <h3 style={{ fontSize: "1rem" }}>🔒 On-device AI is selected — but the model isn't downloaded</h3>
             <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.8rem", maxWidth: 600 }}>
               {aiCount} of these {modelGate.length} file{modelGate.length > 1 ? "s" : ""} need{aiCount === 1 ? "s" : ""} AI

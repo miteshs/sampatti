@@ -96,7 +96,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   return (
     <div className="grid split-aside">
       <div className="grid" style={{ gap: "1rem" }}>
-        <div className="card" style={{ display: "flex", gap: "0.7rem", alignItems: "center", background: "linear-gradient(135deg, #f3f1ff, #ffffff)" }}>
+        <div className="card" style={{ display: "flex", gap: "0.7rem", alignItems: "center", background: "var(--primary-soft)" }}>
           <span style={{ fontSize: "1.3rem" }}>🔒</span>
           <div style={{ fontSize: "0.82rem", color: "var(--ink-2)" }}>
             {engine === "local" ? (
@@ -138,7 +138,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
                     placeholder={profileFor(portfolio.settings).region === "US"
                       ? "e.g. I'm 45, hoping to retire at 60, two kids' college in 8–10 years, comfortable with moderate risk."
                       : "e.g. I'm 45, want to retire by 58, child's higher education in ~10 years, prefer low risk on near-term money."}
-                    style={{ width: "100%", resize: "vertical", font: "inherit", padding: "0.55rem 0.65rem", borderRadius: 8, border: "1px solid var(--line-2)", background: "#fff", boxSizing: "border-box" }}
+                    style={{ width: "100%", resize: "vertical", font: "inherit", padding: "0.55rem 0.65rem", borderRadius: 8, border: "1px solid var(--line-2)", background: "var(--card)", boxSizing: "border-box" }}
                   />
                   <div className="muted" style={{ fontSize: "0.75rem", fontWeight: 600, margin: "0.7rem 0 0.35rem" }}>Focus the review on <span style={{ fontWeight: 400 }}>— optional</span></div>
                   <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
@@ -151,7 +151,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
                           className="qchip"
                           aria-pressed={on}
                           onClick={() => toggleFocus(f)}
-                          style={on ? { background: "var(--primary)", color: "#fff", borderColor: "var(--primary)" } : {}}
+                          style={on ? { background: "var(--primary)", color: "var(--on-primary)", borderColor: "var(--primary)" } : {}}
                         >
                           {on ? "✓ " : ""}{f}
                         </button>

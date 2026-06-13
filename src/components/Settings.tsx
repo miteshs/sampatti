@@ -231,7 +231,7 @@ export function Settings() {
                   display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem",
                   textAlign: "left", padding: "0.6rem 0.8rem", borderRadius: 10, cursor: "pointer",
                   border: active ? "1.5px solid var(--primary)" : "1px solid var(--line-2)",
-                  background: active ? "var(--primary-soft)" : "var(--surface, #fff)",
+                  background: active ? "var(--primary-soft)" : "var(--card)",
                 }}
               >
                 <span>
@@ -256,6 +256,21 @@ export function Settings() {
           </button>
           <button className={`chip ${s.country === "US" ? "active" : ""}`} onClick={() => updateSettings({ country: "US", baseCurrency: "USD" })}>
             United States
+          </button>
+        </div>
+
+        <label>Appearance</label>
+        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.5rem", maxWidth: 600 }}>
+          Light by default. Dark mode is opt-in — it won't follow your device's setting unless you choose it here.
+        </p>
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+          <button className={`chip ${(s.theme ?? "light") !== "dark" ? "active" : ""}`}
+            aria-pressed={(s.theme ?? "light") !== "dark"} onClick={() => updateSettings({ theme: "light" })}>
+            ☀ Light
+          </button>
+          <button className={`chip ${s.theme === "dark" ? "active" : ""}`}
+            aria-pressed={s.theme === "dark"} onClick={() => updateSettings({ theme: "dark" })}>
+            ☾ Dark
           </button>
         </div>
 
