@@ -329,6 +329,11 @@ try {
     await clickText(page, "Overview");
     await sleep(250);
     await auditA11y(page, "Overview-dark");
+    // AI Analysis carries the primary CTA ("Analyze my portfolio") — audit it in dark so a
+    // .btn-primary contrast regression (dark fill + dark text) can't slip through again.
+    await clickText(page, "AI Analysis");
+    await sleep(250);
+    await auditA11y(page, "Analysis-dark");
   });
 
   await step("accessibility: no serious/critical WCAG A/AA violations", async () => {

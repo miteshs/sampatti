@@ -496,7 +496,14 @@ tr:last-child td { border-bottom: none; }
 :root[data-theme="dark"] :is(.nav button.active, .chip.active) {
   background: var(--primary); color: #15130f; border-color: var(--primary);
 }
-:root[data-theme="dark"] .btn-primary { color: #15130f; }
+/* Button VARIANTS keep their own fills — the broad .btn rule above otherwise flattens
+   .btn-primary/.btn-danger to the card surface (dark fill + dark text = an invisible CTA,
+   only the border showing). Re-assert them here (after the broad rule, so order wins). */
+:root[data-theme="dark"] .btn-primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+:root[data-theme="dark"] .btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); }
+:root[data-theme="dark"] .btn-ghost { background: transparent; }
+:root[data-theme="dark"] .btn-ghost:hover { background: var(--line-2); }
+:root[data-theme="dark"] .btn-danger { background: var(--rose-soft); color: var(--down-ink); border-color: var(--rose-soft); }
 /* tones whose text colour was hardcoded for a light ground */
 :root[data-theme="dark"] .badge-amber { background: var(--amber-soft); color: var(--amber); }
 :root[data-theme="dark"] .badge-rose { background: var(--rose-soft); color: var(--down-ink); }

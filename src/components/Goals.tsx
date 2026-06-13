@@ -17,12 +17,24 @@ const D = {
 };
 
 // Module-level so it doesn't remount each render (which would steal input focus mid-typing).
+// Uses a text input bound to the value's canonical string (not type="number"): a controlled
+// number input lets a leading zero stick because React won't rewrite "0150000" → "150000"
+// (they're numerically equal). Here the displayed string is always String(value), so leading
+// zeros never survive a render; 0 shows empty with a "0" placeholder so the user types onto a
+// blank field, not in front of a "0".
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
   return (
     <label style={{ fontSize: "0.74rem" }}>
       {label}
-      <input type="number" min={0} aria-label={label} value={value} style={{ marginTop: "0.2rem" }}
-        onChange={(e) => onChange(Number(e.target.value) || 0)} />
+      <input
+        type="text" inputMode="decimal" aria-label={label}
+        value={value === 0 ? "" : String(value)} placeholder="0" style={{ marginTop: "0.2rem" }}
+        onChange={(e) => {
+          const cleaned = e.target.value.replace(/[^0-9.]/g, "");
+          const n = Number(cleaned);
+          onChange(cleaned === "" || !Number.isFinite(n) ? 0 : n);
+        }}
+      />
     </label>
   );
 }
