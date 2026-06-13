@@ -3,7 +3,7 @@
 // lives on the Settings tab (⚙) — the user asked for the two not to be mixed.
 import { useEffect, useState, type ReactNode } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
-import { diskEncryption, storageLocation, isTauri } from "../platform";
+import { diskEncryption, storageLocation, isTauri, isIOS } from "../platform";
 import { profileFor } from "../regions/profile";
 
 export function Privacy() {
@@ -48,11 +48,16 @@ export function Privacy() {
             Anthropic and never touches our servers. Anthropic does not train on API data.
             How analysis reaches Claude is yours to choose on the <strong>Settings tab (⚙)</strong>.</>} />
         <Flow icon="🔐" title="At rest"
-          body={isTauri()
-            ? <>Turn on {diskEncryption().os} <strong>{diskEncryption().tool}</strong> ({diskEncryption().where}) to
-              encrypt the whole disk, including this app's data file.</>
-            : <>You're viewing the web preview, so data sits in this browser's local storage. The
-              desktop app stores it as a file on your computer instead.</>} />
+          body={!isTauri()
+            ? <>You're viewing the web preview, so data sits in this browser's local storage. The
+              desktop app stores it as a file on your computer instead.</>
+            : isIOS()
+              ? <>On {diskEncryption().os}, <strong>{diskEncryption().tool}</strong> already encrypts this
+                app's data — {diskEncryption().where}. Your data is also <strong>kept out of iCloud and
+                device backups</strong>, so it never leaves the device; use <strong>Export</strong> below to
+                make your own backup.</>
+              : <>Turn on {diskEncryption().os} <strong>{diskEncryption().tool}</strong> ({diskEncryption().where}) to
+                encrypt the whole disk, including this app's data file.</>} />
       </div>
 
       <div className="card">

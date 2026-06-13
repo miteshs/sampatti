@@ -5,6 +5,9 @@
 // `claude_stream` streams Anthropic's SSE response back to the UI over a Channel, emitting
 // only the text deltas (the same shape the web transport parses).
 
+// Desktop only: the embedded llama.cpp engine is excluded from mobile builds (Cargo.toml
+// target cfg). On iOS the on-device engine is gated off by the RAM floor (SPEC §6.10).
+#[cfg(desktop)]
 pub mod local_llm; // pub: examples/local_eval.rs drives the same inference path
 
 use futures_util::StreamExt;
@@ -185,6 +188,31 @@ async fn market_fetch(url: String) -> Result<String, String> {
     resp.text().await.map_err(|e| e.to_string())
 }
 
+// iOS: exclude a path (the app-data directory holding the portfolio file) from iCloud / device
+// backups, so the user's financial data never leaves the device via a backup — keeping the
+// "nothing leaves the device" promise literally true (SPEC §4 principle 1 / §10). The supported
+// backup path is the in-app Export. No-op on Android (no iCloud backup concept).
+#[cfg(mobile)]
+#[tauri::command]
+fn exclude_from_backup(path: String) -> Result<(), String> {
+    #[cfg(target_os = "ios")]
+    {
+        use objc2_foundation::{NSNumber, NSString, NSURL};
+        let ns_path = NSString::from_str(&path);
+        let url = NSURL::fileURLWithPath(&ns_path);
+        let yes = NSNumber::numberWithBool(true);
+        unsafe {
+            url.setResourceValue_forKey_error(Some(&yes), objc2_foundation::NSURLIsExcludedFromBackupKey)
+                .map_err(|e| format!("could not exclude {path} from backup: {e}"))
+        }
+    }
+    #[cfg(not(target_os = "ios"))]
+    {
+        let _ = path; // Android has no iCloud backup to exclude from
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -274,28 +302,47 @@ mod tests {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![
-            set_api_key,
-            has_api_key,
-            clear_api_key,
-            claude_stream,
-            market_fetch,
-            local_llm::local_model_status,
-            local_llm::local_model_download,
-            local_llm::local_model_remove,
-            local_llm::local_generate
-        ])
+        .plugin(tauri_plugin_dialog::init());
+
+    // The on-device LLM commands exist only on desktop (Cargo.toml excludes llama.cpp on
+    // mobile). Register the full handler set on desktop; the network/keystore-only set on
+    // mobile. The keystore + Claude + market paths are identical on every platform.
+    #[cfg(desktop)]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        set_api_key,
+        has_api_key,
+        clear_api_key,
+        claude_stream,
+        market_fetch,
+        local_llm::local_model_status,
+        local_llm::local_model_download,
+        local_llm::local_model_remove,
+        local_llm::local_generate
+    ]);
+    #[cfg(mobile)]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        set_api_key,
+        has_api_key,
+        clear_api_key,
+        claude_stream,
+        market_fetch,
+        exclude_from_backup
+    ]);
+
+    builder
         .build(tauri::generate_context!())
         .expect("error while running Sampatti")
         .run(|_app, event| {
             // Release the cached llama engine before process teardown: ggml-metal's static
             // destructors abort when model buffers are still alive at exit, which surfaces
-            // as "Sampatti quit unexpectedly" after any on-device AI use.
+            // as "Sampatti quit unexpectedly" after any on-device AI use. Desktop only.
+            #[cfg(desktop)]
             if let tauri::RunEvent::Exit = event {
                 local_llm::unload_engine();
             }
+            #[cfg(mobile)]
+            let _ = event;
         });
 }

@@ -32,6 +32,10 @@
   --shadow-lg: 0 2px 6px rgba(26, 31, 23, 0.05), 0 16px 40px rgba(26, 31, 23, 0.09);
   --radius: 14px;
   --radius-sm: 10px;
+  /* Horizontal page gutter — one token so the full-bleed topbar/tabbar negative-margin math
+     tracks the .app padding at every breakpoint. Shrinks on phones (see the media query). */
+  --gutter: 1.6rem;
+  --tabbar-h: 60px; /* height of the mobile bottom navigation (excludes the safe-area inset) */
   --font: "Inter Variable", "InterVariable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", sans-serif;
   --font-display: "Fraunces Variable", Fraunces, Georgia, "Times New Roman", serif;
@@ -64,7 +68,7 @@ button { font-family: inherit; }
 .app {
   max-width: 1160px;
   margin: 0 auto;
-  padding: 0 1.6rem 4rem;
+  padding: 0 var(--gutter) 4rem;
 }
 
 /* ---- top bar (sticky, translucent) ---- */
@@ -74,8 +78,10 @@ button { font-family: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin: 0 -1.6rem 1.4rem;
-  padding: 0.9rem 1.6rem;
+  margin: 0 calc(-1 * var(--gutter)) 1.4rem;
+  padding: 0.9rem var(--gutter);
+  /* pad the sticky bar out from under the iOS status bar / notch */
+  padding-top: calc(0.9rem + env(safe-area-inset-top));
   background: color-mix(in srgb, var(--bg) 78%, transparent);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -127,6 +133,16 @@ button { font-family: inherit; }
 }
 .card-pad-lg { padding: 1.6rem 1.75rem; }
 .grid { display: grid; gap: 1rem; }
+
+/* A main column + fixed aside (e.g. the AI analysis + its context panel). Collapses to a
+   single column once the aside would crowd the content. */
+.split-aside { grid-template-columns: minmax(0, 1fr) 300px; gap: 1.25rem; align-items: start; }
+@media (max-width: 860px) { .split-aside { grid-template-columns: 1fr; } }
+
+/* Wrap wide data tables so they scroll horizontally inside their card on narrow screens
+   instead of overflowing the viewport. Desktop is unaffected (content fits, no scrollbar). */
+.t-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 720px) { .t-scroll > table { min-width: 460px; } }
 
 /* ---- buttons ---- */
 .btn {
@@ -316,3 +332,118 @@ tr:last-child td { border-bottom: none; }
 }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .blink { animation: pulse 1.2s ease-in-out infinite; }
+
+/* ======================================================================
+   Responsive / touch — one codebase from phone to desktop (SPEC §10).
+   Desktop is the default above; everything below adapts narrow + coarse.
+   ====================================================================== */
+
+/* ---- mobile bottom tab bar (hidden on desktop; shown under the breakpoint) ---- */
+.tabbar { display: none; }
+.tabbar-more-sheet { display: none; }
+
+/* Coarse pointer (touch): every interactive target clears the 44px minimum, regardless
+   of width — covers iPad in desktop-width layouts too. */
+@media (pointer: coarse) {
+  .btn, .chip, .qchip, .nav button { min-height: 44px; }
+  input, select, textarea { min-height: 44px; }
+  input[type="checkbox"], input[type="radio"] { min-height: 0; min-width: 22px; min-height: 22px; }
+}
+
+/* ---- the breakpoint: swap the top pill nav for a bottom tab bar ---- */
+@media (max-width: 720px) {
+  :root { --gutter: 1.1rem; }
+
+  .app {
+    /* clear the fixed bottom tab bar + the home-indicator inset */
+    padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 1.25rem);
+    padding-left: max(var(--gutter), env(safe-area-inset-left));
+    padding-right: max(var(--gutter), env(safe-area-inset-right));
+    overflow-x: hidden; /* belt: never let the page scroll sideways on a phone */
+  }
+  /* Let grid/flex children shrink below their intrinsic content width so a long figure or
+     label wraps instead of blowing the track out to two cramped, clipped columns. The default
+     min-width:auto on grid/flex items is what made the Overview stat cards render 2-up. */
+  .view :where(.grid, .card, .grid > *) { min-width: 0; }
+
+  /* the desktop pill nav lives in the topbar — hide it; the tab bar takes over */
+  .topbar .nav { display: none; }
+  .topbar { margin-bottom: 1rem; }
+  .brand .tag { font-size: 0.66rem; }
+
+  /* cards go edge-to-edge-ish and lose some inner padding on small screens */
+  .card { padding: 1.05rem 1.05rem; border-radius: 12px; }
+  .card-pad-lg { padding: 1.2rem 1.15rem; }
+
+  .tabbar {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    padding: 6px max(6px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-right));
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+    border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  }
+  .tabbar button {
+    position: relative;
+    appearance: none; border: none; background: transparent; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-height: var(--tabbar-h); padding: 4px 2px; border-radius: 12px;
+    color: var(--ink-3); font-family: inherit; font-size: 0.66rem; font-weight: 600;
+    letter-spacing: -0.01em; line-height: 1;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .tabbar button svg { width: 23px; height: 23px; stroke-width: 1.9; transition: transform 0.15s ease; }
+  .tabbar button.active { color: var(--primary); }
+  .tabbar button.active svg { stroke-width: 2.3; transform: translateY(-1px); }
+  /* a small indigo pill above the active tab — the one bit of motion the bar gets */
+  .tabbar button.active::after {
+    content: ""; position: absolute; top: 3px; width: 20px; height: 3px;
+    border-radius: 99px; background: var(--primary);
+  }
+  @media (prefers-reduced-motion: reduce) { .tabbar button svg { transition: none; } }
+  .tabbar button:active { background: var(--line-2); }
+  .tabbar button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+  /* ---- the "More" bottom sheet ---- */
+  .tabbar-more-sheet { display: block; }
+  .sheet-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(26, 31, 23, 0.32);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    animation: fade 0.18s ease both;
+  }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
+    background: var(--card);
+    border-radius: 18px 18px 0 0;
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -8px 40px rgba(26, 31, 23, 0.18);
+    padding: 0.5rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+    animation: sheet-up 0.24s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+  .sheet-grip { width: 38px; height: 4px; border-radius: 99px; background: var(--line); margin: 0.45rem auto 0.6rem; }
+  .sheet button {
+    width: 100%; appearance: none; border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0.85rem 0.7rem; border-radius: 12px;
+    font-family: inherit; font-size: 0.98rem; font-weight: 600; color: var(--ink);
+    text-align: left;
+  }
+  .sheet button svg { width: 22px; height: 22px; color: var(--ink-3); flex-shrink: 0; }
+  .sheet button.active { color: var(--primary); background: var(--primary-soft); }
+  .sheet button.active svg { color: var(--primary); }
+  .sheet button:active { background: var(--line-2); }
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .sheet-backdrop { animation: none; }
+}
+
+/* ---- narrow-phone safety: stop wide inline-grid layouts from overflowing ---- */
+@media (max-width: 520px) {
+  .hero-figure { font-size: clamp(2rem, 9vw, 2.6rem); }
+}

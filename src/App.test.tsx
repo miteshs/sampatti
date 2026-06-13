@@ -26,8 +26,9 @@ describe("App integration (demo flow)", () => {
     const demoBtn = await screen.findByText(/Load demo portfolio/i);
     fireEvent.click(demoBtn);
 
-    // Navigate to the Overview tab.
-    fireEvent.click(screen.getByRole("button", { name: "Overview" }));
+    // Navigate to the Overview tab. The desktop pill nav and the mobile bottom tab bar both
+    // render (CSS hides one per breakpoint; jsdom applies no stylesheet), so target the first.
+    fireEvent.click(screen.getAllByRole("button", { name: "Overview" })[0]);
 
     // Net-worth card + a crore-scale value should render from the computed brief.
     expect(await screen.findByText("Net worth")).toBeTruthy();

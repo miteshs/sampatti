@@ -94,7 +94,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const c = brief.concentration;
 
   return (
-    <div className="grid" style={{ gridTemplateColumns: "minmax(0, 1fr) 300px", gap: "1.25rem", alignItems: "start" }}>
+    <div className="grid split-aside">
       <div className="grid" style={{ gap: "1rem" }}>
         <div className="card" style={{ display: "flex", gap: "0.7rem", alignItems: "center", background: "linear-gradient(135deg, #f3f1ff, #ffffff)" }}>
           <span style={{ fontSize: "1.3rem" }}>🔒</span>
