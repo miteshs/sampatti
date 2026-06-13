@@ -35,7 +35,7 @@ export function TrendChart({ points, onBrush, onResetZoom }: {
   const line = points.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p.netWorth).toFixed(1)}`).join(" ");
   const area = `${line} L${x(maxX).toFixed(1)},${H - PAD} L${x(minX).toFixed(1)},${H - PAD} Z`;
   const up = ys[ys.length - 1] >= ys[0];
-  const stroke = up ? "#1a9e6b" : "#d6455d";
+  const stroke = up ? "var(--up)" : "var(--down)"; // theme tokens (graphic-grade) — adapt to dark
   const last = points[points.length - 1];
   return (
     <div>
