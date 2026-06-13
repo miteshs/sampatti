@@ -12,6 +12,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { demoPortfolio } from "../src/demo";
+import { generateStatements } from "./gen-statements";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const REGIONS = [["India", "india"], ["US", "us"]] as const;
@@ -25,6 +26,17 @@ describe("demo backups", () => {
       writeFileSync(join(out, `sampatti-demo-${dir}.json`), JSON.stringify(p, null, 2) + "\n");
       // eslint-disable-next-line no-console
       console.log(`  ✓ ${dir}: ${p.accounts.length} accounts · ${p.holdings.length} holdings · ${p.snapshots.length} days of history`);
+    }
+  });
+
+  // Mixed-format broker statements (CSV/Excel/PDF/screenshot). Heavier — launches Chrome for
+  // the PDF/PNG pages — so it gets its own generous timeout, still guarded behind GEN_DEMO.
+  it.runIf(!!process.env.GEN_DEMO)("writes mixed-format statements/ for each region", { timeout: 120_000 }, async () => {
+    for (const [country, dir] of REGIONS) {
+      const out = join(ROOT, "samples", "demo-statements", dir);
+      const r = await generateStatements(demoPortfolio(country), out);
+      // eslint-disable-next-line no-console
+      console.log(`  ✓ ${dir}/statements: ${r.byFmt.csv} csv · ${r.byFmt.xlsx} xlsx · ${r.byFmt.pdf} pdf · ${r.byFmt.png} png`);
     }
   });
 });

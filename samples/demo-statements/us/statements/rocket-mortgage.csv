@@ -1,0 +1,2 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Mortgage,Rocket Mortgage,liability,na,US,USD,,30-yr fixed (outstanding),other,,410000,,,2026-05-31

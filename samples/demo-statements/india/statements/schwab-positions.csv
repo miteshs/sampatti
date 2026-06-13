@@ -1,0 +1,4 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Schwab Brokerage,Charles Schwab,foreign_broker,taxable,US,USD,,GOLDMAN SACHS FIN VAR 28 DUE 06/15/28 (autocallable),structured_notes,,40000,40000,2024-06-15,2026-05-31
+Schwab Brokerage,Charles Schwab,foreign_broker,taxable,US,USD,,US Treasury Notes 4.25% 2027,fd_rd,,25000,24500,2024-08-01,2026-05-31
+Schwab Brokerage,Charles Schwab,foreign_broker,taxable,US,USD,SWVXX,Schwab Value Advantage Money Fund,cash,,8000,,,2026-05-31

@@ -1,0 +1,7 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Schwab Taxable,Charles Schwab,demat,taxable,US,USD,AAPL,Apple Inc,us_equity,720,185000,96000,2020-03-20,2026-05-31
+Schwab Taxable,Charles Schwab,demat,taxable,US,USD,MSFT,Microsoft Corp,us_equity,320,160000,105000,2021-05-10,2026-05-31
+Schwab Taxable,Charles Schwab,demat,taxable,US,USD,VOO,Vanguard S&P 500 ETF,index_etf,360,210000,150000,2019-08-05,2026-05-31
+Schwab Taxable,Charles Schwab,demat,taxable,US,USD,NVDA,NVIDIA Corp,us_equity,540,95000,28000,2022-10-12,2026-05-31
+Schwab Taxable,Charles Schwab,demat,taxable,US,USD,TSLA,Tesla Inc,us_equity,110,38000,45000,2026-03-02,2026-05-31
+Schwab Taxable,Charles Schwab,demat,taxable,US,USD,SWVXX,Money market sweep,cash,,22000,,,2026-05-31

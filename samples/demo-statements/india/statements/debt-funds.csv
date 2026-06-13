@@ -1,0 +1,3 @@
+account,institution,account_type,tax_treatment,region,currency,symbol,name,asset_class,units,market_value,cost_basis,buy_date,as_of
+Debt Funds,ICICI / HDFC MF,mutual_fund,taxable,India,INR,118987,HDFC Corporate Bond Fund,debt_mf,,4000000,3500000,2023-06-01,2026-05-31
+Debt Funds,ICICI / HDFC MF,mutual_fund,taxable,India,INR,120197,ICICI Prudential Liquid Fund,debt_mf,,2500000,2350000,2024-01-10,2026-05-31
