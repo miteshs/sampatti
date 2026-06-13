@@ -1,0 +1,7400 @@
+{
+  "version": 1,
+  "accounts": [
+    {
+      "name": "Schwab Taxable",
+      "institution": "Charles Schwab",
+      "accountType": "demat",
+      "taxTreatment": "taxable",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-05-31",
+      "id": "demo-1"
+    },
+    {
+      "name": "Fidelity 401(k)",
+      "institution": "Fidelity",
+      "accountType": "mutual_fund",
+      "taxTreatment": "us_pretax",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-05-31",
+      "id": "demo-8"
+    },
+    {
+      "name": "Vanguard Roth IRA",
+      "institution": "Vanguard",
+      "accountType": "mutual_fund",
+      "taxTreatment": "us_roth",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-05-31",
+      "id": "demo-11"
+    },
+    {
+      "name": "HSA Bank",
+      "institution": "HSA Bank / Schwab",
+      "accountType": "bank",
+      "taxTreatment": "us_hsa",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-05-31",
+      "id": "demo-14"
+    },
+    {
+      "name": "Treasury & CDs",
+      "institution": "TreasuryDirect / Marcus",
+      "accountType": "bank",
+      "taxTreatment": "taxable",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-06-13",
+      "id": "demo-17"
+    },
+    {
+      "name": "Coinbase",
+      "institution": "Coinbase",
+      "accountType": "other",
+      "taxTreatment": "taxable",
+      "region": "Other",
+      "currency": "USD",
+      "asOf": "2026-05-31",
+      "id": "demo-20"
+    },
+    {
+      "name": "RSU — Stripe (Carta)",
+      "institution": "Carta",
+      "accountType": "other",
+      "taxTreatment": "taxable",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-03-31",
+      "defaultAssetClass": "us_equity",
+      "note": "Vested private RSUs at last 409A — no cost basis reported",
+      "id": "demo-23"
+    },
+    {
+      "name": "Old Employer 401(k) — Empower",
+      "institution": "Empower",
+      "accountType": "mutual_fund",
+      "taxTreatment": "us_pretax",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-04-30",
+      "excluded": true,
+      "note": "Pending rollover — tracked, excluded from net worth",
+      "id": "demo-25"
+    },
+    {
+      "name": "Zerodha (NRI demat)",
+      "institution": "Zerodha",
+      "accountType": "demat",
+      "taxTreatment": "taxable",
+      "region": "India",
+      "currency": "INR",
+      "asOf": "2026-05-31",
+      "id": "demo-27"
+    },
+    {
+      "name": "Home — Austin",
+      "institution": "—",
+      "accountType": "real_estate",
+      "taxTreatment": "taxable",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-05-29",
+      "defaultAssetClass": "real_estate",
+      "note": "Zillow-style indicative value — update yearly",
+      "id": "demo-30"
+    },
+    {
+      "name": "Mortgage",
+      "institution": "Rocket Mortgage",
+      "accountType": "liability",
+      "taxTreatment": "na",
+      "region": "US",
+      "currency": "USD",
+      "asOf": "2026-05-31",
+      "id": "demo-32"
+    }
+  ],
+  "holdings": [
+    {
+      "id": "demo-2",
+      "accountId": "demo-1",
+      "name": "Apple Inc",
+      "assetClass": "us_equity",
+      "marketValue": 185000,
+      "currency": "USD",
+      "symbol": "AAPL",
+      "units": 720,
+      "costBasis": 96000,
+      "buyDate": "2020-03-20"
+    },
+    {
+      "id": "demo-3",
+      "accountId": "demo-1",
+      "name": "Microsoft Corp",
+      "assetClass": "us_equity",
+      "marketValue": 160000,
+      "currency": "USD",
+      "symbol": "MSFT",
+      "units": 320,
+      "costBasis": 105000,
+      "buyDate": "2021-05-10"
+    },
+    {
+      "id": "demo-4",
+      "accountId": "demo-1",
+      "name": "Vanguard S&P 500 ETF",
+      "assetClass": "index_etf",
+      "marketValue": 210000,
+      "currency": "USD",
+      "symbol": "VOO",
+      "units": 360,
+      "costBasis": 150000,
+      "buyDate": "2019-08-05"
+    },
+    {
+      "id": "demo-5",
+      "accountId": "demo-1",
+      "name": "NVIDIA Corp",
+      "assetClass": "us_equity",
+      "marketValue": 95000,
+      "currency": "USD",
+      "symbol": "NVDA",
+      "units": 540,
+      "costBasis": 28000,
+      "buyDate": "2022-10-12"
+    },
+    {
+      "id": "demo-6",
+      "accountId": "demo-1",
+      "name": "Tesla Inc",
+      "assetClass": "us_equity",
+      "marketValue": 38000,
+      "currency": "USD",
+      "symbol": "TSLA",
+      "units": 110,
+      "costBasis": 45000,
+      "buyDate": "2026-03-02"
+    },
+    {
+      "id": "demo-7",
+      "accountId": "demo-1",
+      "name": "Money market sweep",
+      "assetClass": "cash",
+      "marketValue": 22000,
+      "currency": "USD",
+      "symbol": "SWVXX"
+    },
+    {
+      "id": "demo-9",
+      "accountId": "demo-8",
+      "name": "Fidelity 500 Index Fund",
+      "assetClass": "equity_mf",
+      "marketValue": 385000,
+      "currency": "USD",
+      "symbol": "FXAIX",
+      "costBasis": 235000,
+      "buyDate": "2018-06-01"
+    },
+    {
+      "id": "demo-10",
+      "accountId": "demo-8",
+      "name": "Target Date 2045",
+      "assetClass": "equity_mf",
+      "marketValue": 155000,
+      "currency": "USD",
+      "costBasis": 120000,
+      "buyDate": "2020-01-15"
+    },
+    {
+      "id": "demo-12",
+      "accountId": "demo-11",
+      "name": "Vanguard Total Stock Market ETF",
+      "assetClass": "index_etf",
+      "marketValue": 150000,
+      "currency": "USD",
+      "symbol": "VTI",
+      "units": 480,
+      "costBasis": 92000,
+      "buyDate": "2019-04-01"
+    },
+    {
+      "id": "demo-13",
+      "accountId": "demo-11",
+      "name": "Vanguard Total International ETF",
+      "assetClass": "index_etf",
+      "marketValue": 45000,
+      "currency": "USD",
+      "symbol": "VXUS",
+      "units": 640,
+      "costBasis": 41000,
+      "buyDate": "2022-07-01"
+    },
+    {
+      "id": "demo-15",
+      "accountId": "demo-14",
+      "name": "HSA index sweep (S&P 500)",
+      "assetClass": "index_etf",
+      "marketValue": 40000,
+      "currency": "USD",
+      "costBasis": 29000,
+      "buyDate": "2021-02-01"
+    },
+    {
+      "id": "demo-16",
+      "accountId": "demo-14",
+      "name": "HSA cash",
+      "assetClass": "cash",
+      "marketValue": 5000,
+      "currency": "USD"
+    },
+    {
+      "id": "demo-18",
+      "accountId": "demo-17",
+      "name": "US Treasury Bills 4.8% 2026",
+      "assetClass": "fd_rd",
+      "marketValue": 130000,
+      "currency": "USD",
+      "costBasis": 128000,
+      "buyDate": "2026-05-14"
+    },
+    {
+      "id": "demo-19",
+      "accountId": "demo-17",
+      "name": "Marcus CD 5.0% 2026",
+      "assetClass": "fd_rd",
+      "marketValue": 50000,
+      "currency": "USD",
+      "costBasis": 50000,
+      "buyDate": "2026-05-14"
+    },
+    {
+      "id": "demo-21",
+      "accountId": "demo-20",
+      "name": "Bitcoin",
+      "assetClass": "crypto",
+      "marketValue": 62000,
+      "currency": "USD",
+      "symbol": "BTC",
+      "units": 0.95,
+      "costBasis": 21000,
+      "buyDate": "2020-11-15"
+    },
+    {
+      "id": "demo-22",
+      "accountId": "demo-20",
+      "name": "Ethereum",
+      "assetClass": "crypto",
+      "marketValue": 19000,
+      "currency": "USD",
+      "symbol": "ETH",
+      "units": 6.2,
+      "costBasis": 16000,
+      "buyDate": "2024-02-01"
+    },
+    {
+      "id": "demo-24",
+      "accountId": "demo-23",
+      "name": "Stripe Inc (vested RSUs)",
+      "assetClass": "us_equity",
+      "marketValue": 140000,
+      "currency": "USD"
+    },
+    {
+      "id": "demo-26",
+      "accountId": "demo-25",
+      "name": "Target Date 2045",
+      "assetClass": "equity_mf",
+      "marketValue": 95000,
+      "currency": "USD",
+      "costBasis": 70000,
+      "buyDate": "2016-09-01"
+    },
+    {
+      "id": "demo-28",
+      "accountId": "demo-27",
+      "name": "Reliance Industries",
+      "assetClass": "indian_equity",
+      "marketValue": 1400000,
+      "currency": "INR",
+      "symbol": "RELIANCE",
+      "units": 1110,
+      "costBasis": 900000,
+      "buyDate": "2019-07-12"
+    },
+    {
+      "id": "demo-29",
+      "accountId": "demo-27",
+      "name": "ITC",
+      "assetClass": "indian_equity",
+      "marketValue": 600000,
+      "currency": "INR",
+      "symbol": "ITC",
+      "units": 2150,
+      "costBasis": 450000,
+      "buyDate": "2020-12-01"
+    },
+    {
+      "id": "demo-31",
+      "accountId": "demo-30",
+      "name": "Primary residence — Austin, TX",
+      "assetClass": "real_estate",
+      "marketValue": 780000,
+      "currency": "USD"
+    },
+    {
+      "id": "demo-33",
+      "accountId": "demo-32",
+      "name": "30-yr fixed (outstanding)",
+      "assetClass": "other",
+      "marketValue": 410000,
+      "currency": "USD"
+    }
+  ],
+  "income": [
+    {
+      "id": "demo-34",
+      "source": "Salary",
+      "kind": "salary",
+      "amount": 24000,
+      "frequency": "monthly",
+      "currency": "USD"
+    },
+    {
+      "id": "demo-35",
+      "source": "RSU vests (est.)",
+      "kind": "other",
+      "amount": 60000,
+      "frequency": "annual",
+      "currency": "USD"
+    },
+    {
+      "id": "demo-36",
+      "source": "Dividends",
+      "kind": "dividend",
+      "amount": 9000,
+      "frequency": "annual",
+      "currency": "USD"
+    },
+    {
+      "id": "demo-37",
+      "source": "Interest (T-bills, CDs)",
+      "kind": "interest",
+      "amount": 7500,
+      "frequency": "annual",
+      "currency": "USD"
+    }
+  ],
+  "edits": [],
+  "snapshots": [
+    {
+      "date": "2024-12-10",
+      "accounts": {
+        "demo-1": 52971510,
+        "demo-8": 42543116,
+        "demo-11": 15840126,
+        "demo-25": 9025000,
+        "demo-27": 1586472,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-11",
+      "accounts": {
+        "demo-1": 53023278,
+        "demo-8": 42642261,
+        "demo-11": 15868428,
+        "demo-25": 9025000,
+        "demo-27": 1581510,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-12",
+      "accounts": {
+        "demo-1": 53164534,
+        "demo-8": 42624477,
+        "demo-11": 15903675,
+        "demo-25": 9025000,
+        "demo-27": 1574644,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-13",
+      "accounts": {
+        "demo-1": 53061938,
+        "demo-8": 42634498,
+        "demo-11": 15886002,
+        "demo-25": 9025000,
+        "demo-27": 1578346,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-14",
+      "accounts": {
+        "demo-1": 53061938,
+        "demo-8": 42634498,
+        "demo-11": 15886002,
+        "demo-25": 9025000,
+        "demo-27": 1578346,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-15",
+      "accounts": {
+        "demo-1": 53061938,
+        "demo-8": 42634498,
+        "demo-11": 15886002,
+        "demo-25": 9025000,
+        "demo-27": 1578346,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-16",
+      "accounts": {
+        "demo-1": 53283662,
+        "demo-8": 42665230,
+        "demo-11": 15955012,
+        "demo-25": 9025000,
+        "demo-27": 1575931,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-17",
+      "accounts": {
+        "demo-1": 53127472,
+        "demo-8": 42537220,
+        "demo-11": 15943273,
+        "demo-25": 9025000,
+        "demo-27": 1574598,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-18",
+      "accounts": {
+        "demo-1": 52880035,
+        "demo-8": 42454537,
+        "demo-11": 15911940,
+        "demo-25": 9025000,
+        "demo-27": 1573131,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-19",
+      "accounts": {
+        "demo-1": 52940144,
+        "demo-8": 42515928,
+        "demo-11": 15978995,
+        "demo-25": 9025000,
+        "demo-27": 1583628,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-20",
+      "accounts": {
+        "demo-1": 53303114,
+        "demo-8": 42544205,
+        "demo-11": 16029859,
+        "demo-25": 9025000,
+        "demo-27": 1573803,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-21",
+      "accounts": {
+        "demo-1": 53303114,
+        "demo-8": 42544205,
+        "demo-11": 16029859,
+        "demo-25": 9025000,
+        "demo-27": 1573803,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-22",
+      "accounts": {
+        "demo-1": 53303114,
+        "demo-8": 42544205,
+        "demo-11": 16029859,
+        "demo-25": 9025000,
+        "demo-27": 1573803,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-23",
+      "accounts": {
+        "demo-1": 53630221,
+        "demo-8": 42369939,
+        "demo-11": 16012658,
+        "demo-25": 9025000,
+        "demo-27": 1565538,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-24",
+      "accounts": {
+        "demo-1": 53433769,
+        "demo-8": 42225957,
+        "demo-11": 15959578,
+        "demo-25": 9025000,
+        "demo-27": 1570362,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-25",
+      "accounts": {
+        "demo-1": 53243669,
+        "demo-8": 42058222,
+        "demo-11": 15914738,
+        "demo-25": 9025000,
+        "demo-27": 1563991,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-26",
+      "accounts": {
+        "demo-1": 53202475,
+        "demo-8": 42139032,
+        "demo-11": 15840495,
+        "demo-25": 9025000,
+        "demo-27": 1572725,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-27",
+      "accounts": {
+        "demo-1": 53235387,
+        "demo-8": 42135143,
+        "demo-11": 15778800,
+        "demo-25": 9025000,
+        "demo-27": 1581192,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-28",
+      "accounts": {
+        "demo-1": 53235387,
+        "demo-8": 42135143,
+        "demo-11": 15778800,
+        "demo-25": 9025000,
+        "demo-27": 1581192,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-29",
+      "accounts": {
+        "demo-1": 53235387,
+        "demo-8": 42135143,
+        "demo-11": 15778800,
+        "demo-25": 9025000,
+        "demo-27": 1581192,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-30",
+      "accounts": {
+        "demo-1": 53272629,
+        "demo-8": 42080037,
+        "demo-11": 15827074,
+        "demo-25": 9025000,
+        "demo-27": 1579341,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2024-12-31",
+      "accounts": {
+        "demo-1": 53085352,
+        "demo-8": 41959890,
+        "demo-11": 15829795,
+        "demo-25": 9025000,
+        "demo-27": 1568641,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-01",
+      "accounts": {
+        "demo-1": 53369196,
+        "demo-8": 42014211,
+        "demo-11": 15816272,
+        "demo-25": 9025000,
+        "demo-27": 1566626,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-02",
+      "accounts": {
+        "demo-1": 53243658,
+        "demo-8": 42033831,
+        "demo-11": 15815615,
+        "demo-25": 9025000,
+        "demo-27": 1568137,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-03",
+      "accounts": {
+        "demo-1": 53106323,
+        "demo-8": 42079723,
+        "demo-11": 15787326,
+        "demo-25": 9025000,
+        "demo-27": 1560713,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-04",
+      "accounts": {
+        "demo-1": 53106323,
+        "demo-8": 42079723,
+        "demo-11": 15787326,
+        "demo-25": 9025000,
+        "demo-27": 1560713,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-05",
+      "accounts": {
+        "demo-1": 53106323,
+        "demo-8": 42079723,
+        "demo-11": 15787326,
+        "demo-25": 9025000,
+        "demo-27": 1560713,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-06",
+      "accounts": {
+        "demo-1": 52880159,
+        "demo-8": 41838731,
+        "demo-11": 15801710,
+        "demo-25": 9025000,
+        "demo-27": 1560517,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-07",
+      "accounts": {
+        "demo-1": 53037340,
+        "demo-8": 41908943,
+        "demo-11": 15784759,
+        "demo-25": 9025000,
+        "demo-27": 1556254,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-08",
+      "accounts": {
+        "demo-1": 53004510,
+        "demo-8": 41949587,
+        "demo-11": 15691718,
+        "demo-25": 9025000,
+        "demo-27": 1563369,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-09",
+      "accounts": {
+        "demo-1": 53347552,
+        "demo-8": 41791641,
+        "demo-11": 15742554,
+        "demo-25": 9025000,
+        "demo-27": 1569193,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-10",
+      "accounts": {
+        "demo-1": 53159251,
+        "demo-8": 42035965,
+        "demo-11": 15743820,
+        "demo-25": 9025000,
+        "demo-27": 1580100,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-11",
+      "accounts": {
+        "demo-1": 53159251,
+        "demo-8": 42035965,
+        "demo-11": 15743820,
+        "demo-25": 9025000,
+        "demo-27": 1580100,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-12",
+      "accounts": {
+        "demo-1": 53159251,
+        "demo-8": 42035965,
+        "demo-11": 15743820,
+        "demo-25": 9025000,
+        "demo-27": 1580100,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-13",
+      "accounts": {
+        "demo-1": 53427588,
+        "demo-8": 41993601,
+        "demo-11": 15750474,
+        "demo-25": 9025000,
+        "demo-27": 1581758,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-14",
+      "accounts": {
+        "demo-1": 53495940,
+        "demo-8": 41838679,
+        "demo-11": 15695392,
+        "demo-25": 9025000,
+        "demo-27": 1592136,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-15",
+      "accounts": {
+        "demo-1": 53730819,
+        "demo-8": 41939962,
+        "demo-11": 15653400,
+        "demo-25": 9025000,
+        "demo-27": 1594917,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-16",
+      "accounts": {
+        "demo-1": 53665467,
+        "demo-8": 42194732,
+        "demo-11": 15735990,
+        "demo-25": 9025000,
+        "demo-27": 1599989,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-17",
+      "accounts": {
+        "demo-1": 53513993,
+        "demo-8": 42088702,
+        "demo-11": 15775464,
+        "demo-25": 9025000,
+        "demo-27": 1596070,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-18",
+      "accounts": {
+        "demo-1": 53513993,
+        "demo-8": 42088702,
+        "demo-11": 15775464,
+        "demo-25": 9025000,
+        "demo-27": 1596070,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-19",
+      "accounts": {
+        "demo-1": 53513993,
+        "demo-8": 42088702,
+        "demo-11": 15775464,
+        "demo-25": 9025000,
+        "demo-27": 1596070,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-20",
+      "accounts": {
+        "demo-1": 53311595,
+        "demo-8": 42099778,
+        "demo-11": 15786599,
+        "demo-25": 9025000,
+        "demo-27": 1596296,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-21",
+      "accounts": {
+        "demo-1": 52909862,
+        "demo-8": 42270614,
+        "demo-11": 15814454,
+        "demo-25": 9025000,
+        "demo-27": 1594908,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-22",
+      "accounts": {
+        "demo-1": 53042345,
+        "demo-8": 42261155,
+        "demo-11": 15819963,
+        "demo-25": 9025000,
+        "demo-27": 1600231,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-23",
+      "accounts": {
+        "demo-1": 53227274,
+        "demo-8": 42162530,
+        "demo-11": 15848029,
+        "demo-25": 9025000,
+        "demo-27": 1593876,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-24",
+      "accounts": {
+        "demo-1": 53224196,
+        "demo-8": 42039985,
+        "demo-11": 15822071,
+        "demo-25": 9025000,
+        "demo-27": 1597513,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-25",
+      "accounts": {
+        "demo-1": 53224196,
+        "demo-8": 42039985,
+        "demo-11": 15822071,
+        "demo-25": 9025000,
+        "demo-27": 1597513,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-26",
+      "accounts": {
+        "demo-1": 53224196,
+        "demo-8": 42039985,
+        "demo-11": 15822071,
+        "demo-25": 9025000,
+        "demo-27": 1597513,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-27",
+      "accounts": {
+        "demo-1": 53002761,
+        "demo-8": 42030956,
+        "demo-11": 15788018,
+        "demo-25": 9025000,
+        "demo-27": 1598346,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-28",
+      "accounts": {
+        "demo-1": 53269396,
+        "demo-8": 41957922,
+        "demo-11": 15796896,
+        "demo-25": 9025000,
+        "demo-27": 1598179,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-29",
+      "accounts": {
+        "demo-1": 53148042,
+        "demo-8": 42138196,
+        "demo-11": 15801116,
+        "demo-25": 9025000,
+        "demo-27": 1604468,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-30",
+      "accounts": {
+        "demo-1": 53027472,
+        "demo-8": 42071159,
+        "demo-11": 15830001,
+        "demo-25": 9025000,
+        "demo-27": 1603623,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-01-31",
+      "accounts": {
+        "demo-1": 53060263,
+        "demo-8": 42030508,
+        "demo-11": 15918992,
+        "demo-25": 9025000,
+        "demo-27": 1600972,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-01",
+      "accounts": {
+        "demo-1": 53060263,
+        "demo-8": 42030508,
+        "demo-11": 15918992,
+        "demo-25": 9025000,
+        "demo-27": 1600972,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-02",
+      "accounts": {
+        "demo-1": 53060263,
+        "demo-8": 42030508,
+        "demo-11": 15918992,
+        "demo-25": 9025000,
+        "demo-27": 1600972,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-03",
+      "accounts": {
+        "demo-1": 53003875,
+        "demo-8": 41947380,
+        "demo-11": 15908652,
+        "demo-25": 9025000,
+        "demo-27": 1598197,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-04",
+      "accounts": {
+        "demo-1": 52773990,
+        "demo-8": 42084871,
+        "demo-11": 15937003,
+        "demo-25": 9025000,
+        "demo-27": 1599363,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-05",
+      "accounts": {
+        "demo-1": 53129423,
+        "demo-8": 42093400,
+        "demo-11": 15936285,
+        "demo-25": 9025000,
+        "demo-27": 1609044,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-06",
+      "accounts": {
+        "demo-1": 53496092,
+        "demo-8": 41863717,
+        "demo-11": 16007067,
+        "demo-25": 9025000,
+        "demo-27": 1612114,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-07",
+      "accounts": {
+        "demo-1": 53970344,
+        "demo-8": 41939780,
+        "demo-11": 15990503,
+        "demo-25": 9025000,
+        "demo-27": 1609204,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-08",
+      "accounts": {
+        "demo-1": 53970344,
+        "demo-8": 41939780,
+        "demo-11": 15990503,
+        "demo-25": 9025000,
+        "demo-27": 1609204,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-09",
+      "accounts": {
+        "demo-1": 53970344,
+        "demo-8": 41939780,
+        "demo-11": 15990503,
+        "demo-25": 9025000,
+        "demo-27": 1609204,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-10",
+      "accounts": {
+        "demo-1": 54217604,
+        "demo-8": 41705317,
+        "demo-11": 15972402,
+        "demo-25": 9025000,
+        "demo-27": 1612591,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-11",
+      "accounts": {
+        "demo-1": 54201290,
+        "demo-8": 41880352,
+        "demo-11": 15961350,
+        "demo-25": 9025000,
+        "demo-27": 1608048,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-12",
+      "accounts": {
+        "demo-1": 54184668,
+        "demo-8": 41871065,
+        "demo-11": 15936820,
+        "demo-25": 9025000,
+        "demo-27": 1611666,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-13",
+      "accounts": {
+        "demo-1": 54445803,
+        "demo-8": 41692753,
+        "demo-11": 15917594,
+        "demo-25": 9025000,
+        "demo-27": 1612945,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-14",
+      "accounts": {
+        "demo-1": 54436461,
+        "demo-8": 41805452,
+        "demo-11": 15941482,
+        "demo-25": 9025000,
+        "demo-27": 1611270,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-15",
+      "accounts": {
+        "demo-1": 54436461,
+        "demo-8": 41805452,
+        "demo-11": 15941482,
+        "demo-25": 9025000,
+        "demo-27": 1611270,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-16",
+      "accounts": {
+        "demo-1": 54436461,
+        "demo-8": 41805452,
+        "demo-11": 15941482,
+        "demo-25": 9025000,
+        "demo-27": 1611270,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-17",
+      "accounts": {
+        "demo-1": 54538694,
+        "demo-8": 41614345,
+        "demo-11": 15980194,
+        "demo-25": 9025000,
+        "demo-27": 1616818,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-18",
+      "accounts": {
+        "demo-1": 54560775,
+        "demo-8": 41639911,
+        "demo-11": 15988982,
+        "demo-25": 9025000,
+        "demo-27": 1620531,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-19",
+      "accounts": {
+        "demo-1": 54431599,
+        "demo-8": 41798439,
+        "demo-11": 16013742,
+        "demo-25": 9025000,
+        "demo-27": 1624980,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-20",
+      "accounts": {
+        "demo-1": 54826822,
+        "demo-8": 41575507,
+        "demo-11": 15960582,
+        "demo-25": 9025000,
+        "demo-27": 1627535,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-21",
+      "accounts": {
+        "demo-1": 54792882,
+        "demo-8": 41608645,
+        "demo-11": 16028925,
+        "demo-25": 9025000,
+        "demo-27": 1632118,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-22",
+      "accounts": {
+        "demo-1": 54792882,
+        "demo-8": 41608645,
+        "demo-11": 16028925,
+        "demo-25": 9025000,
+        "demo-27": 1632118,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-23",
+      "accounts": {
+        "demo-1": 54792882,
+        "demo-8": 41608645,
+        "demo-11": 16028925,
+        "demo-25": 9025000,
+        "demo-27": 1632118,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-24",
+      "accounts": {
+        "demo-1": 54612850,
+        "demo-8": 41667654,
+        "demo-11": 16062955,
+        "demo-25": 9025000,
+        "demo-27": 1625503,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-25",
+      "accounts": {
+        "demo-1": 54637868,
+        "demo-8": 41826458,
+        "demo-11": 16012907,
+        "demo-25": 9025000,
+        "demo-27": 1624972,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-26",
+      "accounts": {
+        "demo-1": 54894893,
+        "demo-8": 42017062,
+        "demo-11": 15992710,
+        "demo-25": 9025000,
+        "demo-27": 1626841,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-27",
+      "accounts": {
+        "demo-1": 54710126,
+        "demo-8": 42035987,
+        "demo-11": 15971646,
+        "demo-25": 9025000,
+        "demo-27": 1622937,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-02-28",
+      "accounts": {
+        "demo-1": 54764660,
+        "demo-8": 42090824,
+        "demo-11": 15959871,
+        "demo-25": 9025000,
+        "demo-27": 1628937,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-01",
+      "accounts": {
+        "demo-1": 54764660,
+        "demo-8": 42090824,
+        "demo-11": 15959871,
+        "demo-25": 9025000,
+        "demo-27": 1628937,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-02",
+      "accounts": {
+        "demo-1": 54764660,
+        "demo-8": 42090824,
+        "demo-11": 15959871,
+        "demo-25": 9025000,
+        "demo-27": 1628937,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-03",
+      "accounts": {
+        "demo-1": 54685995,
+        "demo-8": 42263301,
+        "demo-11": 15948349,
+        "demo-25": 9025000,
+        "demo-27": 1630799,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-04",
+      "accounts": {
+        "demo-1": 54813040,
+        "demo-8": 42370202,
+        "demo-11": 15877297,
+        "demo-25": 9025000,
+        "demo-27": 1631684,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-05",
+      "accounts": {
+        "demo-1": 55104599,
+        "demo-8": 42310742,
+        "demo-11": 15892126,
+        "demo-25": 9025000,
+        "demo-27": 1631745,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-06",
+      "accounts": {
+        "demo-1": 55309144,
+        "demo-8": 42101885,
+        "demo-11": 15952652,
+        "demo-25": 9025000,
+        "demo-27": 1631289,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-07",
+      "accounts": {
+        "demo-1": 55436716,
+        "demo-8": 42148797,
+        "demo-11": 15959893,
+        "demo-25": 9025000,
+        "demo-27": 1634551,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-08",
+      "accounts": {
+        "demo-1": 55436716,
+        "demo-8": 42148797,
+        "demo-11": 15959893,
+        "demo-25": 9025000,
+        "demo-27": 1634551,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-09",
+      "accounts": {
+        "demo-1": 55436716,
+        "demo-8": 42148797,
+        "demo-11": 15959893,
+        "demo-25": 9025000,
+        "demo-27": 1634551,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-10",
+      "accounts": {
+        "demo-1": 55616256,
+        "demo-8": 42142233,
+        "demo-11": 15965726,
+        "demo-25": 9025000,
+        "demo-27": 1638796,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-11",
+      "accounts": {
+        "demo-1": 55207696,
+        "demo-8": 42241184,
+        "demo-11": 16029938,
+        "demo-25": 9025000,
+        "demo-27": 1637729,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-12",
+      "accounts": {
+        "demo-1": 55495493,
+        "demo-8": 42328495,
+        "demo-11": 16036706,
+        "demo-25": 9025000,
+        "demo-27": 1631394,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-13",
+      "accounts": {
+        "demo-1": 55419878,
+        "demo-8": 42298191,
+        "demo-11": 16074103,
+        "demo-25": 9025000,
+        "demo-27": 1638026,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-14",
+      "accounts": {
+        "demo-1": 55604754,
+        "demo-8": 42385848,
+        "demo-11": 16054876,
+        "demo-25": 9025000,
+        "demo-27": 1644312,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-15",
+      "accounts": {
+        "demo-1": 55604754,
+        "demo-8": 42385848,
+        "demo-11": 16054876,
+        "demo-25": 9025000,
+        "demo-27": 1644312,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-16",
+      "accounts": {
+        "demo-1": 55604754,
+        "demo-8": 42385848,
+        "demo-11": 16054876,
+        "demo-25": 9025000,
+        "demo-27": 1644312,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-17",
+      "accounts": {
+        "demo-1": 55992528,
+        "demo-8": 42344966,
+        "demo-11": 16012476,
+        "demo-25": 9025000,
+        "demo-27": 1640807,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-18",
+      "accounts": {
+        "demo-1": 55799389,
+        "demo-8": 42295642,
+        "demo-11": 16016561,
+        "demo-25": 9025000,
+        "demo-27": 1641942,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-19",
+      "accounts": {
+        "demo-1": 55831419,
+        "demo-8": 42166272,
+        "demo-11": 15983918,
+        "demo-25": 9025000,
+        "demo-27": 1641201,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-20",
+      "accounts": {
+        "demo-1": 56157072,
+        "demo-8": 42402481,
+        "demo-11": 16056169,
+        "demo-25": 9025000,
+        "demo-27": 1639776,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-21",
+      "accounts": {
+        "demo-1": 56244052,
+        "demo-8": 42492555,
+        "demo-11": 16078066,
+        "demo-25": 9025000,
+        "demo-27": 1633000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-22",
+      "accounts": {
+        "demo-1": 56244052,
+        "demo-8": 42492555,
+        "demo-11": 16078066,
+        "demo-25": 9025000,
+        "demo-27": 1633000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-23",
+      "accounts": {
+        "demo-1": 56244052,
+        "demo-8": 42492555,
+        "demo-11": 16078066,
+        "demo-25": 9025000,
+        "demo-27": 1633000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-24",
+      "accounts": {
+        "demo-1": 56259221,
+        "demo-8": 42577804,
+        "demo-11": 16087973,
+        "demo-25": 9025000,
+        "demo-27": 1635991,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-25",
+      "accounts": {
+        "demo-1": 56443969,
+        "demo-8": 42553914,
+        "demo-11": 16128181,
+        "demo-25": 9025000,
+        "demo-27": 1639198,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-26",
+      "accounts": {
+        "demo-1": 56381637,
+        "demo-8": 42475244,
+        "demo-11": 16118999,
+        "demo-25": 9025000,
+        "demo-27": 1637167,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-27",
+      "accounts": {
+        "demo-1": 56674346,
+        "demo-8": 42550229,
+        "demo-11": 16050749,
+        "demo-25": 9025000,
+        "demo-27": 1632548,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-28",
+      "accounts": {
+        "demo-1": 56657283,
+        "demo-8": 42818183,
+        "demo-11": 16129512,
+        "demo-25": 9025000,
+        "demo-27": 1621611,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-29",
+      "accounts": {
+        "demo-1": 56657283,
+        "demo-8": 42818183,
+        "demo-11": 16129512,
+        "demo-25": 9025000,
+        "demo-27": 1621611,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-30",
+      "accounts": {
+        "demo-1": 56657283,
+        "demo-8": 42818183,
+        "demo-11": 16129512,
+        "demo-25": 9025000,
+        "demo-27": 1621611,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-03-31",
+      "accounts": {
+        "demo-1": 56267279,
+        "demo-8": 42790196,
+        "demo-11": 16097974,
+        "demo-25": 9025000,
+        "demo-27": 1625893,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-01",
+      "accounts": {
+        "demo-1": 55848531,
+        "demo-8": 42611003,
+        "demo-11": 16056412,
+        "demo-25": 9025000,
+        "demo-27": 1624603,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-02",
+      "accounts": {
+        "demo-1": 56275170,
+        "demo-8": 42513567,
+        "demo-11": 16051854,
+        "demo-25": 9025000,
+        "demo-27": 1626273,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-03",
+      "accounts": {
+        "demo-1": 56449122,
+        "demo-8": 42542086,
+        "demo-11": 16021449,
+        "demo-25": 9025000,
+        "demo-27": 1632360,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-04",
+      "accounts": {
+        "demo-1": 56392993,
+        "demo-8": 42738200,
+        "demo-11": 16001417,
+        "demo-25": 9025000,
+        "demo-27": 1631754,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-05",
+      "accounts": {
+        "demo-1": 56392993,
+        "demo-8": 42738200,
+        "demo-11": 16001417,
+        "demo-25": 9025000,
+        "demo-27": 1631754,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-06",
+      "accounts": {
+        "demo-1": 56392993,
+        "demo-8": 42738200,
+        "demo-11": 16001417,
+        "demo-25": 9025000,
+        "demo-27": 1631754,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-07",
+      "accounts": {
+        "demo-1": 56464397,
+        "demo-8": 42560185,
+        "demo-11": 15943992,
+        "demo-25": 9025000,
+        "demo-27": 1625922,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-08",
+      "accounts": {
+        "demo-1": 56282983,
+        "demo-8": 42651564,
+        "demo-11": 15949879,
+        "demo-25": 9025000,
+        "demo-27": 1623879,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-09",
+      "accounts": {
+        "demo-1": 56205527,
+        "demo-8": 42617926,
+        "demo-11": 15942979,
+        "demo-25": 9025000,
+        "demo-27": 1634693,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-10",
+      "accounts": {
+        "demo-1": 56340115,
+        "demo-8": 42615186,
+        "demo-11": 15971676,
+        "demo-25": 9025000,
+        "demo-27": 1640966,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-11",
+      "accounts": {
+        "demo-1": 56452253,
+        "demo-8": 42468225,
+        "demo-11": 16011644,
+        "demo-25": 9025000,
+        "demo-27": 1650982,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-12",
+      "accounts": {
+        "demo-1": 56452253,
+        "demo-8": 42468225,
+        "demo-11": 16011644,
+        "demo-25": 9025000,
+        "demo-27": 1650982,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-13",
+      "accounts": {
+        "demo-1": 56452253,
+        "demo-8": 42468225,
+        "demo-11": 16011644,
+        "demo-25": 9025000,
+        "demo-27": 1650982,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-14",
+      "accounts": {
+        "demo-1": 56090084,
+        "demo-8": 42437230,
+        "demo-11": 15967383,
+        "demo-25": 9025000,
+        "demo-27": 1647950,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-15",
+      "accounts": {
+        "demo-1": 55769826,
+        "demo-8": 42523685,
+        "demo-11": 15942091,
+        "demo-25": 9025000,
+        "demo-27": 1646977,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-16",
+      "accounts": {
+        "demo-1": 55913390,
+        "demo-8": 42474250,
+        "demo-11": 15977518,
+        "demo-25": 9025000,
+        "demo-27": 1646527,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-17",
+      "accounts": {
+        "demo-1": 55799024,
+        "demo-8": 42567785,
+        "demo-11": 15964238,
+        "demo-25": 9025000,
+        "demo-27": 1652453,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-18",
+      "accounts": {
+        "demo-1": 55555076,
+        "demo-8": 42502164,
+        "demo-11": 15971354,
+        "demo-25": 9025000,
+        "demo-27": 1652189,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-19",
+      "accounts": {
+        "demo-1": 55555076,
+        "demo-8": 42502164,
+        "demo-11": 15971354,
+        "demo-25": 9025000,
+        "demo-27": 1652189,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-20",
+      "accounts": {
+        "demo-1": 55555076,
+        "demo-8": 42502164,
+        "demo-11": 15971354,
+        "demo-25": 9025000,
+        "demo-27": 1652189,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-21",
+      "accounts": {
+        "demo-1": 55378351,
+        "demo-8": 42508914,
+        "demo-11": 15888956,
+        "demo-25": 9025000,
+        "demo-27": 1654360,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-22",
+      "accounts": {
+        "demo-1": 55294393,
+        "demo-8": 42617406,
+        "demo-11": 15883076,
+        "demo-25": 9025000,
+        "demo-27": 1648710,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-23",
+      "accounts": {
+        "demo-1": 55667002,
+        "demo-8": 42566665,
+        "demo-11": 15911622,
+        "demo-25": 9025000,
+        "demo-27": 1648561,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-24",
+      "accounts": {
+        "demo-1": 56080344,
+        "demo-8": 42477291,
+        "demo-11": 15849161,
+        "demo-25": 9025000,
+        "demo-27": 1653906,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-25",
+      "accounts": {
+        "demo-1": 56268273,
+        "demo-8": 42405645,
+        "demo-11": 15819587,
+        "demo-25": 9025000,
+        "demo-27": 1645033,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-26",
+      "accounts": {
+        "demo-1": 56268273,
+        "demo-8": 42405645,
+        "demo-11": 15819587,
+        "demo-25": 9025000,
+        "demo-27": 1645033,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-27",
+      "accounts": {
+        "demo-1": 56268273,
+        "demo-8": 42405645,
+        "demo-11": 15819587,
+        "demo-25": 9025000,
+        "demo-27": 1645033,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-28",
+      "accounts": {
+        "demo-1": 56031104,
+        "demo-8": 42294193,
+        "demo-11": 15884784,
+        "demo-25": 9025000,
+        "demo-27": 1644642,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-29",
+      "accounts": {
+        "demo-1": 56071604,
+        "demo-8": 42189203,
+        "demo-11": 15852897,
+        "demo-25": 9025000,
+        "demo-27": 1655226,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-04-30",
+      "accounts": {
+        "demo-1": 56101749,
+        "demo-8": 42233294,
+        "demo-11": 15797628,
+        "demo-25": 9025000,
+        "demo-27": 1662609,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-01",
+      "accounts": {
+        "demo-1": 55638294,
+        "demo-8": 42295829,
+        "demo-11": 15887995,
+        "demo-25": 9025000,
+        "demo-27": 1654104,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-02",
+      "accounts": {
+        "demo-1": 55933063,
+        "demo-8": 42519508,
+        "demo-11": 15891173,
+        "demo-25": 9025000,
+        "demo-27": 1651741,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-03",
+      "accounts": {
+        "demo-1": 55933063,
+        "demo-8": 42519508,
+        "demo-11": 15891173,
+        "demo-25": 9025000,
+        "demo-27": 1651741,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-04",
+      "accounts": {
+        "demo-1": 55933063,
+        "demo-8": 42519508,
+        "demo-11": 15891173,
+        "demo-25": 9025000,
+        "demo-27": 1651741,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-05",
+      "accounts": {
+        "demo-1": 56214954,
+        "demo-8": 42620254,
+        "demo-11": 15807794,
+        "demo-25": 9025000,
+        "demo-27": 1651027,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-06",
+      "accounts": {
+        "demo-1": 56481225,
+        "demo-8": 42652967,
+        "demo-11": 15853536,
+        "demo-25": 9025000,
+        "demo-27": 1653093,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-07",
+      "accounts": {
+        "demo-1": 56845269,
+        "demo-8": 42934303,
+        "demo-11": 15819449,
+        "demo-25": 9025000,
+        "demo-27": 1665665,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-08",
+      "accounts": {
+        "demo-1": 56879783,
+        "demo-8": 42987907,
+        "demo-11": 15802176,
+        "demo-25": 9025000,
+        "demo-27": 1662923,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-09",
+      "accounts": {
+        "demo-1": 56721620,
+        "demo-8": 43049989,
+        "demo-11": 15817999,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1673327,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-10",
+      "accounts": {
+        "demo-1": 56721620,
+        "demo-8": 43049989,
+        "demo-11": 15817999,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1673327,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-11",
+      "accounts": {
+        "demo-1": 56721620,
+        "demo-8": 43049989,
+        "demo-11": 15817999,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1673327,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-12",
+      "accounts": {
+        "demo-1": 56315115,
+        "demo-8": 43037043,
+        "demo-11": 15813596,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1664554,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-13",
+      "accounts": {
+        "demo-1": 56272503,
+        "demo-8": 43213541,
+        "demo-11": 15888063,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1674188,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-14",
+      "accounts": {
+        "demo-1": 56448712,
+        "demo-8": 43383253,
+        "demo-11": 15895337,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1673735,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-15",
+      "accounts": {
+        "demo-1": 56578701,
+        "demo-8": 43634858,
+        "demo-11": 15854489,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1673736,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-16",
+      "accounts": {
+        "demo-1": 56737456,
+        "demo-8": 43810195,
+        "demo-11": 15896585,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1684391,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-17",
+      "accounts": {
+        "demo-1": 56737456,
+        "demo-8": 43810195,
+        "demo-11": 15896585,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1684391,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-18",
+      "accounts": {
+        "demo-1": 56737456,
+        "demo-8": 43810195,
+        "demo-11": 15896585,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1684391,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-19",
+      "accounts": {
+        "demo-1": 56488660,
+        "demo-8": 43786238,
+        "demo-11": 15883743,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1691784,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-20",
+      "accounts": {
+        "demo-1": 56776824,
+        "demo-8": 43888789,
+        "demo-11": 15837085,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1690825,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-21",
+      "accounts": {
+        "demo-1": 57002597,
+        "demo-8": 43866507,
+        "demo-11": 15792198,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1691497,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-22",
+      "accounts": {
+        "demo-1": 57293451,
+        "demo-8": 43868691,
+        "demo-11": 15800604,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1698240,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-23",
+      "accounts": {
+        "demo-1": 57547045,
+        "demo-8": 44079121,
+        "demo-11": 15763434,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1695212,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-24",
+      "accounts": {
+        "demo-1": 57547045,
+        "demo-8": 44079121,
+        "demo-11": 15763434,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1695212,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-25",
+      "accounts": {
+        "demo-1": 57547045,
+        "demo-8": 44079121,
+        "demo-11": 15763434,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1695212,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-26",
+      "accounts": {
+        "demo-1": 57280980,
+        "demo-8": 44004856,
+        "demo-11": 15801917,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1686010,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-27",
+      "accounts": {
+        "demo-1": 57281537,
+        "demo-8": 44109098,
+        "demo-11": 15801346,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1695488,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-28",
+      "accounts": {
+        "demo-1": 57501813,
+        "demo-8": 43999501,
+        "demo-11": 15814671,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1693133,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-29",
+      "accounts": {
+        "demo-1": 57196053,
+        "demo-8": 43853653,
+        "demo-11": 15851142,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1704572,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-30",
+      "accounts": {
+        "demo-1": 57088137,
+        "demo-8": 43718823,
+        "demo-11": 15883447,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1702285,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-05-31",
+      "accounts": {
+        "demo-1": 57088137,
+        "demo-8": 43718823,
+        "demo-11": 15883447,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1702285,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-01",
+      "accounts": {
+        "demo-1": 57088137,
+        "demo-8": 43718823,
+        "demo-11": 15883447,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1702285,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-02",
+      "accounts": {
+        "demo-1": 56801014,
+        "demo-8": 43823377,
+        "demo-11": 15847958,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1708045,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-03",
+      "accounts": {
+        "demo-1": 56678448,
+        "demo-8": 43905567,
+        "demo-11": 15891638,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1706402,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-04",
+      "accounts": {
+        "demo-1": 56493492,
+        "demo-8": 43988306,
+        "demo-11": 15959225,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1694426,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-05",
+      "accounts": {
+        "demo-1": 56696567,
+        "demo-8": 43853576,
+        "demo-11": 16067226,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1694506,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-06",
+      "accounts": {
+        "demo-1": 56528647,
+        "demo-8": 43835546,
+        "demo-11": 16065239,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1691782,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-07",
+      "accounts": {
+        "demo-1": 56528647,
+        "demo-8": 43835546,
+        "demo-11": 16065239,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1691782,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-08",
+      "accounts": {
+        "demo-1": 56528647,
+        "demo-8": 43835546,
+        "demo-11": 16065239,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1691782,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-09",
+      "accounts": {
+        "demo-1": 56903221,
+        "demo-8": 43775888,
+        "demo-11": 16125633,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1695595,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-10",
+      "accounts": {
+        "demo-1": 56668028,
+        "demo-8": 44019736,
+        "demo-11": 16119834,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1695756,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-11",
+      "accounts": {
+        "demo-1": 56644112,
+        "demo-8": 44154391,
+        "demo-11": 16129660,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1702278,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-12",
+      "accounts": {
+        "demo-1": 57172857,
+        "demo-8": 44272443,
+        "demo-11": 16176487,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1701471,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-13",
+      "accounts": {
+        "demo-1": 56979800,
+        "demo-8": 44254916,
+        "demo-11": 16235998,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1707248,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-14",
+      "accounts": {
+        "demo-1": 56979800,
+        "demo-8": 44254916,
+        "demo-11": 16235998,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1707248,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-15",
+      "accounts": {
+        "demo-1": 56979800,
+        "demo-8": 44254916,
+        "demo-11": 16235998,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1707248,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-16",
+      "accounts": {
+        "demo-1": 56965362,
+        "demo-8": 44487814,
+        "demo-11": 16216251,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1715060,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-17",
+      "accounts": {
+        "demo-1": 57195025,
+        "demo-8": 44525096,
+        "demo-11": 16210323,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1714896,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-18",
+      "accounts": {
+        "demo-1": 56880449,
+        "demo-8": 44261002,
+        "demo-11": 16199938,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1727389,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-19",
+      "accounts": {
+        "demo-1": 56750311,
+        "demo-8": 44171173,
+        "demo-11": 16159711,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1732004,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-20",
+      "accounts": {
+        "demo-1": 56741418,
+        "demo-8": 44152832,
+        "demo-11": 16139744,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1741703,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-21",
+      "accounts": {
+        "demo-1": 56741418,
+        "demo-8": 44152832,
+        "demo-11": 16139744,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1741703,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-22",
+      "accounts": {
+        "demo-1": 56741418,
+        "demo-8": 44152832,
+        "demo-11": 16139744,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1741703,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-23",
+      "accounts": {
+        "demo-1": 56932305,
+        "demo-8": 44297599,
+        "demo-11": 16172460,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1743435,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-24",
+      "accounts": {
+        "demo-1": 57157185,
+        "demo-8": 44453170,
+        "demo-11": 16234976,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1745792,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-25",
+      "accounts": {
+        "demo-1": 57164462,
+        "demo-8": 44283590,
+        "demo-11": 16217530,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1738523,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-26",
+      "accounts": {
+        "demo-1": 57047892,
+        "demo-8": 44390340,
+        "demo-11": 16288810,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1738878,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-27",
+      "accounts": {
+        "demo-1": 57039529,
+        "demo-8": 44357069,
+        "demo-11": 16288820,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1740099,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-28",
+      "accounts": {
+        "demo-1": 57039529,
+        "demo-8": 44357069,
+        "demo-11": 16288820,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1740099,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-29",
+      "accounts": {
+        "demo-1": 57039529,
+        "demo-8": 44357069,
+        "demo-11": 16288820,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1740099,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-06-30",
+      "accounts": {
+        "demo-1": 57409076,
+        "demo-8": 44254261,
+        "demo-11": 16235641,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1739215,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-01",
+      "accounts": {
+        "demo-1": 57539596,
+        "demo-8": 44208165,
+        "demo-11": 16200076,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1737273,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-02",
+      "accounts": {
+        "demo-1": 57328946,
+        "demo-8": 44281156,
+        "demo-11": 16207849,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1727139,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-03",
+      "accounts": {
+        "demo-1": 57388236,
+        "demo-8": 44254205,
+        "demo-11": 16235850,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1728628,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-04",
+      "accounts": {
+        "demo-1": 57832918,
+        "demo-8": 44161741,
+        "demo-11": 16229112,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1737612,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-05",
+      "accounts": {
+        "demo-1": 57832918,
+        "demo-8": 44161741,
+        "demo-11": 16229112,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1737612,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-06",
+      "accounts": {
+        "demo-1": 57832918,
+        "demo-8": 44161741,
+        "demo-11": 16229112,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1737612,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-07",
+      "accounts": {
+        "demo-1": 57979026,
+        "demo-8": 43925539,
+        "demo-11": 16245317,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1741743,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-08",
+      "accounts": {
+        "demo-1": 58084228,
+        "demo-8": 43970116,
+        "demo-11": 16278321,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1731064,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-09",
+      "accounts": {
+        "demo-1": 58535626,
+        "demo-8": 44183381,
+        "demo-11": 16248346,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1731852,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-10",
+      "accounts": {
+        "demo-1": 58290167,
+        "demo-8": 44313260,
+        "demo-11": 16230955,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1732489,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-11",
+      "accounts": {
+        "demo-1": 58113736,
+        "demo-8": 44047645,
+        "demo-11": 16252229,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1739001,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-12",
+      "accounts": {
+        "demo-1": 58113736,
+        "demo-8": 44047645,
+        "demo-11": 16252229,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1739001,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-13",
+      "accounts": {
+        "demo-1": 58113736,
+        "demo-8": 44047645,
+        "demo-11": 16252229,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1739001,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-14",
+      "accounts": {
+        "demo-1": 57933167,
+        "demo-8": 44029543,
+        "demo-11": 16294480,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1740494,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-15",
+      "accounts": {
+        "demo-1": 57940569,
+        "demo-8": 43783154,
+        "demo-11": 16327987,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1731273,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-16",
+      "accounts": {
+        "demo-1": 57775301,
+        "demo-8": 43804644,
+        "demo-11": 16391252,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1726516,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-17",
+      "accounts": {
+        "demo-1": 57553497,
+        "demo-8": 43788761,
+        "demo-11": 16381429,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1726610,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-18",
+      "accounts": {
+        "demo-1": 57204275,
+        "demo-8": 43768209,
+        "demo-11": 16381588,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1733759,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-19",
+      "accounts": {
+        "demo-1": 57204275,
+        "demo-8": 43768209,
+        "demo-11": 16381588,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1733759,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-20",
+      "accounts": {
+        "demo-1": 57204275,
+        "demo-8": 43768209,
+        "demo-11": 16381588,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1733759,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-21",
+      "accounts": {
+        "demo-1": 57287433,
+        "demo-8": 43697714,
+        "demo-11": 16461153,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1733295,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-22",
+      "accounts": {
+        "demo-1": 57318892,
+        "demo-8": 43743961,
+        "demo-11": 16461271,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1733887,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-23",
+      "accounts": {
+        "demo-1": 57555447,
+        "demo-8": 43940220,
+        "demo-11": 16460677,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1731121,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-24",
+      "accounts": {
+        "demo-1": 57280812,
+        "demo-8": 43806426,
+        "demo-11": 16504598,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1731270,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-25",
+      "accounts": {
+        "demo-1": 57213760,
+        "demo-8": 43783386,
+        "demo-11": 16543152,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1729108,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-26",
+      "accounts": {
+        "demo-1": 57213760,
+        "demo-8": 43783386,
+        "demo-11": 16543152,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1729108,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-27",
+      "accounts": {
+        "demo-1": 57213760,
+        "demo-8": 43783386,
+        "demo-11": 16543152,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1729108,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-28",
+      "accounts": {
+        "demo-1": 57473349,
+        "demo-8": 43803623,
+        "demo-11": 16529254,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1722051,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-29",
+      "accounts": {
+        "demo-1": 57276172,
+        "demo-8": 43683063,
+        "demo-11": 16529104,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1721258,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-30",
+      "accounts": {
+        "demo-1": 57268266,
+        "demo-8": 43730815,
+        "demo-11": 16571213,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1720166,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-07-31",
+      "accounts": {
+        "demo-1": 57332054,
+        "demo-8": 43782183,
+        "demo-11": 16591084,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1725187,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-01",
+      "accounts": {
+        "demo-1": 57606405,
+        "demo-8": 43796809,
+        "demo-11": 16528919,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1729955,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-02",
+      "accounts": {
+        "demo-1": 57606405,
+        "demo-8": 43796809,
+        "demo-11": 16528919,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1729955,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-03",
+      "accounts": {
+        "demo-1": 57606405,
+        "demo-8": 43796809,
+        "demo-11": 16528919,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1729955,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-04",
+      "accounts": {
+        "demo-1": 57441616,
+        "demo-8": 43805189,
+        "demo-11": 16564828,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1728439,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-05",
+      "accounts": {
+        "demo-1": 57441536,
+        "demo-8": 43956650,
+        "demo-11": 16612097,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1719259,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-06",
+      "accounts": {
+        "demo-1": 57882535,
+        "demo-8": 44005652,
+        "demo-11": 16619228,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1723748,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-07",
+      "accounts": {
+        "demo-1": 57769783,
+        "demo-8": 44189161,
+        "demo-11": 16694355,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1727503,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-08",
+      "accounts": {
+        "demo-1": 57811223,
+        "demo-8": 44152578,
+        "demo-11": 16683180,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1730860,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-09",
+      "accounts": {
+        "demo-1": 57811223,
+        "demo-8": 44152578,
+        "demo-11": 16683180,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1730860,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-10",
+      "accounts": {
+        "demo-1": 57811223,
+        "demo-8": 44152578,
+        "demo-11": 16683180,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1730860,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-11",
+      "accounts": {
+        "demo-1": 57554505,
+        "demo-8": 44054407,
+        "demo-11": 16668439,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1741822,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-12",
+      "accounts": {
+        "demo-1": 57604934,
+        "demo-8": 44247575,
+        "demo-11": 16635191,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1743568,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-13",
+      "accounts": {
+        "demo-1": 57754480,
+        "demo-8": 44404132,
+        "demo-11": 16707656,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1745623,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-14",
+      "accounts": {
+        "demo-1": 57532491,
+        "demo-8": 44512226,
+        "demo-11": 16712876,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1753865,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-15",
+      "accounts": {
+        "demo-1": 57919061,
+        "demo-8": 44694279,
+        "demo-11": 16802951,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1757312,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-16",
+      "accounts": {
+        "demo-1": 57919061,
+        "demo-8": 44694279,
+        "demo-11": 16802951,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1757312,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-17",
+      "accounts": {
+        "demo-1": 57919061,
+        "demo-8": 44694279,
+        "demo-11": 16802951,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1757312,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-18",
+      "accounts": {
+        "demo-1": 58087494,
+        "demo-8": 44566642,
+        "demo-11": 16895884,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1768115,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-19",
+      "accounts": {
+        "demo-1": 58518213,
+        "demo-8": 44672621,
+        "demo-11": 16905720,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1770923,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-20",
+      "accounts": {
+        "demo-1": 59020842,
+        "demo-8": 44719694,
+        "demo-11": 16872640,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1784642,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-21",
+      "accounts": {
+        "demo-1": 58680083,
+        "demo-8": 44654960,
+        "demo-11": 16850568,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1786914,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-22",
+      "accounts": {
+        "demo-1": 58915396,
+        "demo-8": 44553988,
+        "demo-11": 16860701,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1791102,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-23",
+      "accounts": {
+        "demo-1": 58915396,
+        "demo-8": 44553988,
+        "demo-11": 16860701,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1791102,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-24",
+      "accounts": {
+        "demo-1": 58915396,
+        "demo-8": 44553988,
+        "demo-11": 16860701,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1791102,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-25",
+      "accounts": {
+        "demo-1": 58993895,
+        "demo-8": 44704516,
+        "demo-11": 16834545,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1791186,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-26",
+      "accounts": {
+        "demo-1": 58899600,
+        "demo-8": 44803210,
+        "demo-11": 16930483,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1797470,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-27",
+      "accounts": {
+        "demo-1": 58512580,
+        "demo-8": 44974826,
+        "demo-11": 16934354,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1808570,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-28",
+      "accounts": {
+        "demo-1": 58641867,
+        "demo-8": 44847281,
+        "demo-11": 16999804,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1804075,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-29",
+      "accounts": {
+        "demo-1": 58536702,
+        "demo-8": 44923286,
+        "demo-11": 17026099,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1800784,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-30",
+      "accounts": {
+        "demo-1": 58536702,
+        "demo-8": 44923286,
+        "demo-11": 17026099,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1800784,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-08-31",
+      "accounts": {
+        "demo-1": 58536702,
+        "demo-8": 44923286,
+        "demo-11": 17026099,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1800784,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-01",
+      "accounts": {
+        "demo-1": 58834823,
+        "demo-8": 44977371,
+        "demo-11": 17000142,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790222,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-02",
+      "accounts": {
+        "demo-1": 58944413,
+        "demo-8": 44735361,
+        "demo-11": 16978506,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793560,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-03",
+      "accounts": {
+        "demo-1": 58965955,
+        "demo-8": 44538451,
+        "demo-11": 17001732,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790468,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-04",
+      "accounts": {
+        "demo-1": 58850864,
+        "demo-8": 44474934,
+        "demo-11": 16973715,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793959,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-05",
+      "accounts": {
+        "demo-1": 59098000,
+        "demo-8": 44594889,
+        "demo-11": 16980051,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1801911,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-06",
+      "accounts": {
+        "demo-1": 59098000,
+        "demo-8": 44594889,
+        "demo-11": 16980051,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1801911,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-07",
+      "accounts": {
+        "demo-1": 59098000,
+        "demo-8": 44594889,
+        "demo-11": 16980051,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1801911,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-08",
+      "accounts": {
+        "demo-1": 59319655,
+        "demo-8": 44556008,
+        "demo-11": 16976907,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1807479,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-09",
+      "accounts": {
+        "demo-1": 59444824,
+        "demo-8": 44395415,
+        "demo-11": 16896729,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1799182,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-10",
+      "accounts": {
+        "demo-1": 59261356,
+        "demo-8": 44208192,
+        "demo-11": 16968189,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1799587,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-11",
+      "accounts": {
+        "demo-1": 59125226,
+        "demo-8": 44399853,
+        "demo-11": 16947993,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1796659,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-12",
+      "accounts": {
+        "demo-1": 59391883,
+        "demo-8": 44445142,
+        "demo-11": 16982362,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1794602,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-13",
+      "accounts": {
+        "demo-1": 59391883,
+        "demo-8": 44445142,
+        "demo-11": 16982362,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1794602,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-14",
+      "accounts": {
+        "demo-1": 59391883,
+        "demo-8": 44445142,
+        "demo-11": 16982362,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1794602,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-15",
+      "accounts": {
+        "demo-1": 59551699,
+        "demo-8": 44645238,
+        "demo-11": 17082293,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1804520,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-16",
+      "accounts": {
+        "demo-1": 59794176,
+        "demo-8": 44830215,
+        "demo-11": 17063715,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1803199,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-17",
+      "accounts": {
+        "demo-1": 59836137,
+        "demo-8": 44786948,
+        "demo-11": 17122380,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1801414,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-18",
+      "accounts": {
+        "demo-1": 59702596,
+        "demo-8": 44758058,
+        "demo-11": 17197198,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1798949,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-19",
+      "accounts": {
+        "demo-1": 59489189,
+        "demo-8": 44703210,
+        "demo-11": 17224951,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1802905,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-20",
+      "accounts": {
+        "demo-1": 59489189,
+        "demo-8": 44703210,
+        "demo-11": 17224951,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1802905,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-21",
+      "accounts": {
+        "demo-1": 59489189,
+        "demo-8": 44703210,
+        "demo-11": 17224951,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1802905,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-22",
+      "accounts": {
+        "demo-1": 59376676,
+        "demo-8": 44702750,
+        "demo-11": 17307806,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1799445,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-23",
+      "accounts": {
+        "demo-1": 59542927,
+        "demo-8": 44821858,
+        "demo-11": 17281731,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1792886,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-24",
+      "accounts": {
+        "demo-1": 59440665,
+        "demo-8": 44941237,
+        "demo-11": 17233603,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1789802,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-25",
+      "accounts": {
+        "demo-1": 59631652,
+        "demo-8": 44986182,
+        "demo-11": 17258259,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1784988,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-26",
+      "accounts": {
+        "demo-1": 59987910,
+        "demo-8": 45095861,
+        "demo-11": 17341764,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793058,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-27",
+      "accounts": {
+        "demo-1": 59987910,
+        "demo-8": 45095861,
+        "demo-11": 17341764,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793058,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-28",
+      "accounts": {
+        "demo-1": 59987910,
+        "demo-8": 45095861,
+        "demo-11": 17341764,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793058,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-29",
+      "accounts": {
+        "demo-1": 60209344,
+        "demo-8": 45205480,
+        "demo-11": 17353222,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1795768,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-09-30",
+      "accounts": {
+        "demo-1": 60483487,
+        "demo-8": 45239767,
+        "demo-11": 17378555,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1795194,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-01",
+      "accounts": {
+        "demo-1": 60422404,
+        "demo-8": 45381689,
+        "demo-11": 17422478,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1803450,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-02",
+      "accounts": {
+        "demo-1": 60529252,
+        "demo-8": 45148534,
+        "demo-11": 17516441,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1795648,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-03",
+      "accounts": {
+        "demo-1": 60979326,
+        "demo-8": 45147152,
+        "demo-11": 17526898,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1786352,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-04",
+      "accounts": {
+        "demo-1": 60979326,
+        "demo-8": 45147152,
+        "demo-11": 17526898,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1786352,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-05",
+      "accounts": {
+        "demo-1": 60979326,
+        "demo-8": 45147152,
+        "demo-11": 17526898,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1786352,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-06",
+      "accounts": {
+        "demo-1": 61080772,
+        "demo-8": 45248551,
+        "demo-11": 17550878,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1789553,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-07",
+      "accounts": {
+        "demo-1": 61073423,
+        "demo-8": 45384361,
+        "demo-11": 17592161,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793187,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-08",
+      "accounts": {
+        "demo-1": 60884254,
+        "demo-8": 45493634,
+        "demo-11": 17603169,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793740,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-09",
+      "accounts": {
+        "demo-1": 60983009,
+        "demo-8": 45325204,
+        "demo-11": 17550676,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790037,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-10",
+      "accounts": {
+        "demo-1": 61198550,
+        "demo-8": 45433208,
+        "demo-11": 17611851,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790540,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-11",
+      "accounts": {
+        "demo-1": 61198550,
+        "demo-8": 45433208,
+        "demo-11": 17611851,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790540,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-12",
+      "accounts": {
+        "demo-1": 61198550,
+        "demo-8": 45433208,
+        "demo-11": 17611851,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790540,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-13",
+      "accounts": {
+        "demo-1": 61426518,
+        "demo-8": 45571062,
+        "demo-11": 17573470,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1800011,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-14",
+      "accounts": {
+        "demo-1": 61488140,
+        "demo-8": 45564709,
+        "demo-11": 17467142,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1797352,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-15",
+      "accounts": {
+        "demo-1": 61231317,
+        "demo-8": 45609601,
+        "demo-11": 17533730,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1795460,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-16",
+      "accounts": {
+        "demo-1": 61255106,
+        "demo-8": 45514015,
+        "demo-11": 17526413,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1801460,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-17",
+      "accounts": {
+        "demo-1": 61040939,
+        "demo-8": 45635348,
+        "demo-11": 17568617,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1792013,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-18",
+      "accounts": {
+        "demo-1": 61040939,
+        "demo-8": 45635348,
+        "demo-11": 17568617,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1792013,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-19",
+      "accounts": {
+        "demo-1": 61040939,
+        "demo-8": 45635348,
+        "demo-11": 17568617,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1792013,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-20",
+      "accounts": {
+        "demo-1": 60854971,
+        "demo-8": 45566955,
+        "demo-11": 17533575,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790326,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-21",
+      "accounts": {
+        "demo-1": 60871113,
+        "demo-8": 45659144,
+        "demo-11": 17515983,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1777700,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-22",
+      "accounts": {
+        "demo-1": 60876603,
+        "demo-8": 45961229,
+        "demo-11": 17518130,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1785314,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-23",
+      "accounts": {
+        "demo-1": 60742677,
+        "demo-8": 45832320,
+        "demo-11": 17572876,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1780025,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-24",
+      "accounts": {
+        "demo-1": 60651882,
+        "demo-8": 45656577,
+        "demo-11": 17525384,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1782165,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-25",
+      "accounts": {
+        "demo-1": 60651882,
+        "demo-8": 45656577,
+        "demo-11": 17525384,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1782165,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-26",
+      "accounts": {
+        "demo-1": 60651882,
+        "demo-8": 45656577,
+        "demo-11": 17525384,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1782165,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-27",
+      "accounts": {
+        "demo-1": 60801548,
+        "demo-8": 45499018,
+        "demo-11": 17627953,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1773313,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-28",
+      "accounts": {
+        "demo-1": 60828375,
+        "demo-8": 45292825,
+        "demo-11": 17663148,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1784576,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-29",
+      "accounts": {
+        "demo-1": 60824320,
+        "demo-8": 45416627,
+        "demo-11": 17703533,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790960,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-30",
+      "accounts": {
+        "demo-1": 60923863,
+        "demo-8": 45283863,
+        "demo-11": 17738286,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1786313,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-10-31",
+      "accounts": {
+        "demo-1": 60857006,
+        "demo-8": 45368218,
+        "demo-11": 17667686,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793886,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-01",
+      "accounts": {
+        "demo-1": 60857006,
+        "demo-8": 45368218,
+        "demo-11": 17667686,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793886,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-02",
+      "accounts": {
+        "demo-1": 60857006,
+        "demo-8": 45368218,
+        "demo-11": 17667686,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1793886,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-03",
+      "accounts": {
+        "demo-1": 60666638,
+        "demo-8": 45347450,
+        "demo-11": 17739314,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1791019,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-04",
+      "accounts": {
+        "demo-1": 60793299,
+        "demo-8": 45396531,
+        "demo-11": 17777622,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1788967,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-05",
+      "accounts": {
+        "demo-1": 60936804,
+        "demo-8": 45488387,
+        "demo-11": 17836807,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1790348,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-06",
+      "accounts": {
+        "demo-1": 61203699,
+        "demo-8": 45617581,
+        "demo-11": 17839017,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1792815,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-07",
+      "accounts": {
+        "demo-1": 61435084,
+        "demo-8": 45486661,
+        "demo-11": 17932574,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1795966,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-08",
+      "accounts": {
+        "demo-1": 61435084,
+        "demo-8": 45486661,
+        "demo-11": 17932574,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1795966,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-09",
+      "accounts": {
+        "demo-1": 61435084,
+        "demo-8": 45486661,
+        "demo-11": 17932574,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1795966,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-10",
+      "accounts": {
+        "demo-1": 61257477,
+        "demo-8": 45505391,
+        "demo-11": 17895019,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1789190,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-11",
+      "accounts": {
+        "demo-1": 61343223,
+        "demo-8": 45640294,
+        "demo-11": 17988766,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1785890,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-12",
+      "accounts": {
+        "demo-1": 61477718,
+        "demo-8": 45652302,
+        "demo-11": 18013859,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1786761,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-13",
+      "accounts": {
+        "demo-1": 61461250,
+        "demo-8": 45411991,
+        "demo-11": 18052931,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1787943,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-14",
+      "accounts": {
+        "demo-1": 61360420,
+        "demo-8": 45468074,
+        "demo-11": 18036164,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1798740,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-15",
+      "accounts": {
+        "demo-1": 61360420,
+        "demo-8": 45468074,
+        "demo-11": 18036164,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1798740,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-16",
+      "accounts": {
+        "demo-1": 61360420,
+        "demo-8": 45468074,
+        "demo-11": 18036164,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1798740,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-17",
+      "accounts": {
+        "demo-1": 61171434,
+        "demo-8": 45517376,
+        "demo-11": 18052380,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1798925,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-18",
+      "accounts": {
+        "demo-1": 60951402,
+        "demo-8": 45702712,
+        "demo-11": 18063321,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1788342,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-19",
+      "accounts": {
+        "demo-1": 61356041,
+        "demo-8": 45554831,
+        "demo-11": 18058023,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1791336,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-20",
+      "accounts": {
+        "demo-1": 61379755,
+        "demo-8": 45610696,
+        "demo-11": 18031633,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1800533,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-21",
+      "accounts": {
+        "demo-1": 61685797,
+        "demo-8": 45823313,
+        "demo-11": 18101539,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1805967,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-22",
+      "accounts": {
+        "demo-1": 61685797,
+        "demo-8": 45823313,
+        "demo-11": 18101539,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1805967,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-23",
+      "accounts": {
+        "demo-1": 61685797,
+        "demo-8": 45823313,
+        "demo-11": 18101539,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1805967,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-24",
+      "accounts": {
+        "demo-1": 61966636,
+        "demo-8": 45973873,
+        "demo-11": 18074536,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1806172,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-25",
+      "accounts": {
+        "demo-1": 62451567,
+        "demo-8": 45961799,
+        "demo-11": 18049115,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1819147,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-26",
+      "accounts": {
+        "demo-1": 62112741,
+        "demo-8": 45768470,
+        "demo-11": 18138632,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1824461,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-27",
+      "accounts": {
+        "demo-1": 61878743,
+        "demo-8": 45810280,
+        "demo-11": 18113776,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1831629,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-28",
+      "accounts": {
+        "demo-1": 62104302,
+        "demo-8": 46089801,
+        "demo-11": 18115417,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1830588,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-29",
+      "accounts": {
+        "demo-1": 62104302,
+        "demo-8": 46089801,
+        "demo-11": 18115417,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1830588,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-11-30",
+      "accounts": {
+        "demo-1": 62104302,
+        "demo-8": 46089801,
+        "demo-11": 18115417,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1830588,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-01",
+      "accounts": {
+        "demo-1": 61972374,
+        "demo-8": 46352624,
+        "demo-11": 18200984,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1844905,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-02",
+      "accounts": {
+        "demo-1": 62168712,
+        "demo-8": 46271276,
+        "demo-11": 18238024,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1846213,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-03",
+      "accounts": {
+        "demo-1": 62348383,
+        "demo-8": 46418110,
+        "demo-11": 18158840,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1857878,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-04",
+      "accounts": {
+        "demo-1": 62337861,
+        "demo-8": 46401841,
+        "demo-11": 18251138,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1856355,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-05",
+      "accounts": {
+        "demo-1": 62052140,
+        "demo-8": 46522459,
+        "demo-11": 18184061,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1861796,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-06",
+      "accounts": {
+        "demo-1": 62052140,
+        "demo-8": 46522459,
+        "demo-11": 18184061,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1861796,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-07",
+      "accounts": {
+        "demo-1": 62052140,
+        "demo-8": 46522459,
+        "demo-11": 18184061,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1861796,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-08",
+      "accounts": {
+        "demo-1": 62107815,
+        "demo-8": 46586174,
+        "demo-11": 18303672,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1867227,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-09",
+      "accounts": {
+        "demo-1": 62228230,
+        "demo-8": 46621016,
+        "demo-11": 18362481,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1867798,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-10",
+      "accounts": {
+        "demo-1": 62542519,
+        "demo-8": 46872434,
+        "demo-11": 18365315,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1867923,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-11",
+      "accounts": {
+        "demo-1": 62702988,
+        "demo-8": 46804433,
+        "demo-11": 18335668,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1861333,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-12",
+      "accounts": {
+        "demo-1": 62756688,
+        "demo-8": 46946314,
+        "demo-11": 18341364,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1857008,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-13",
+      "accounts": {
+        "demo-1": 62756688,
+        "demo-8": 46946314,
+        "demo-11": 18341364,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1857008,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-14",
+      "accounts": {
+        "demo-1": 62756688,
+        "demo-8": 46946314,
+        "demo-11": 18341364,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1857008,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-15",
+      "accounts": {
+        "demo-1": 62763571,
+        "demo-8": 46965973,
+        "demo-11": 18378757,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1862677,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-16",
+      "accounts": {
+        "demo-1": 63078736,
+        "demo-8": 47080343,
+        "demo-11": 18340479,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1857655,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-17",
+      "accounts": {
+        "demo-1": 63097831,
+        "demo-8": 47022503,
+        "demo-11": 18235978,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1850928,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-18",
+      "accounts": {
+        "demo-1": 63644179,
+        "demo-8": 47229453,
+        "demo-11": 18197504,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1854236,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-19",
+      "accounts": {
+        "demo-1": 63552125,
+        "demo-8": 47503874,
+        "demo-11": 18198864,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1856804,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-20",
+      "accounts": {
+        "demo-1": 63552125,
+        "demo-8": 47503874,
+        "demo-11": 18198864,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1856804,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-21",
+      "accounts": {
+        "demo-1": 63552125,
+        "demo-8": 47503874,
+        "demo-11": 18198864,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1856804,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-22",
+      "accounts": {
+        "demo-1": 63556674,
+        "demo-8": 47592192,
+        "demo-11": 18181061,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1866904,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-23",
+      "accounts": {
+        "demo-1": 63499610,
+        "demo-8": 47882979,
+        "demo-11": 18143057,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1872437,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-24",
+      "accounts": {
+        "demo-1": 63526850,
+        "demo-8": 48032702,
+        "demo-11": 18159712,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1869457,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-25",
+      "accounts": {
+        "demo-1": 63455150,
+        "demo-8": 48018871,
+        "demo-11": 18189948,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1863930,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-26",
+      "accounts": {
+        "demo-1": 63514016,
+        "demo-8": 47916198,
+        "demo-11": 18273060,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1865594,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-27",
+      "accounts": {
+        "demo-1": 63514016,
+        "demo-8": 47916198,
+        "demo-11": 18273060,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1865594,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-28",
+      "accounts": {
+        "demo-1": 63514016,
+        "demo-8": 47916198,
+        "demo-11": 18273060,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1865594,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-29",
+      "accounts": {
+        "demo-1": 63697838,
+        "demo-8": 48057746,
+        "demo-11": 18185032,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1863264,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-30",
+      "accounts": {
+        "demo-1": 63734283,
+        "demo-8": 47983918,
+        "demo-11": 18170007,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1866334,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2025-12-31",
+      "accounts": {
+        "demo-1": 63617874,
+        "demo-8": 47791440,
+        "demo-11": 18263422,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1871463,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-01",
+      "accounts": {
+        "demo-1": 63390377,
+        "demo-8": 47826651,
+        "demo-11": 18272146,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1873116,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-02",
+      "accounts": {
+        "demo-1": 63472551,
+        "demo-8": 47808617,
+        "demo-11": 18289549,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1879277,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-03",
+      "accounts": {
+        "demo-1": 63472551,
+        "demo-8": 47808617,
+        "demo-11": 18289549,
+        "demo-14": 4275000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1879277,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-04",
+      "accounts": {
+        "demo-1": 63472551,
+        "demo-8": 47808617,
+        "demo-11": 18289549,
+        "demo-14": 4275000,
+        "demo-20": 8285276,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1879277,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-05",
+      "accounts": {
+        "demo-1": 63740563,
+        "demo-8": 47801758,
+        "demo-11": 18308609,
+        "demo-14": 4275000,
+        "demo-20": 8316327,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1888689,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-06",
+      "accounts": {
+        "demo-1": 63403878,
+        "demo-8": 47725159,
+        "demo-11": 18232083,
+        "demo-14": 4275000,
+        "demo-20": 8468306,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1888454,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-07",
+      "accounts": {
+        "demo-1": 63121692,
+        "demo-8": 47511014,
+        "demo-11": 18204723,
+        "demo-14": 4275000,
+        "demo-20": 8440121,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1890884,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-08",
+      "accounts": {
+        "demo-1": 63347632,
+        "demo-8": 47387320,
+        "demo-11": 18114443,
+        "demo-14": 4275000,
+        "demo-20": 8568065,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1890215,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-09",
+      "accounts": {
+        "demo-1": 63236764,
+        "demo-8": 47390102,
+        "demo-11": 18153650,
+        "demo-14": 4275000,
+        "demo-20": 8644678,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1892350,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-10",
+      "accounts": {
+        "demo-1": 63236764,
+        "demo-8": 47390102,
+        "demo-11": 18153650,
+        "demo-14": 4275000,
+        "demo-20": 8645921,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1892350,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-11",
+      "accounts": {
+        "demo-1": 63236764,
+        "demo-8": 47390102,
+        "demo-11": 18153650,
+        "demo-14": 4275000,
+        "demo-20": 8689528,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1892350,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-12",
+      "accounts": {
+        "demo-1": 63102943,
+        "demo-8": 47545915,
+        "demo-11": 18146396,
+        "demo-14": 4275000,
+        "demo-20": 8618995,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896068,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-13",
+      "accounts": {
+        "demo-1": 63316566,
+        "demo-8": 47518650,
+        "demo-11": 18198313,
+        "demo-14": 4275000,
+        "demo-20": 8584934,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1889525,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-14",
+      "accounts": {
+        "demo-1": 63329965,
+        "demo-8": 47548037,
+        "demo-11": 18114164,
+        "demo-14": 4275000,
+        "demo-20": 8696482,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1890413,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-15",
+      "accounts": {
+        "demo-1": 62972623,
+        "demo-8": 47315325,
+        "demo-11": 18049691,
+        "demo-14": 4275000,
+        "demo-20": 8697556,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1890616,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-16",
+      "accounts": {
+        "demo-1": 63044253,
+        "demo-8": 47501914,
+        "demo-11": 18009803,
+        "demo-14": 4275000,
+        "demo-20": 8741941,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1886403,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-17",
+      "accounts": {
+        "demo-1": 63044253,
+        "demo-8": 47501914,
+        "demo-11": 18009803,
+        "demo-14": 4275000,
+        "demo-20": 8745860,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1886403,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-18",
+      "accounts": {
+        "demo-1": 63044253,
+        "demo-8": 47501914,
+        "demo-11": 18009803,
+        "demo-14": 4275000,
+        "demo-20": 8779768,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1886403,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-19",
+      "accounts": {
+        "demo-1": 63438843,
+        "demo-8": 47707090,
+        "demo-11": 18122228,
+        "demo-14": 4275000,
+        "demo-20": 8589502,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1893072,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-20",
+      "accounts": {
+        "demo-1": 63045567,
+        "demo-8": 47729226,
+        "demo-11": 18166054,
+        "demo-14": 4275000,
+        "demo-20": 8503022,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1904012,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-21",
+      "accounts": {
+        "demo-1": 63422920,
+        "demo-8": 47557459,
+        "demo-11": 18185096,
+        "demo-14": 4275000,
+        "demo-20": 8417331,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1900080,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-22",
+      "accounts": {
+        "demo-1": 63398565,
+        "demo-8": 47645123,
+        "demo-11": 18170910,
+        "demo-14": 4275000,
+        "demo-20": 8565128,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1910005,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-23",
+      "accounts": {
+        "demo-1": 63097886,
+        "demo-8": 47647890,
+        "demo-11": 18092374,
+        "demo-14": 4275000,
+        "demo-20": 8470497,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1909825,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-24",
+      "accounts": {
+        "demo-1": 63097886,
+        "demo-8": 47647890,
+        "demo-11": 18092374,
+        "demo-14": 4275000,
+        "demo-20": 8478442,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1909825,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-25",
+      "accounts": {
+        "demo-1": 63097886,
+        "demo-8": 47647890,
+        "demo-11": 18092374,
+        "demo-14": 4275000,
+        "demo-20": 8508743,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1909825,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-26",
+      "accounts": {
+        "demo-1": 63381191,
+        "demo-8": 47626576,
+        "demo-11": 18095569,
+        "demo-14": 4275000,
+        "demo-20": 8559864,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1904667,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-27",
+      "accounts": {
+        "demo-1": 63842381,
+        "demo-8": 47617849,
+        "demo-11": 18205836,
+        "demo-14": 4275000,
+        "demo-20": 8755384,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1901232,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-28",
+      "accounts": {
+        "demo-1": 63696710,
+        "demo-8": 47704181,
+        "demo-11": 18146627,
+        "demo-14": 4275000,
+        "demo-20": 8760316,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1911938,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-29",
+      "accounts": {
+        "demo-1": 63882695,
+        "demo-8": 47430600,
+        "demo-11": 18159005,
+        "demo-14": 4275000,
+        "demo-20": 8752408,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1898539,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-30",
+      "accounts": {
+        "demo-1": 64179417,
+        "demo-8": 47561546,
+        "demo-11": 18089568,
+        "demo-14": 4275000,
+        "demo-20": 8791785,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896546,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-01-31",
+      "accounts": {
+        "demo-1": 64179417,
+        "demo-8": 47561546,
+        "demo-11": 18089568,
+        "demo-14": 4275000,
+        "demo-20": 8725615,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896546,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-01",
+      "accounts": {
+        "demo-1": 64179417,
+        "demo-8": 47561546,
+        "demo-11": 18089568,
+        "demo-14": 4275000,
+        "demo-20": 8748471,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896546,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-02",
+      "accounts": {
+        "demo-1": 63731262,
+        "demo-8": 47686093,
+        "demo-11": 18037404,
+        "demo-14": 4275000,
+        "demo-20": 8748465,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1908004,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-03",
+      "accounts": {
+        "demo-1": 63650604,
+        "demo-8": 47779447,
+        "demo-11": 18107197,
+        "demo-14": 4275000,
+        "demo-20": 8669134,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1914058,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-04",
+      "accounts": {
+        "demo-1": 63323655,
+        "demo-8": 47930181,
+        "demo-11": 18118281,
+        "demo-14": 4275000,
+        "demo-20": 8536460,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1912499,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-05",
+      "accounts": {
+        "demo-1": 63305717,
+        "demo-8": 48005728,
+        "demo-11": 18155239,
+        "demo-14": 4275000,
+        "demo-20": 8634824,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1915275,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-06",
+      "accounts": {
+        "demo-1": 63756231,
+        "demo-8": 48086776,
+        "demo-11": 18177415,
+        "demo-14": 4275000,
+        "demo-20": 8549682,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1904047,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-07",
+      "accounts": {
+        "demo-1": 63756231,
+        "demo-8": 48086776,
+        "demo-11": 18177415,
+        "demo-14": 4275000,
+        "demo-20": 8538487,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1904047,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-08",
+      "accounts": {
+        "demo-1": 63756231,
+        "demo-8": 48086776,
+        "demo-11": 18177415,
+        "demo-14": 4275000,
+        "demo-20": 8544417,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1904047,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-09",
+      "accounts": {
+        "demo-1": 64086517,
+        "demo-8": 47893532,
+        "demo-11": 18110343,
+        "demo-14": 4275000,
+        "demo-20": 8550781,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1912673,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-10",
+      "accounts": {
+        "demo-1": 64644799,
+        "demo-8": 47855981,
+        "demo-11": 18169089,
+        "demo-14": 4275000,
+        "demo-20": 8595870,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1907363,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-11",
+      "accounts": {
+        "demo-1": 64832544,
+        "demo-8": 47686717,
+        "demo-11": 18194873,
+        "demo-14": 4275000,
+        "demo-20": 8706848,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1918434,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-12",
+      "accounts": {
+        "demo-1": 65275043,
+        "demo-8": 47816072,
+        "demo-11": 18211559,
+        "demo-14": 4275000,
+        "demo-20": 8612024,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1908159,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-13",
+      "accounts": {
+        "demo-1": 65445827,
+        "demo-8": 47994832,
+        "demo-11": 18238097,
+        "demo-14": 4275000,
+        "demo-20": 8504478,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1914512,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-14",
+      "accounts": {
+        "demo-1": 65445827,
+        "demo-8": 47994832,
+        "demo-11": 18238097,
+        "demo-14": 4275000,
+        "demo-20": 8358776,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1914512,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-15",
+      "accounts": {
+        "demo-1": 65445827,
+        "demo-8": 47994832,
+        "demo-11": 18238097,
+        "demo-14": 4275000,
+        "demo-20": 8339372,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1914512,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-16",
+      "accounts": {
+        "demo-1": 65419738,
+        "demo-8": 47825815,
+        "demo-11": 18268047,
+        "demo-14": 4275000,
+        "demo-20": 8475512,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1915187,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-17",
+      "accounts": {
+        "demo-1": 65177092,
+        "demo-8": 47843901,
+        "demo-11": 18237271,
+        "demo-14": 4275000,
+        "demo-20": 8440970,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1906232,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-18",
+      "accounts": {
+        "demo-1": 65464688,
+        "demo-8": 47891554,
+        "demo-11": 18236865,
+        "demo-14": 4275000,
+        "demo-20": 8571879,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1900948,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-19",
+      "accounts": {
+        "demo-1": 65923053,
+        "demo-8": 48077593,
+        "demo-11": 18211081,
+        "demo-14": 4275000,
+        "demo-20": 8607743,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1912307,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-20",
+      "accounts": {
+        "demo-1": 65970233,
+        "demo-8": 48132280,
+        "demo-11": 18183344,
+        "demo-14": 4275000,
+        "demo-20": 8635092,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1916359,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-21",
+      "accounts": {
+        "demo-1": 65970233,
+        "demo-8": 48132280,
+        "demo-11": 18183344,
+        "demo-14": 4275000,
+        "demo-20": 8549676,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1916359,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-22",
+      "accounts": {
+        "demo-1": 65970233,
+        "demo-8": 48132280,
+        "demo-11": 18183344,
+        "demo-14": 4275000,
+        "demo-20": 8445980,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1916359,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-23",
+      "accounts": {
+        "demo-1": 65775019,
+        "demo-8": 47996525,
+        "demo-11": 18241701,
+        "demo-14": 4275000,
+        "demo-20": 8490244,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1906394,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-24",
+      "accounts": {
+        "demo-1": 65866362,
+        "demo-8": 47990873,
+        "demo-11": 18262840,
+        "demo-14": 4275000,
+        "demo-20": 8323165,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896380,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-25",
+      "accounts": {
+        "demo-1": 65846206,
+        "demo-8": 47831042,
+        "demo-11": 18186427,
+        "demo-14": 4275000,
+        "demo-20": 8372341,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1897121,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-26",
+      "accounts": {
+        "demo-1": 65768292,
+        "demo-8": 47919814,
+        "demo-11": 18101216,
+        "demo-14": 4275000,
+        "demo-20": 8339913,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896988,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-27",
+      "accounts": {
+        "demo-1": 66068058,
+        "demo-8": 48072105,
+        "demo-11": 18179969,
+        "demo-14": 4275000,
+        "demo-20": 8438204,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1901403,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-02-28",
+      "accounts": {
+        "demo-1": 66068058,
+        "demo-8": 48072105,
+        "demo-11": 18179969,
+        "demo-14": 4275000,
+        "demo-20": 8513092,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1901403,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-01",
+      "accounts": {
+        "demo-1": 66068058,
+        "demo-8": 48072105,
+        "demo-11": 18179969,
+        "demo-14": 4275000,
+        "demo-20": 8490544,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1901403,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-02",
+      "accounts": {
+        "demo-1": 65956410,
+        "demo-8": 48349198,
+        "demo-11": 18144036,
+        "demo-14": 4275000,
+        "demo-20": 8519696,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1900761,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-03",
+      "accounts": {
+        "demo-1": 66120628,
+        "demo-8": 48579251,
+        "demo-11": 18151619,
+        "demo-14": 4275000,
+        "demo-20": 8517061,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1895811,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-04",
+      "accounts": {
+        "demo-1": 65963560,
+        "demo-8": 48756547,
+        "demo-11": 18155179,
+        "demo-14": 4275000,
+        "demo-20": 8543974,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1882368,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-05",
+      "accounts": {
+        "demo-1": 65873709,
+        "demo-8": 48760106,
+        "demo-11": 18183327,
+        "demo-14": 4275000,
+        "demo-20": 8379519,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1884086,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-06",
+      "accounts": {
+        "demo-1": 65991157,
+        "demo-8": 49042392,
+        "demo-11": 18161315,
+        "demo-14": 4275000,
+        "demo-20": 8385410,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1882679,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-07",
+      "accounts": {
+        "demo-1": 65991157,
+        "demo-8": 49042392,
+        "demo-11": 18161315,
+        "demo-14": 4275000,
+        "demo-20": 8476816,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1882679,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-08",
+      "accounts": {
+        "demo-1": 65991157,
+        "demo-8": 49042392,
+        "demo-11": 18161315,
+        "demo-14": 4275000,
+        "demo-20": 8368473,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1882679,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-09",
+      "accounts": {
+        "demo-1": 66003111,
+        "demo-8": 49143238,
+        "demo-11": 18151240,
+        "demo-14": 4275000,
+        "demo-20": 8391474,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896746,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-10",
+      "accounts": {
+        "demo-1": 66481769,
+        "demo-8": 49374094,
+        "demo-11": 18134360,
+        "demo-14": 4275000,
+        "demo-20": 8406336,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1896903,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-11",
+      "accounts": {
+        "demo-1": 66511040,
+        "demo-8": 49358247,
+        "demo-11": 18153646,
+        "demo-14": 4275000,
+        "demo-20": 8393950,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1886739,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-12",
+      "accounts": {
+        "demo-1": 66781260,
+        "demo-8": 49288097,
+        "demo-11": 18231746,
+        "demo-14": 4275000,
+        "demo-20": 8268098,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1883473,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-13",
+      "accounts": {
+        "demo-1": 66888109,
+        "demo-8": 49186106,
+        "demo-11": 18232352,
+        "demo-14": 4275000,
+        "demo-20": 8290663,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1894765,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-14",
+      "accounts": {
+        "demo-1": 66888109,
+        "demo-8": 49186106,
+        "demo-11": 18232352,
+        "demo-14": 4275000,
+        "demo-20": 8307527,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1894765,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-15",
+      "accounts": {
+        "demo-1": 66888109,
+        "demo-8": 49186106,
+        "demo-11": 18232352,
+        "demo-14": 4275000,
+        "demo-20": 8201753,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1894765,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-16",
+      "accounts": {
+        "demo-1": 67263125,
+        "demo-8": 49145572,
+        "demo-11": 18200118,
+        "demo-14": 4275000,
+        "demo-20": 8141428,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1906481,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-17",
+      "accounts": {
+        "demo-1": 67105836,
+        "demo-8": 48862868,
+        "demo-11": 18236675,
+        "demo-14": 4275000,
+        "demo-20": 7999911,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1911290,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-18",
+      "accounts": {
+        "demo-1": 67276951,
+        "demo-8": 49106072,
+        "demo-11": 18290621,
+        "demo-14": 4275000,
+        "demo-20": 7870904,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1923018,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-19",
+      "accounts": {
+        "demo-1": 67592448,
+        "demo-8": 49095357,
+        "demo-11": 18217202,
+        "demo-14": 4275000,
+        "demo-20": 7943166,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1920323,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-20",
+      "accounts": {
+        "demo-1": 67212929,
+        "demo-8": 49173456,
+        "demo-11": 18179163,
+        "demo-14": 4275000,
+        "demo-20": 7922678,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1921978,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-21",
+      "accounts": {
+        "demo-1": 67212929,
+        "demo-8": 49173456,
+        "demo-11": 18179163,
+        "demo-14": 4275000,
+        "demo-20": 7931497,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1921978,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-22",
+      "accounts": {
+        "demo-1": 67212929,
+        "demo-8": 49173456,
+        "demo-11": 18179163,
+        "demo-14": 4275000,
+        "demo-20": 7975768,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1921978,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-23",
+      "accounts": {
+        "demo-1": 67023869,
+        "demo-8": 49166865,
+        "demo-11": 18170074,
+        "demo-14": 4275000,
+        "demo-20": 7910737,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1923963,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-24",
+      "accounts": {
+        "demo-1": 67119208,
+        "demo-8": 49037287,
+        "demo-11": 18203402,
+        "demo-14": 4275000,
+        "demo-20": 7890332,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1929767,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-25",
+      "accounts": {
+        "demo-1": 67290108,
+        "demo-8": 49090352,
+        "demo-11": 18296528,
+        "demo-14": 4275000,
+        "demo-20": 8022829,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1935252,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-26",
+      "accounts": {
+        "demo-1": 67111758,
+        "demo-8": 49289251,
+        "demo-11": 18356846,
+        "demo-14": 4275000,
+        "demo-20": 8016695,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1938830,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-27",
+      "accounts": {
+        "demo-1": 67092654,
+        "demo-8": 49269438,
+        "demo-11": 18283121,
+        "demo-14": 4275000,
+        "demo-20": 7995077,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1931679,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-28",
+      "accounts": {
+        "demo-1": 67092654,
+        "demo-8": 49269438,
+        "demo-11": 18283121,
+        "demo-14": 4275000,
+        "demo-20": 7872599,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1931679,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-29",
+      "accounts": {
+        "demo-1": 67092654,
+        "demo-8": 49269438,
+        "demo-11": 18283121,
+        "demo-14": 4275000,
+        "demo-20": 7983290,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1931679,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-30",
+      "accounts": {
+        "demo-1": 66867440,
+        "demo-8": 49192237,
+        "demo-11": 18345826,
+        "demo-14": 4275000,
+        "demo-20": 8026711,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1923978,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-03-31",
+      "accounts": {
+        "demo-1": 67054296,
+        "demo-8": 49233701,
+        "demo-11": 18426997,
+        "demo-14": 4275000,
+        "demo-20": 8018982,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1934940,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-01",
+      "accounts": {
+        "demo-1": 67323318,
+        "demo-8": 49395371,
+        "demo-11": 18503094,
+        "demo-14": 4275000,
+        "demo-20": 8005850,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1949059,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-02",
+      "accounts": {
+        "demo-1": 67099402,
+        "demo-8": 49155347,
+        "demo-11": 18557513,
+        "demo-14": 4275000,
+        "demo-20": 8074594,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1948278,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-03",
+      "accounts": {
+        "demo-1": 67038935,
+        "demo-8": 49203776,
+        "demo-11": 18579920,
+        "demo-14": 4275000,
+        "demo-20": 7935716,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1962602,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-04",
+      "accounts": {
+        "demo-1": 67038935,
+        "demo-8": 49203776,
+        "demo-11": 18579920,
+        "demo-14": 4275000,
+        "demo-20": 7923353,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1962602,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-05",
+      "accounts": {
+        "demo-1": 67038935,
+        "demo-8": 49203776,
+        "demo-11": 18579920,
+        "demo-14": 4275000,
+        "demo-20": 7913747,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1962602,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-06",
+      "accounts": {
+        "demo-1": 66902688,
+        "demo-8": 49241667,
+        "demo-11": 18604682,
+        "demo-14": 4275000,
+        "demo-20": 7934347,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1979845,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-07",
+      "accounts": {
+        "demo-1": 66855681,
+        "demo-8": 49488392,
+        "demo-11": 18667122,
+        "demo-14": 4275000,
+        "demo-20": 7923864,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1982220,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-08",
+      "accounts": {
+        "demo-1": 66748623,
+        "demo-8": 49586456,
+        "demo-11": 18661198,
+        "demo-14": 4275000,
+        "demo-20": 7939094,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1992917,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-09",
+      "accounts": {
+        "demo-1": 66614027,
+        "demo-8": 49637872,
+        "demo-11": 18640836,
+        "demo-14": 4275000,
+        "demo-20": 8072841,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1995817,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "accounts": {
+        "demo-1": 67078275,
+        "demo-8": 49798601,
+        "demo-11": 18650122,
+        "demo-14": 4275000,
+        "demo-20": 8110028,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1990802,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-11",
+      "accounts": {
+        "demo-1": 67078275,
+        "demo-8": 49798601,
+        "demo-11": 18650122,
+        "demo-14": 4275000,
+        "demo-20": 8195988,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1990802,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-12",
+      "accounts": {
+        "demo-1": 67078275,
+        "demo-8": 49798601,
+        "demo-11": 18650122,
+        "demo-14": 4275000,
+        "demo-20": 8239762,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1990802,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-13",
+      "accounts": {
+        "demo-1": 67638649,
+        "demo-8": 49765068,
+        "demo-11": 18550656,
+        "demo-14": 4275000,
+        "demo-20": 8374763,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1995142,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-14",
+      "accounts": {
+        "demo-1": 67519410,
+        "demo-8": 49912857,
+        "demo-11": 18596582,
+        "demo-14": 4275000,
+        "demo-20": 8526733,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1984171,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-15",
+      "accounts": {
+        "demo-1": 67348118,
+        "demo-8": 50122673,
+        "demo-11": 18544577,
+        "demo-14": 4275000,
+        "demo-20": 8667431,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1978762,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-16",
+      "accounts": {
+        "demo-1": 67591034,
+        "demo-8": 50153054,
+        "demo-11": 18534794,
+        "demo-14": 4275000,
+        "demo-20": 8650366,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967040,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-17",
+      "accounts": {
+        "demo-1": 67404919,
+        "demo-8": 49993719,
+        "demo-11": 18619306,
+        "demo-14": 4275000,
+        "demo-20": 8467440,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967620,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-18",
+      "accounts": {
+        "demo-1": 67404919,
+        "demo-8": 49993719,
+        "demo-11": 18619306,
+        "demo-14": 4275000,
+        "demo-20": 8342663,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967620,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "accounts": {
+        "demo-1": 67404919,
+        "demo-8": 49993719,
+        "demo-11": 18619306,
+        "demo-14": 4275000,
+        "demo-20": 8203610,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967620,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "accounts": {
+        "demo-1": 67111779,
+        "demo-8": 50113378,
+        "demo-11": 18552614,
+        "demo-14": 4275000,
+        "demo-20": 8217163,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967387,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-21",
+      "accounts": {
+        "demo-1": 67006458,
+        "demo-8": 50027212,
+        "demo-11": 18605911,
+        "demo-14": 4275000,
+        "demo-20": 8187491,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967525,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-22",
+      "accounts": {
+        "demo-1": 67234760,
+        "demo-8": 49883483,
+        "demo-11": 18594523,
+        "demo-14": 4275000,
+        "demo-20": 8186040,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1966744,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-23",
+      "accounts": {
+        "demo-1": 67243090,
+        "demo-8": 50009875,
+        "demo-11": 18575507,
+        "demo-14": 4275000,
+        "demo-20": 8040824,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1968179,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-24",
+      "accounts": {
+        "demo-1": 66943809,
+        "demo-8": 49777155,
+        "demo-11": 18605177,
+        "demo-14": 4275000,
+        "demo-20": 7849682,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967372,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-25",
+      "accounts": {
+        "demo-1": 66943809,
+        "demo-8": 49777155,
+        "demo-11": 18605177,
+        "demo-14": 4275000,
+        "demo-20": 7899212,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967372,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-26",
+      "accounts": {
+        "demo-1": 66943809,
+        "demo-8": 49777155,
+        "demo-11": 18605177,
+        "demo-14": 4275000,
+        "demo-20": 7959243,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967372,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-27",
+      "accounts": {
+        "demo-1": 67206225,
+        "demo-8": 49918468,
+        "demo-11": 18607446,
+        "demo-14": 4275000,
+        "demo-20": 7853140,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1957568,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-28",
+      "accounts": {
+        "demo-1": 67184820,
+        "demo-8": 49894304,
+        "demo-11": 18538832,
+        "demo-14": 4275000,
+        "demo-20": 7794883,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1959242,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-29",
+      "accounts": {
+        "demo-1": 67759952,
+        "demo-8": 49908602,
+        "demo-11": 18571672,
+        "demo-14": 4275000,
+        "demo-20": 7799395,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1964974,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-04-30",
+      "accounts": {
+        "demo-1": 67284643,
+        "demo-8": 50097330,
+        "demo-11": 18560788,
+        "demo-14": 4275000,
+        "demo-20": 7827337,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967526,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-01",
+      "accounts": {
+        "demo-1": 67383641,
+        "demo-8": 50336128,
+        "demo-11": 18502627,
+        "demo-14": 4275000,
+        "demo-20": 7806508,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1965605,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-02",
+      "accounts": {
+        "demo-1": 67383641,
+        "demo-8": 50336128,
+        "demo-11": 18502627,
+        "demo-14": 4275000,
+        "demo-20": 7808288,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1965605,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-03",
+      "accounts": {
+        "demo-1": 67383641,
+        "demo-8": 50336128,
+        "demo-11": 18502627,
+        "demo-14": 4275000,
+        "demo-20": 7735653,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1965605,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-04",
+      "accounts": {
+        "demo-1": 67104453,
+        "demo-8": 50230041,
+        "demo-11": 18563617,
+        "demo-14": 4275000,
+        "demo-20": 7757844,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1966177,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-05",
+      "accounts": {
+        "demo-1": 66877143,
+        "demo-8": 50368338,
+        "demo-11": 18576832,
+        "demo-14": 4275000,
+        "demo-20": 7747599,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1966250,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-06",
+      "accounts": {
+        "demo-1": 66669983,
+        "demo-8": 50537966,
+        "demo-11": 18553637,
+        "demo-14": 4275000,
+        "demo-20": 7836027,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1962806,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-07",
+      "accounts": {
+        "demo-1": 66741367,
+        "demo-8": 50658845,
+        "demo-11": 18494745,
+        "demo-14": 4275000,
+        "demo-20": 7907821,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1952189,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-08",
+      "accounts": {
+        "demo-1": 66749828,
+        "demo-8": 50722037,
+        "demo-11": 18515601,
+        "demo-14": 4275000,
+        "demo-20": 7813062,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1955451,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-09",
+      "accounts": {
+        "demo-1": 66749828,
+        "demo-8": 50722037,
+        "demo-11": 18515601,
+        "demo-14": 4275000,
+        "demo-20": 7890835,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1955451,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-10",
+      "accounts": {
+        "demo-1": 66749828,
+        "demo-8": 50722037,
+        "demo-11": 18515601,
+        "demo-14": 4275000,
+        "demo-20": 7865985,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1955451,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-11",
+      "accounts": {
+        "demo-1": 66621512,
+        "demo-8": 50845038,
+        "demo-11": 18479964,
+        "demo-14": 4275000,
+        "demo-20": 7834250,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1941232,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-12",
+      "accounts": {
+        "demo-1": 66879271,
+        "demo-8": 50775879,
+        "demo-11": 18382510,
+        "demo-14": 4275000,
+        "demo-20": 7676299,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1931971,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-13",
+      "accounts": {
+        "demo-1": 66781104,
+        "demo-8": 50643164,
+        "demo-11": 18384979,
+        "demo-14": 4275000,
+        "demo-20": 7611644,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1935191,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-14",
+      "accounts": {
+        "demo-1": 66404908,
+        "demo-8": 50765070,
+        "demo-11": 18391235,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7661479,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1933006,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-15",
+      "accounts": {
+        "demo-1": 66441829,
+        "demo-8": 50773326,
+        "demo-11": 18348518,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7793226,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1948847,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-16",
+      "accounts": {
+        "demo-1": 66441829,
+        "demo-8": 50773326,
+        "demo-11": 18348518,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7631706,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1948847,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-17",
+      "accounts": {
+        "demo-1": 66441829,
+        "demo-8": 50773326,
+        "demo-11": 18348518,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7697037,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1948847,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-18",
+      "accounts": {
+        "demo-1": 67006454,
+        "demo-8": 50729566,
+        "demo-11": 18311067,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7552837,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1937741,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-19",
+      "accounts": {
+        "demo-1": 66949841,
+        "demo-8": 50900108,
+        "demo-11": 18274215,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7497029,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1945872,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-20",
+      "accounts": {
+        "demo-1": 67057091,
+        "demo-8": 50947157,
+        "demo-11": 18316091,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7510598,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1944814,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-21",
+      "accounts": {
+        "demo-1": 66775184,
+        "demo-8": 50852755,
+        "demo-11": 18349995,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7524839,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1947336,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-22",
+      "accounts": {
+        "demo-1": 66740632,
+        "demo-8": 50586684,
+        "demo-11": 18371385,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7489952,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1949963,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-23",
+      "accounts": {
+        "demo-1": 66740632,
+        "demo-8": 50586684,
+        "demo-11": 18371385,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7521817,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1949963,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-24",
+      "accounts": {
+        "demo-1": 66740632,
+        "demo-8": 50586684,
+        "demo-11": 18371385,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7577656,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1949963,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-25",
+      "accounts": {
+        "demo-1": 66954436,
+        "demo-8": 50879398,
+        "demo-11": 18343382,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7710065,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1958902,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-26",
+      "accounts": {
+        "demo-1": 67139265,
+        "demo-8": 50982955,
+        "demo-11": 18360943,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7715123,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1961037,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-27",
+      "accounts": {
+        "demo-1": 67205958,
+        "demo-8": 51107654,
+        "demo-11": 18272485,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7797299,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1958271,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-28",
+      "accounts": {
+        "demo-1": 67516146,
+        "demo-8": 50822332,
+        "demo-11": 18284457,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7810696,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1952249,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-29",
+      "accounts": {
+        "demo-1": 67651060,
+        "demo-8": 50714741,
+        "demo-11": 18308072,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7842216,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967689,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-30",
+      "accounts": {
+        "demo-1": 67651060,
+        "demo-8": 50714741,
+        "demo-11": 18308072,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7851572,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967689,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-05-31",
+      "accounts": {
+        "demo-1": 67651060,
+        "demo-8": 50714741,
+        "demo-11": 18308072,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7884670,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1967689,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-01",
+      "accounts": {
+        "demo-1": 67321865,
+        "demo-8": 50829542,
+        "demo-11": 18295246,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 8027836,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1972745,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-02",
+      "accounts": {
+        "demo-1": 67856976,
+        "demo-8": 50858890,
+        "demo-11": 18331829,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7939044,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1988289,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-03",
+      "accounts": {
+        "demo-1": 67512474,
+        "demo-8": 50686739,
+        "demo-11": 18333399,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7888926,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 2001136,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-04",
+      "accounts": {
+        "demo-1": 67496323,
+        "demo-8": 50799432,
+        "demo-11": 18289850,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7803675,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1999629,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-05",
+      "accounts": {
+        "demo-1": 67624413,
+        "demo-8": 50755734,
+        "demo-11": 18339829,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7730819,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1996320,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-06",
+      "accounts": {
+        "demo-1": 67624413,
+        "demo-8": 50755734,
+        "demo-11": 18339829,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7768779,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1996320,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-07",
+      "accounts": {
+        "demo-1": 67624413,
+        "demo-8": 50755734,
+        "demo-11": 18339829,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7851521,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1996320,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-08",
+      "accounts": {
+        "demo-1": 67750762,
+        "demo-8": 50785872,
+        "demo-11": 18346601,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7753435,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 2002867,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-09",
+      "accounts": {
+        "demo-1": 67904608,
+        "demo-8": 50758985,
+        "demo-11": 18466452,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7766892,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1997220,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-10",
+      "accounts": {
+        "demo-1": 67902456,
+        "demo-8": 50885804,
+        "demo-11": 18427690,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7675866,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 1999404,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-11",
+      "accounts": {
+        "demo-1": 67690352,
+        "demo-8": 51150623,
+        "demo-11": 18437754,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7728925,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 2003627,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-12",
+      "accounts": {
+        "demo-1": 67450000,
+        "demo-8": 51300000,
+        "demo-11": 18525000,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7829799,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 2000000,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    },
+    {
+      "date": "2026-06-13",
+      "accounts": {
+        "demo-1": 67450000,
+        "demo-8": 51300000,
+        "demo-11": 18525000,
+        "demo-14": 4275000,
+        "demo-17": 17100000,
+        "demo-20": 7695000,
+        "demo-23": 13300000,
+        "demo-25": 9025000,
+        "demo-27": 2000000,
+        "demo-30": 74100000,
+        "demo-32": -38950000
+      }
+    }
+  ],
+  "flows": [
+    {
+      "id": "demo-38",
+      "date": "2025-09-16",
+      "accountId": "demo-14",
+      "amount": 4275000,
+      "kind": "tracking",
+      "source": "account_added",
+      "label": "Started tracking the HSA"
+    },
+    {
+      "id": "demo-39",
+      "date": "2026-05-14",
+      "accountId": "demo-17",
+      "amount": 17100000,
+      "kind": "flow",
+      "source": "account_added",
+      "label": "Moved idle cash into T-bills"
+    },
+    {
+      "id": "demo-40",
+      "date": "2026-01-04",
+      "accountId": "demo-20",
+      "amount": 8285276,
+      "kind": "tracking",
+      "source": "account_added",
+      "label": "Started tracking the Coinbase wallet"
+    },
+    {
+      "id": "demo-41",
+      "date": "2025-05-09",
+      "accountId": "demo-23",
+      "amount": 13300000,
+      "kind": "tracking",
+      "source": "account_added",
+      "label": "Started tracking vested Stripe RSUs"
+    },
+    {
+      "id": "demo-42",
+      "date": "2026-05-26",
+      "accountId": "demo-30",
+      "amount": 74100000,
+      "kind": "tracking",
+      "source": "account_added",
+      "label": "Started tracking — primary residence"
+    }
+  ],
+  "settings": {
+    "country": "US",
+    "baseCurrency": "USD",
+    "claudeMode": "relay",
+    "relayUrl": "https://sampatti-relay.sampatti.workers.dev",
+    "usdInr": 95,
+    "byoKeySet": false,
+    "analysisModel": "claude-sonnet-4-6",
+    "ai": {
+      "extraction": "claude",
+      "analysis": "claude"
+    },
+    "developerMode": false
+  },
+  "updatedAt": "2026-06-13T21:03:44.438Z"
+}
