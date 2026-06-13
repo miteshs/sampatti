@@ -260,6 +260,28 @@ describe("wipe clears ALL local data (no residue)", () => {
   });
 });
 
+describe("appearance preference survives data actions", () => {
+  it("keeps the chosen theme across load-demo/import (replaceAll) and erase (wipe)", async () => {
+    useStore.getState().updateSettings({ theme: "dark" });
+    expect(useStore.getState().portfolio.settings.theme).toBe("dark");
+
+    // load-demo / import bring a portfolio whose settings default to light; the user's
+    // appearance choice (a device pref, not portfolio data) must persist through it.
+    const incoming = emptyPortfolio(); // theme: "light"
+    incoming.accounts.push({
+      id: "a", name: "X", institution: "Y", accountType: "demat",
+      taxTreatment: "taxable", region: "India", currency: "INR",
+    });
+    useStore.getState().replaceAll(incoming);
+    expect(useStore.getState().portfolio.accounts).toHaveLength(1); // data DID replace
+    expect(useStore.getState().portfolio.settings.theme).toBe("dark"); // appearance kept
+
+    await useStore.getState().wipe();
+    expect(useStore.getState().portfolio.accounts).toHaveLength(0); // data erased
+    expect(useStore.getState().portfolio.settings.theme).toBe("dark"); // appearance still kept
+  });
+});
+
 describe("store persistence across a restart", () => {
   it("saves committed data to disk and reloads it on next boot", async () => {
     const id = useStore.getState().addAccount({
