@@ -45,8 +45,8 @@ describe("App integration (demo flow)", () => {
   it("opens the per-account editor (Manage tab) without looping/blanking, and edits write through", async () => {
     render(<App />);
     fireEvent.click(await screen.findByText(/Load demo portfolio/i));
-    fireEvent.click(screen.getByRole("button", { name: "Manage" }));
-    // Account editing lives on the Manage tab now.
+    fireEvent.click(screen.getAllByRole("button", { name: "Holdings" })[0]);
+    // Account editing lives on the merged Holdings tab now (Manage + Add data).
     const editBtn = await screen.findAllByTitle("Edit account & holdings");
 
     // Clicking ✎ used to mount AccountEditor with a selector that returned a fresh array each

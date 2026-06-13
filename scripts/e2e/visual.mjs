@@ -79,8 +79,8 @@ try {
   await sleep(1500);
 
   const SHOTS = [
-    ["overview", "Overview"], ["performance", "Performance"], ["manage", "Manage"],
-    ["analysis", "AI Analysis"], ["add-data", "Add data"], ["settings", "Settings"],
+    ["overview", "Overview"], ["performance", "Performance"], ["holdings", "Holdings"],
+    ["analysis", "AI Analysis"], ["settings", "Settings"],
   ];
   mkdirSync(BASE_DIR, { recursive: true });
   mkdirSync(CAND_DIR, { recursive: true });
