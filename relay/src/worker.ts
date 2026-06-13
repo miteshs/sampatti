@@ -67,23 +67,32 @@ export function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-// The access codes this relay accepts as x-app-token: the APP_TOKENS list (short per-friend
-// codes) plus the legacy single APP_TOKEN. Trimmed, blanks dropped, upper-cased so the codes
-// friends type are case-insensitive (a 6-char code shouldn't fail over a stray capital).
-export function validCodes(env: Env): string[] {
-  return [env.APP_TOKEN ?? "", ...(env.APP_TOKENS ?? "").split(",")]
+// The short, human-shareable access codes from APP_TOKENS: trimmed, blanks dropped, and
+// upper-cased so a 6-char code a friend types is case-insensitive (a stray capital shouldn't
+// lock them out). The legacy single APP_TOKEN is deliberately NOT in here — it's a long,
+// high-entropy token, so it's matched case-SENSITIVELY in `authorized` (upper-casing it would
+// fold distinct characters together and erode its entropy).
+export function friendCodes(env: Env): string[] {
+  return (env.APP_TOKENS ?? "")
+    .split(",")
     .map((c) => c.trim().toUpperCase())
     .filter((c) => c.length > 0);
 }
 
-// True if the presented token matches any configured code. No codes configured → open relay
-// (same as an unset APP_TOKEN). Checks every code with the constant-time compare and never
-// short-circuits, so timing leaks neither which code matched nor how many exist.
-export function authorized(presented: string, codes: string[]): boolean {
-  if (codes.length === 0) return true;
-  const p = presented.trim().toUpperCase();
+// True if the presented x-app-token is accepted. With neither APP_TOKEN nor APP_TOKENS set the
+// relay is open (same as before). The legacy APP_TOKEN is compared case-sensitively at full
+// entropy; the short friend codes are compared case-insensitively. Every candidate is checked
+// with the constant-time compare and the loop never short-circuits, so timing leaks neither
+// which credential matched nor how many exist.
+export function authorized(presented: string, env: Env): boolean {
+  const legacy = (env.APP_TOKEN ?? "").trim();
+  const codes = friendCodes(env);
+  if (!legacy && codes.length === 0) return true;
+  const p = presented.trim();
+  const pUpper = p.toUpperCase();
   let ok = false;
-  for (const c of codes) ok = safeEqual(p, c) || ok;
+  if (legacy) ok = safeEqual(p, legacy) || ok; // case-sensitive — preserve the token's entropy
+  for (const c of codes) ok = safeEqual(pUpper, c) || ok; // case-insensitive friend codes
   return ok;
 }
 
@@ -114,7 +123,7 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
 
-    if (!authorized(request.headers.get("x-app-token") ?? "", validCodes(env))) {
+    if (!authorized(request.headers.get("x-app-token") ?? "", env)) {
       return json({ error: "unauthorized" }, 401);
     }
 

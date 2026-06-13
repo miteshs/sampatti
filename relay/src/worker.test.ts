@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import worker, { authorized, readBodyCapped, sanitizeRequest, safeEqual, validCodes, type Env } from "./worker";
+import worker, { authorized, friendCodes, readBodyCapped, sanitizeRequest, safeEqual, type Env } from "./worker";
 
 describe("safeEqual (constant-time token compare)", () => {
   it("matches identical tokens", () => {
@@ -121,31 +121,45 @@ describe("APP_TOKEN gate (fetch handler)", () => {
   });
 });
 
-describe("validCodes / authorized (short per-friend access codes)", () => {
+describe("friendCodes / authorized (short per-friend access codes)", () => {
   it("parses APP_TOKENS into a trimmed, upper-cased, blank-free list", () => {
-    expect(validCodes({ ANTHROPIC_API_KEY: "k", APP_TOKENS: "abc123, def456 ,, ghi789" }))
+    expect(friendCodes({ ANTHROPIC_API_KEY: "k", APP_TOKENS: "abc123, def456 ,, ghi789" }))
       .toEqual(["ABC123", "DEF456", "GHI789"]);
   });
 
-  it("includes the legacy APP_TOKEN alongside APP_TOKENS", () => {
-    expect(validCodes({ ANTHROPIC_API_KEY: "k", APP_TOKEN: "long-legacy", APP_TOKENS: "abc123" }))
-      .toEqual(["LONG-LEGACY", "ABC123"]);
+  it("excludes the legacy APP_TOKEN (it's matched case-sensitively, not in this list)", () => {
+    expect(friendCodes({ ANTHROPIC_API_KEY: "k", APP_TOKEN: "long-legacy", APP_TOKENS: "abc123" }))
+      .toEqual(["ABC123"]);
   });
 
-  it("is empty when neither is set (→ open relay)", () => {
-    expect(validCodes({ ANTHROPIC_API_KEY: "k" })).toEqual([]);
+  it("is empty when APP_TOKENS is unset", () => {
+    expect(friendCodes({ ANTHROPIC_API_KEY: "k" })).toEqual([]);
   });
 
-  it("accepts a code that matches any entry, case-insensitively and trimmed", () => {
-    const codes = validCodes({ ANTHROPIC_API_KEY: "k", APP_TOKENS: "ABC123,DEF456" });
-    expect(authorized("def456", codes)).toBe(true);   // lower-case friend typed
-    expect(authorized("  ABC123  ", codes)).toBe(true); // stray whitespace
-    expect(authorized("XYZ999", codes)).toBe(false);   // unknown code
+  it("accepts a friend code case-insensitively and trimmed", () => {
+    const env: Env = { ANTHROPIC_API_KEY: "k", APP_TOKENS: "ABC123,DEF456" };
+    expect(authorized("def456", env)).toBe(true);     // lower-case friend typed
+    expect(authorized("  ABC123  ", env)).toBe(true); // stray whitespace
+    expect(authorized("XYZ999", env)).toBe(false);    // unknown code
   });
 
-  it("is open (accepts anything, even empty) when no codes are configured", () => {
-    expect(authorized("", [])).toBe(true);
-    expect(authorized("whatever", [])).toBe(true);
+  it("matches the legacy APP_TOKEN case-SENSITIVELY (upper-casing it would erode entropy)", () => {
+    const env: Env = { ANTHROPIC_API_KEY: "k", APP_TOKEN: "spt_AbC123xyz" };
+    expect(authorized("spt_AbC123xyz", env)).toBe(true);   // exact case → in
+    expect(authorized("spt_abc123xyz", env)).toBe(false);  // wrong case → rejected
+    expect(authorized("SPT_ABC123XYZ", env)).toBe(false);
+  });
+
+  it("accepts EITHER the legacy token or a friend code when both are set", () => {
+    const env: Env = { ANTHROPIC_API_KEY: "k", APP_TOKEN: "spt_Legacy", APP_TOKENS: "ABC123" };
+    expect(authorized("spt_Legacy", env)).toBe(true);  // legacy, exact case
+    expect(authorized("abc123", env)).toBe(true);      // friend code, case-insensitive
+    expect(authorized("spt_legacy", env)).toBe(false); // legacy wrong case → rejected
+  });
+
+  it("is open (accepts anything, even empty) when neither APP_TOKEN nor APP_TOKENS is set", () => {
+    expect(authorized("", { ANTHROPIC_API_KEY: "k" })).toBe(true);
+    expect(authorized("whatever", { ANTHROPIC_API_KEY: "k" })).toBe(true);
   });
 });
 
