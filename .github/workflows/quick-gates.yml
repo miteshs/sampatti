@@ -2,9 +2,11 @@
 # (The Windows workflow runs the full platform gates at release time; this one keeps every
 # commit honest for cheap: 1×-minute ubuntu runners.)
 #
-#   gates: vitest (incl. privacy/egress/version contracts, fuzz, migration) + tsc +
-#          relay tests + production-dependency audit
-#   e2e:   the built app driven by real Chrome through the whole user journey
+#   gates:     vitest (incl. privacy/egress/version contracts, fuzz, migration) + tsc +
+#              relay tests + production-dependency audit
+#   e2e:       the built app driven by real Chrome through the whole user journey
+#   ios-build: cross-compiles the Rust core to the iOS simulator target so the iOS port can't
+#              silently break (macOS runner = 10× minutes, so PR + dispatch only)
 
 name: quick-gates
 
@@ -78,3 +80,25 @@ jobs:
           name: visual-candidates
           path: scripts/e2e/.candidates/
           if-no-files-found: ignore
+
+  ios-build:
+    # The iOS cross-compile needs the iOS SDK (macOS-only). macOS runners bill 10× minutes, so
+    # this runs on PRs + manual dispatch — not every main push — which is enough to catch a
+    # broken iOS build. llama.cpp is excluded on iOS (Cargo.toml target cfg), so this is a
+    # moderate Rust-only compile, not the heavy desktop build.
+    if: github.event_name != 'push'
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Add the iOS simulator Rust target
+        run: rustup target add aarch64-apple-ios-sim
+      - run: npm ci
+      # generate_context! embeds the frontend, so dist/ must exist before the Rust build.
+      - run: npm run build
+      - name: Cross-compile the Rust core for the iOS simulator
+        run: cargo build --manifest-path src-tauri/Cargo.toml --target aarch64-apple-ios-sim --lib
