@@ -80,8 +80,7 @@ try {
 
   const SHOTS = [
     ["overview", "Overview"], ["performance", "Performance"], ["manage", "Manage"],
-    ["analysis", "AI Analysis"], ["add-data", "Add data"], ["privacy", "Privacy"],
-    ["settings", "Settings"],
+    ["analysis", "AI Analysis"], ["add-data", "Add data"], ["settings", "Settings"],
   ];
   mkdirSync(BASE_DIR, { recursive: true });
   mkdirSync(CAND_DIR, { recursive: true });

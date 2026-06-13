@@ -1,34 +1,21 @@
-// The privacy EXPLAINER + your-data controls, and nothing else: where data lives, what
-// leaves the device, export and erase. All configuration (models, region, keys, engines)
-// lives on the Settings tab (⚙) — the user asked for the two not to be mixed.
+// The transparency EXPLAINER — where data lives, what leaves the device, at rest. Rendered
+// inside the "How Sampatti handles your data" modal on the Settings tab (⚙); the data
+// controls (export / erase) live in that same Settings section.
 import { useEffect, useState, type ReactNode } from "react";
-import { useStore, exportPortfolio } from "../storage/store";
+import { useStore } from "../storage/store";
 import { diskEncryption, storageLocation, isTauri, isIOS } from "../platform";
 import { profileFor } from "../regions/profile";
 
-export function Privacy() {
-  const { portfolio, wipe } = useStore();
-  const s = portfolio.settings;
+export function PrivacyExplainer() {
+  const s = useStore((st) => st.portfolio.settings);
   const [location, setLocation] = useState("…");
-  const [confirmWipe, setConfirmWipe] = useState(false);
-  const [exportNote, setExportNote] = useState<string | null>(null);
-
-  const doExport = async () => {
-    try {
-      const dest = await exportPortfolio(portfolio);
-      if (dest) setExportNote(`Saved to ${dest}`);
-    } catch (e) {
-      setExportNote(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  };
 
   useEffect(() => {
     void storageLocation().then(setLocation);
   }, []);
 
   return (
-    <div className="grid" style={{ gap: "1.25rem", maxWidth: 760 }}>
-      <div className="card card-pad-lg">
+      <div className="card card-pad-lg" style={{ boxShadow: "none", border: "none", padding: 0 }}>
         <div className="eyebrow">Transparency</div>
         <h2 style={{ fontSize: "1.3rem", margin: "0.2rem 0 1rem" }}>Where your data lives, and what leaves</h2>
         <Flow icon="💾" title="Stored only on this device"
@@ -59,31 +46,6 @@ export function Privacy() {
               : <>Turn on {diskEncryption().os} <strong>{diskEncryption().tool}</strong> ({diskEncryption().where}) to
                 encrypt the whole disk, including this app's data file.</>} />
       </div>
-
-      <div className="card">
-        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.5rem" }}>Your data, your control</h3>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button className="btn" onClick={() => void doExport()}>⬇ Export everything (JSON)</button>
-          {confirmWipe ? (
-            <>
-              <button className="btn btn-danger" onClick={() => { void wipe(); setConfirmWipe(false); }}>Yes, erase all data</button>
-              <button className="btn btn-ghost" onClick={() => setConfirmWipe(false)}>Cancel</button>
-            </>
-          ) : (
-            <button className="btn btn-danger" onClick={() => setConfirmWipe(true)}>🗑 Erase all data</button>
-          )}
-        </div>
-        {exportNote && (
-          <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>{exportNote}</p>
-        )}
-        <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem", maxWidth: 560 }}>
-          Erases your entire portfolio (accounts, holdings, income, edit history) and every local cache,
-          including the net-worth price history — nothing is left on this device. Sampatti keeps no server
-          database, so there's nothing stored elsewhere to remove. Your Anthropic API key, if you set one,
-          is a separate credential — remove it on the Settings tab (⚙).
-        </p>
-      </div>
-    </div>
   );
 }
 

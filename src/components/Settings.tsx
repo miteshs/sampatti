@@ -1,8 +1,13 @@
-// Configuration lives here (⚙): AI engines, how analysis reaches Claude, model/region/FX,
-// developer mode. The Privacy tab stays a pure explainer + data controls — the user asked
-// for the two not to be mixed.
+// Configuration lives here (⚙), organised by what the user is actually deciding:
+//   1. AI analysis   — how the review reaches Claude (relay / own key) + which model writes it
+//   2. Region & currency
+//   3. Appearance     — light / dark
+//   4. Insights       — optional Overview extras
+//   5. Developer mode — experimental toggle… which reveals
+//   6. AI engines     — the on-device engine (only when developer mode is on)
+// The Privacy tab stays a pure explainer + data controls — the two are deliberately not mixed.
 import { useEffect, useState } from "react";
-import { useStore } from "../storage/store";
+import { useStore, exportPortfolio } from "../storage/store";
 import { DEFAULT_RELAY_URL } from "../domain/types";
 import { clearByoKey, hasByoKey, keyStoreName, setByoKey, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
@@ -10,13 +15,28 @@ import { localModelDownload, localModelRemove, localModelStatus, type LocalModel
 import type { AiEngine } from "../domain/types";
 import { fetchUsdInr } from "../domain/fx";
 import { profileFor } from "../regions/profile";
+import { PrivacyExplainer } from "./Privacy";
+
+const H3 = { fontSize: "1.05rem", marginBottom: "0.3rem" } as const;
 
 export function Settings() {
-  const { portfolio, updateSettings } = useStore();
+  const { portfolio, updateSettings, wipe } = useStore();
   const s = portfolio.settings;
   const [keyInput, setKeyInput] = useState("");
   const [keySet, setKeySet] = useState(false);
   const [confirmDev, setConfirmDev] = useState(false);
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const [exportNote, setExportNote] = useState<string | null>(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+
+  const doExport = async () => {
+    try {
+      const dest = await exportPortfolio(portfolio);
+      if (dest) setExportNote(`Saved to ${dest}`);
+    } catch (e) {
+      setExportNote(`Export failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
   const [fxBusy, setFxBusy] = useState(false);
   const [fxNote, setFxNote] = useState<string | null>(null);
   const [model, setModel] = useState<LocalModelStatus | null>(null);
@@ -90,67 +110,20 @@ export function Settings() {
 
   return (
     <div className="grid" style={{ gap: "1.25rem", maxWidth: 760 }}>
-      {s.developerMode && (
+      {/* ── 1. AI analysis: how the review reaches Claude, and which model writes it ── */}
       <div className="card">
-        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>AI engines</h3>
-        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
-          Choose, per task, whether AI runs on <strong>Claude</strong> (best quality; the brief or
-          the document you approve is sent) or <strong>on this device</strong> (nothing leaves —
-          a smaller model, downloaded once). Mix freely.
+        <h3 style={H3}>AI analysis</h3>
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.9rem", maxWidth: 600 }}>
+          Where the review runs and which model writes it. Your portfolio stays on device — only the
+          compact brief (or a document you approve) is sent.
         </p>
-        {(["extraction", "analysis"] as const).map((task) => (
-          <div key={task} style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", padding: "0.4rem 0" }}>
-            <span style={{ fontSize: "0.86rem", fontWeight: 600, width: 190 }}>
-              {task === "extraction" ? "Statement extraction" : "Portfolio analysis & chat"}
-            </span>
-            <button className={`chip ${s.ai[task] === "claude" ? "active" : ""}`} onClick={() => setEngine(task, "claude")}>
-              Claude — best quality
-            </button>
-            <button
-              className={`chip ${s.ai[task] === "local" ? "active" : ""}`}
-              disabled={model?.state !== "ready"}
-              title={model?.state !== "ready" ? "Download the on-device model below first" : undefined}
-              onClick={() => setEngine(task, "local")}
-            >
-              🔒 On this device{task === "analysis" ? " — quick take" : ""}
-            </button>
-          </div>
-        ))}
-        {isTauri() ? (
-          <div style={{ marginTop: "0.7rem", paddingTop: "0.7rem", borderTop: "1px solid var(--line-2)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "0.84rem", fontWeight: 600 }}>On-device model</span>
-              {model?.state === "ready" && <span className="badge badge-green">downloaded · {(model.size_bytes / 1e9).toFixed(2)} GB</span>}
-              {model?.state === "partial" && <span className="badge badge-amber">partially downloaded — resume below</span>}
-              {(!model || model.state === "absent") && <span className="badge badge-gray">not downloaded</span>}
-              {dlProgress != null ? (
-                <span className="muted" style={{ fontSize: "0.8rem" }}>downloading… {(dlProgress * 100).toFixed(0)}%</span>
-              ) : model?.state === "ready" ? (
-                <button className="btn btn-ghost" onClick={() => void removeModel()}>Remove model</button>
-              ) : (
-                <button className="btn" onClick={() => void downloadModel()}>
-                  ⬇ Download model (~2.3 GB, one time)
-                </button>
-              )}
-            </div>
-            <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.4rem", maxWidth: 600 }}>
-              Qwen3-4B (Apache-2.0), fetched once from huggingface.co and integrity-verified
-              (sha-256). It runs entirely inside Sampatti — no separate app, no server. Screenshots
-              and scans still use Claude even in on-device mode (small models can't read them well).
-            </p>
-            {modelErr && <div className="badge badge-rose" style={{ marginTop: "0.4rem", padding: "0.3rem 0.6rem" }}>{modelErr}</div>}
-          </div>
-        ) : (
-          <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>
-            The on-device model is available in the desktop app (this is the web preview).
-          </p>
-        )}
-      </div>
-      )}
 
-      <div className="card">
-        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.8rem" }}>How analysis reaches Claude</h3>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        {/* The relay-vs-own-key choice is hidden for now (alpha): the app just uses the relay.
+            Revealed under Developer mode so it stays recoverable for advanced users / testing. */}
+        {s.developerMode ? (
+        <>
+        <label>How analysis reaches Claude</label>
+        <div style={{ display: "flex", gap: "0.5rem", margin: "0.3rem 0 1rem" }}>
           <button className={`chip ${s.claudeMode === "relay" ? "active" : ""}`} onClick={() => updateSettings({ claudeMode: "relay" })}>
             Relay (default, easiest)
           </button>
@@ -210,17 +183,30 @@ export function Settings() {
             </p>
           </div>
         )}
-      </div>
+        </>
+        ) : (
+          <>
+            <label>Access code <span className="muted" style={{ fontWeight: 400 }}>— from the developer</span></label>
+            <input
+              type="password"
+              aria-label="Relay access code"
+              placeholder="paste the code you were given"
+              value={s.relayCode ?? ""}
+              onChange={(e) => updateSettings({ relayCode: e.target.value })}
+            />
+            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem", maxWidth: 600 }}>
+              Your analysis runs through Sampatti's relay, which is invite-only during alpha — paste
+              the access code you were given. (Prefer your own Anthropic key? Enable developer mode below.)
+            </p>
+          </>
+        )}
 
-      <div className="card">
-        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.8rem" }}>Model, region & rates</h3>
-
-        <label>Analysis model</label>
+        <label style={{ display: "block", marginTop: "1.3rem" }}>Analysis model</label>
         <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.6rem" }}>
-          Which Claude writes your analysis. Output length drives cost, so a lighter model is the
-          simplest way to cut spend. Costs are rough, per analysis, on your own key.
+          Which Claude writes your analysis. More thorough models reason deeper on nuance;
+          lighter ones reply faster.
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "1.25rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
           {ANALYSIS_MODELS.map((m) => {
             const active = s.analysisModel === m.id;
             return (
@@ -243,34 +229,23 @@ export function Settings() {
             );
           })}
         </div>
+      </div>
 
-        <label>Region</label>
-        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.5rem", maxWidth: 600 }}>
+      {/* ── 2. Region & currency ── */}
+      <div className="card">
+        <h3 style={H3}>Region &amp; currency</h3>
+        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.6rem", maxWidth: 600 }}>
           Tax language, the analyst persona, examples and currency display follow your market.
           Your data itself is never changed or converted in storage — figures display at the
           ₹/$ rate below.
         </p>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+        <label>Region</label>
+        <div style={{ display: "flex", gap: "0.5rem", margin: "0.3rem 0 1.25rem" }}>
           <button className={`chip ${s.country !== "US" ? "active" : ""}`} onClick={() => updateSettings({ country: "India", baseCurrency: "INR" })}>
             India
           </button>
           <button className={`chip ${s.country === "US" ? "active" : ""}`} onClick={() => updateSettings({ country: "US", baseCurrency: "USD" })}>
             United States
-          </button>
-        </div>
-
-        <label>Appearance</label>
-        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.5rem", maxWidth: 600 }}>
-          Light by default. Dark mode is opt-in — it won't follow your device's setting unless you choose it here.
-        </p>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
-          <button className={`chip ${(s.theme ?? "light") !== "dark" ? "active" : ""}`}
-            aria-pressed={(s.theme ?? "light") !== "dark"} onClick={() => updateSettings({ theme: "light" })}>
-            ☀ Light
-          </button>
-          <button className={`chip ${s.theme === "dark" ? "active" : ""}`}
-            aria-pressed={s.theme === "dark"} onClick={() => updateSettings({ theme: "dark" })}>
-            ☾ Dark
           </button>
         </div>
 
@@ -289,8 +264,27 @@ export function Settings() {
         </div>
       </div>
 
+      {/* ── 3. Appearance ── */}
       <div className="card">
-        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>Insights</h3>
+        <h3 style={H3}>Appearance</h3>
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.6rem", maxWidth: 600 }}>
+          Light by default. Dark mode is opt-in — it won't follow your device's setting unless you choose it here.
+        </p>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button className={`chip ${(s.theme ?? "light") !== "dark" ? "active" : ""}`}
+            aria-pressed={(s.theme ?? "light") !== "dark"} onClick={() => updateSettings({ theme: "light" })}>
+            ☀ Light
+          </button>
+          <button className={`chip ${s.theme === "dark" ? "active" : ""}`}
+            aria-pressed={s.theme === "dark"} onClick={() => updateSettings({ theme: "dark" })}>
+            ☾ Dark
+          </button>
+        </div>
+      </div>
+
+      {/* ── 4. Insights (optional Overview extras) ── */}
+      <div className="card">
+        <h3 style={H3}>Insights</h3>
         <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.4rem", maxWidth: 600 }}>
           Optional extras for the Overview — off by default to keep things simple. Turn on what's useful to you.
         </p>
@@ -314,11 +308,45 @@ export function Settings() {
         })}
       </div>
 
+      {/* ── 5. Privacy & data — the explainer (modal) + your-data controls ── */}
       <div className="card">
-        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>Developer mode</h3>
+        <h3 style={H3}>Privacy &amp; data</h3>
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.7rem", maxWidth: 600 }}>
+          Everything stays on this device — no account, no cloud database.{" "}
+          <button
+            onClick={() => setShowPrivacy(true)}
+            style={{ background: "none", border: "none", padding: 0, color: "var(--primary)", cursor: "pointer", font: "inherit", textDecoration: "underline" }}
+          >
+            How Sampatti handles your data
+          </button>
+        </p>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button className="btn" onClick={() => void doExport()}>⬇ Export everything (JSON)</button>
+          {confirmWipe ? (
+            <>
+              <button className="btn btn-danger" onClick={() => { void wipe(); setConfirmWipe(false); }}>Yes, erase all data</button>
+              <button className="btn btn-ghost" onClick={() => setConfirmWipe(false)}>Cancel</button>
+            </>
+          ) : (
+            <button className="btn btn-danger" onClick={() => setConfirmWipe(true)}>🗑 Erase all data</button>
+          )}
+        </div>
+        {exportNote && (
+          <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>{exportNote}</p>
+        )}
+        <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.5rem", maxWidth: 560 }}>
+          Erasing removes your entire portfolio (accounts, holdings, income, edit history) and every
+          local cache — nothing is left on this device, and Sampatti keeps no server copy. Your
+          Anthropic key, if set, is a separate credential (managed under AI analysis above).
+        </p>
+      </div>
+
+      {/* ── 6. Developer mode (the toggle that reveals the on-device engine below) ── */}
+      <div className="card">
+        <h3 style={H3}>Developer mode</h3>
         <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
-          Unlocks experimental features — today, the <strong>on-device AI engine</strong>. Everyday
-          use doesn't need it; everything else in Sampatti works without it.
+          Unlocks experimental features — today, the <strong>on-device AI engine</strong> (shown below
+          when on). Everyday use doesn't need it; everything else in Sampatti works without it.
         </p>
         {s.developerMode ? (
           <button
@@ -351,6 +379,75 @@ export function Settings() {
           <button className="btn" onClick={() => setConfirmDev(true)}>Turn on developer mode…</button>
         )}
       </div>
+
+      {/* ── 6. AI engines — revealed by developer mode: per-task Claude vs on-device ── */}
+      {s.developerMode && (
+        <div className="card">
+          <h3 style={H3}>AI engines</h3>
+          <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
+            Choose, per task, whether AI runs on <strong>Claude</strong> (best quality; the brief or
+            the document you approve is sent) or <strong>on this device</strong> (nothing leaves —
+            a smaller model, downloaded once). Mix freely.
+          </p>
+          {(["extraction", "analysis"] as const).map((task) => (
+            <div key={task} style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", padding: "0.4rem 0" }}>
+              <span style={{ fontSize: "0.86rem", fontWeight: 600, width: 190 }}>
+                {task === "extraction" ? "Statement extraction" : "Portfolio analysis & chat"}
+              </span>
+              <button className={`chip ${s.ai[task] === "claude" ? "active" : ""}`} onClick={() => setEngine(task, "claude")}>
+                Claude — best quality
+              </button>
+              <button
+                className={`chip ${s.ai[task] === "local" ? "active" : ""}`}
+                disabled={model?.state !== "ready"}
+                title={model?.state !== "ready" ? "Download the on-device model below first" : undefined}
+                onClick={() => setEngine(task, "local")}
+              >
+                🔒 On this device{task === "analysis" ? " — quick take" : ""}
+              </button>
+            </div>
+          ))}
+          {isTauri() ? (
+            <div style={{ marginTop: "0.7rem", paddingTop: "0.7rem", borderTop: "1px solid var(--line-2)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "0.84rem", fontWeight: 600 }}>On-device model</span>
+                {model?.state === "ready" && <span className="badge badge-green">downloaded · {(model.size_bytes / 1e9).toFixed(2)} GB</span>}
+                {model?.state === "partial" && <span className="badge badge-amber">partially downloaded — resume below</span>}
+                {(!model || model.state === "absent") && <span className="badge badge-gray">not downloaded</span>}
+                {dlProgress != null ? (
+                  <span className="muted" style={{ fontSize: "0.8rem" }}>downloading… {(dlProgress * 100).toFixed(0)}%</span>
+                ) : model?.state === "ready" ? (
+                  <button className="btn btn-ghost" onClick={() => void removeModel()}>Remove model</button>
+                ) : (
+                  <button className="btn" onClick={() => void downloadModel()}>
+                    ⬇ Download model (~2.3 GB, one time)
+                  </button>
+                )}
+              </div>
+              <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.4rem", maxWidth: 600 }}>
+                Qwen3-4B (Apache-2.0), fetched once from huggingface.co and integrity-verified
+                (sha-256). It runs entirely inside Sampatti — no separate app, no server. Screenshots
+                and scans still use Claude even in on-device mode (small models can't read them well).
+              </p>
+              {modelErr && <div className="badge badge-rose" style={{ marginTop: "0.4rem", padding: "0.3rem 0.6rem" }}>{modelErr}</div>}
+            </div>
+          ) : (
+            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.5rem" }}>
+              The on-device model is available in the desktop app (this is the web preview).
+            </p>
+          )}
+        </div>
+      )}
+
+      {showPrivacy && (
+        <div className="modal-backdrop" onClick={() => setShowPrivacy(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="How Sampatti handles your data" onClick={(e) => e.stopPropagation()}>
+            <button className="btn btn-ghost" aria-label="Close" onClick={() => setShowPrivacy(false)}
+              style={{ position: "absolute", top: "0.5rem", right: "0.5rem" }}>✕</button>
+            <PrivacyExplainer />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
