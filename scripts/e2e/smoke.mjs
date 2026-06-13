@@ -220,8 +220,9 @@ try {
 
   await step("Developer mode gates AI engines; local gated off in web; toggle persists", async () => {
     await clickText(page, "Settings");
-    await waitFor(page, () => bodyHas(page, "How analysis reaches Claude"), "settings tab");
-    // The experimental card must not exist until developer mode is switched on.
+    await waitFor(page, () => bodyHas(page, "AI analysis"), "settings tab");
+    // The relay-vs-own-key controls and the experimental card are both hidden until dev mode.
+    if (await bodyHas(page, "How analysis reaches Claude")) throw new Error("relay/key controls visible without developer mode");
     if (await bodyHas(page, "AI engines")) throw new Error("AI engines card visible without developer mode");
     await clickText(page, "Turn on developer mode");
     await waitFor(page, () => bodyHas(page, "heads-up before you switch this on"), "risk notice");
