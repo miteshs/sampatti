@@ -59,17 +59,48 @@ A cloud, subscription all-in-one US money app:
    brief already does a retirement sense-check).
 4. **Tax-action tools** — turn the LTCG/STCG split into actions: "harvest the ₹1.25L LTCG
    exemption," "you're ₹X / N days from long-term on holding Y."
+5. **Portfolio-health score** — roll the existing per-number verdicts (`src/domain/verdicts.ts`)
+   into one headline 0–100 read with friendly bands (see the Financial Fitness comparison
+   below). Highest value / lowest effort, and on-brand for the 45–65 audience.
 
 ### Tier 2 — valuable, more effort
 - Couples / household profiles (his / hers / joint).
 - Spending / cash-flow from bank-statement CSV import (budgeting-lite).
-- Mobile — Tauri 2 mobile target, or ship the web build as a PWA.
+- ~~Mobile~~ — **DONE (2026-06-13):** iOS (iPhone + iPad) shipped via the Tauri 2 iOS target on
+  the same codebase — responsive bottom-tab UI + on-device privacy (sandbox, Data Protection,
+  iCloud-backup exclusion). Android still open; a PWA was explicitly rejected (WebKit evicts
+  script-writable storage — unsafe as the sole copy of financial data). Also shipped: **optional
+  dark mode**.
+- **India-benchmark KPI scorecard** — equity-by-age, concentration, liquidity-months, retirement-
+  corpus adequacy, each scored vs. an age-cohort target (from the Financial Fitness comparison).
+- **"Now / Next / Later" action plan** + a deterministic **SWOT** grid — make the AI review legible
+  and actionable for people who won't read paragraphs (the UI frame for #3 + #4 above).
 - Proactive nudges — rebalance, concentration, tax-deadline, SIP reminders.
 
 ### Tier 3 — strategic, heavy
 - **India Account Aggregator** integration — consent-based, privacy-respecting aggregation
   (requires registering as / using an FIU + TSP). The privacy-aligned answer to Plaid.
 - ~~MF Central / CAS import~~ — **DONE** (CAMS/KFintech + NSDL/CDSL CAS parsed fully on-device, password handling included, with cross-account duplicate reconciliation). Remaining: MF Central API-style auto-fetch.
+
+## A second yardstick — the Financial Fitness Assessment
+
+Compared against [Dhingra Consultants' Financial Fitness Assessment](https://financial-fitness-assessment.netlify.app/),
+a questionnaire-driven scoring tool (also local-first — raw data stays in the browser). Different
+shape from Sampatti (it scores a self-reported profile; we aggregate actual holdings), but four of
+its ideas fit our "plain-words verdicts for non-techies" grain and are now on the roadmap above:
+
+1. **Single health score (0–100) + friendly bands** ("Athlete / In training / Warm-up"). → Tier 1 #5.
+2. **Age-banded KPI scorecard** vs. peer targets. → Tier 2.
+3. **"Now / Next / Later" execution plan** with dated milestones. → Tier 2 (frames goals + tax actions).
+4. **Deterministic SWOT** generated from the numbers. → Tier 2.
+
+**Tension to decide, not just adopt:** its strongest KPIs (emergency-fund months, savings rate,
+debt-to-income, 10× income life cover) need **monthly expenses + insurance coverage** — data
+Sampatti deliberately does *not* collect (budgeting / spend-tracking are non-goals below). So a
+fitness scorecard is either limited to **portfolio-only KPIs** (concentration, liquidity,
+equity-by-age, corpus adequacy) or it crosses the expense-capture line — a real product decision,
+not a default. **Don't borrow:** its cloud sync of "anonymised results" (our local-only stance is
+stronger) or the consultation lead-gen funnel (we're not an advisory).
 
 ## Deliberate non-goals (and why)
 | Origin feature | Why we don't match it |
