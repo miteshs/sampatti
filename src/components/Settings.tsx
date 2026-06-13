@@ -290,6 +290,31 @@ export function Settings() {
       </div>
 
       <div className="card">
+        <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>Insights</h3>
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.4rem", maxWidth: 600 }}>
+          Optional extras for the Overview — off by default to keep things simple. Turn on what's useful to you.
+        </p>
+        {([
+          { key: "healthScore", label: "Portfolio health score", hint: "A single 0–100 read across your exposure, concentration and liquidity." },
+          { key: "goals", label: "Goals & retirement", hint: "Project your corpus to retirement and see whether you're on track." },
+        ] as { key: "healthScore" | "goals"; label: string; hint: string }[]).map((f) => {
+          const on = !!s.insights?.[f.key];
+          return (
+            <div key={f.key} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.65rem 0", borderTop: "1px solid var(--line-2)" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{f.label}</div>
+                <div className="muted" style={{ fontSize: "0.76rem" }}>{f.hint}</div>
+              </div>
+              <button className={`chip ${on ? "active" : ""}`} role="switch" aria-checked={on} aria-label={f.label}
+                onClick={() => updateSettings({ insights: { ...s.insights, [f.key]: !on } })}>
+                {on ? "On" : "Off"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="card">
         <h3 style={{ fontSize: "1.05rem", marginBottom: "0.3rem" }}>Developer mode</h3>
         <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
           Unlocks experimental features — today, the <strong>on-device AI engine</strong>. Everyday

@@ -1,0 +1,69 @@
+// Optional "Retirement outlook" card (Settings → Insights → Goals & retirement). A rough,
+// deterministic projection of the investable corpus to the retirement year vs. the corpus needed
+// to fund a desired income (25× / 4% rule). Assumptions persist in settings.retirement. India-
+// first: figures are in the base currency. A read/estimate, not advice.
+import { useStore } from "../storage/store";
+import { fmtMoney } from "../regions/profile";
+import { projectRetirement } from "../domain/retirement";
+
+// India-typical defaults used until the user sets their own.
+const D = {
+  currentAge: 35,
+  retireAge: 60,
+  monthlyContribution: 0,
+  desiredMonthlyIncome: 50_000,
+  expectedReturnPct: 10,
+  inflationPct: 6,
+};
+
+// Module-level so it doesn't remount each render (which would steal input focus mid-typing).
+function NumField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+  return (
+    <label style={{ fontSize: "0.74rem" }}>
+      {label}
+      <input type="number" min={0} aria-label={label} value={value} style={{ marginTop: "0.2rem" }}
+        onChange={(e) => onChange(Number(e.target.value) || 0)} />
+    </label>
+  );
+}
+
+export function Goals({ currentCorpus }: { currentCorpus: number }) {
+  const ret = useStore((s) => s.portfolio.settings.retirement);
+  const updateSettings = useStore((s) => s.updateSettings);
+  const v = { ...D, ...ret };
+  const save = (patch: Partial<typeof D>) => updateSettings({ retirement: { ...ret, ...patch } });
+
+  const p = projectRetirement({ currentCorpus, ...v });
+
+  return (
+    <div className="card">
+      <div className="eyebrow">Retirement outlook · optional</div>
+      <h3 style={{ fontSize: "1.05rem", margin: "0.15rem 0 0.3rem" }}>Are you on track?</h3>
+      <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.9rem", maxWidth: 640 }}>
+        A rough projection from your investable corpus of <strong>{fmtMoney(Math.round(currentCorpus))}</strong>{" "}
+        (excludes property) plus what you keep investing. Estimates — not advice.
+      </p>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(130px, 100%), 1fr))", gap: "0.6rem", marginBottom: "1rem" }}>
+        <NumField label="Age now" value={v.currentAge} onChange={(n) => save({ currentAge: n })} />
+        <NumField label="Retire at" value={v.retireAge} onChange={(n) => save({ retireAge: n })} />
+        <NumField label="Invest / month" value={v.monthlyContribution} onChange={(n) => save({ monthlyContribution: n })} />
+        <NumField label="Want / month (today's money)" value={v.desiredMonthlyIncome} onChange={(n) => save({ desiredMonthlyIncome: n })} />
+        <NumField label="Return % / yr" value={v.expectedReturnPct} onChange={(n) => save({ expectedReturnPct: n })} />
+        <NumField label="Inflation % / yr" value={v.inflationPct} onChange={(n) => save({ inflationPct: n })} />
+      </div>
+      <div className={`verdict ${p.tone}`} style={{ fontSize: "0.95rem" }}>
+        <span className="dot" /> <strong>{p.headline}</strong>
+      </div>
+      <p className="muted" style={{ fontSize: "0.82rem", marginTop: "0.55rem", lineHeight: 1.65 }}>
+        In {p.years} {p.years === 1 ? "year" : "years"} your corpus could reach{" "}
+        <strong>{fmtMoney(Math.round(p.projectedCorpus))}</strong>. To draw about{" "}
+        {fmtMoney(Math.round(p.desiredAnnualIncomeAtRetirement / 12))}/month then (your{" "}
+        {fmtMoney(v.desiredMonthlyIncome)} grown by inflation), you'd want roughly{" "}
+        <strong>{fmtMoney(Math.round(p.requiredCorpus))}</strong> set aside (the 25× / 4% rule) —{" "}
+        {p.gap >= 0
+          ? <>a surplus of <strong>{fmtMoney(Math.round(p.gap))}</strong>.</>
+          : <>a shortfall of <strong>{fmtMoney(Math.round(-p.gap))}</strong>.</>}
+      </p>
+    </div>
+  );
+}
