@@ -17,8 +17,8 @@
 #      on first launch — no quarantine-stripping postflight needed. Direct download is now the
 #      recommended install (see README); this cask is retained for legacy `brew` users.
 cask "sampatti" do
-  version "0.7.0"
-  sha256 "e9c45d7078bc65c73baf6842bae4f750d19ab5c045868243819d455c7090a4ac" # set per-release by scripts/release.sh
+  version "0.8.1"
+  sha256 "190264ad51d17328e20ba61e975f8a824c6ae5f9d7d42b5f2c9731d6d5cb9aa1" # set per-release by scripts/release.sh
 
   url "https://github.com/miteshs/sampatti-releases/releases/download/v#{version}/Sampatti_#{version}_aarch64.dmg"
   name "Sampatti"
