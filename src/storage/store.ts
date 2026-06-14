@@ -422,22 +422,21 @@ export const useStore = create<State>((set, get) => ({
 // webviews (found broken in WebView2 on Windows). The dialog plugin auto-allows the chosen
 // path in the fs scope, so no extra capability is needed. Web preview keeps the browser
 // download. Returns the written path (or the download name), null if the user cancelled.
-export async function exportPortfolio(p: Portfolio): Promise<string | null> {
-  const json = JSON.stringify(p, null, 2);
-  const name = `sampatti-portfolio-${new Date().toISOString().slice(0, 10)}.json`;
-  // Desktop: native Save dialog + fs write.
+// Save text to a file the user picks — native Save dialog on desktop, share sheet on iOS,
+// blob download on the web. Returns the destination (path/name) or null if cancelled.
+export async function saveTextFile(content: string, name: string, mime: string, ext: string): Promise<string | null> {
   if (isTauri() && !isIOS()) {
     const { save } = await import("@tauri-apps/plugin-dialog");
-    const path = await save({ defaultPath: name, filters: [{ name: "JSON", extensions: ["json"] }] });
+    const path = await save({ defaultPath: name, filters: [{ name: ext.toUpperCase(), extensions: [ext] }] });
     if (!path) return null;
     const { writeTextFile } = await import("@tauri-apps/plugin-fs");
-    await writeTextFile(path, json);
+    await writeTextFile(path, content);
     return path;
   }
   // iOS has no save panel — use the native share sheet via the Web Share API (supported in the
   // iOS WKWebView). The user picks Files / Mail / AirDrop. Cancel → AbortError → null.
   if (isIOS() && typeof navigator !== "undefined" && typeof navigator.canShare === "function") {
-    const file = new File([json], name, { type: "application/json" });
+    const file = new File([content], name, { type: mime });
     if (navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: "Sampatti export" });
@@ -448,7 +447,7 @@ export async function exportPortfolio(p: Portfolio): Promise<string | null> {
       }
     }
   }
-  const blob = new Blob([json], { type: "application/json" });
+  const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -457,4 +456,18 @@ export async function exportPortfolio(p: Portfolio): Promise<string | null> {
   // Revoking synchronously can race the engine's download start; defer it.
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return name;
+}
+
+export async function exportPortfolio(p: Portfolio): Promise<string | null> {
+  return saveTextFile(JSON.stringify(p, null, 2), `sampatti-portfolio-${new Date().toISOString().slice(0, 10)}.json`, "application/json", "json");
+}
+
+// Render a saved AI analysis as Markdown for export. Pure (testable).
+export function analysisMarkdown(run: AnalysisRun): string {
+  const out = [`# ${run.title}`, "", `_Sampatti AI analysis · ${new Date(run.at).toLocaleString()}_`, ""];
+  for (const t of run.turns) {
+    if (!t.text.trim()) continue;
+    out.push(t.role === "user" ? `## Your question\n\n${t.text}` : `## Analysis\n\n${t.text}`, "");
+  }
+  return out.join("\n").trimEnd() + "\n";
 }

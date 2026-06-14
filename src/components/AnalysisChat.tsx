@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { useStore } from "../storage/store";
+import { useStore, saveTextFile, analysisMarkdown } from "../storage/store";
 import { buildBrief, briefForModel } from "../domain/brief";
 import { fmtMoney, profileFor } from "../regions/profile";
 import { analysisReady, visiblePortfolio } from "../domain/types";
@@ -270,6 +270,8 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
                       {fmtMoney(a.netWorth)} · {new Date(a.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     </span>
                   </button>
+                  <button className="btn btn-ghost" title="Export this analysis (Markdown)" style={{ padding: "0.15rem 0.45rem" }}
+                    onClick={() => void saveTextFile(analysisMarkdown(a), `sampatti-analysis-${a.at.slice(0, 10)}.md`, "text/markdown", "md")}>⬇</button>
                   <button className="btn btn-ghost" title="Delete this analysis" style={{ padding: "0.15rem 0.45rem" }}
                     onClick={() => deleteAnalysis(a.id)}>✕</button>
                 </div>
