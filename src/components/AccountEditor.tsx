@@ -21,7 +21,7 @@ function MortgageField({ valueRaw, onCommit }: { valueRaw: number; onCommit: (n:
   useEffect(() => { setStr(valueRaw ? String(Math.round(valueRaw)) : ""); }, [valueRaw]);
   return (
     <input
-      value={str} inputMode="decimal" placeholder="0"
+      value={str} inputMode="decimal" placeholder="0" aria-label="Remaining loan / mortgage"
       onChange={(e) => setStr(e.target.value)}
       onBlur={() => onCommit(Number(str.replace(/[₹$,\s]/g, "")) || 0)}
       style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }}
