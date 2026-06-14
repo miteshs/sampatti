@@ -15,11 +15,13 @@ Apple, so it opens normally on first launch — no Gatekeeper warning, no Homebr
 [releases page](https://github.com/miteshs/sampatti-releases/releases) and run it. SmartScreen
 will object once (unsigned build): **More info → Run anyway**. Details in [windows.md](windows.md).
 
-## 2. One-time setup (Privacy tab)
+## 2. One-time setup (Settings ⚙)
 
-- **Connect Claude** — add your own Anthropic API key (`platform.claude.com` → API keys). It's
-  stored in the macOS Keychain (on Windows: the Credential Manager) and never leaves your
-  machine except to call Anthropic directly.
+- **Connect Claude** — paste the **access code** you were given into *Settings → Access code*;
+  that is all the hosted relay needs (nothing is baked into the app). Prefer no third party in the
+  path? Turn on **Developer mode** and choose *My own key* — your Anthropic API key
+  (`platform.claude.com` → API keys) is stored in the macOS Keychain (on Windows: the Credential
+  Manager) and never leaves your machine except to call Anthropic directly.
 - **USD→INR rate** — tap the refresh button to pull the live rate if you hold US assets
   (RSUs/ESPP/US brokerage).
 - Optional: pick the analysis model — Sonnet is the balanced default; Opus is the most

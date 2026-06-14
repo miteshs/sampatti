@@ -19,8 +19,8 @@ privacy posture. Platform differences, all handled automatically:
    **More info → Run anyway**.
 3. It installs per-user (no administrator rights needed) and adds a Start-menu entry.
 4. First-run setup is the same as macOS — see [getting-started.md](getting-started.md):
-   add your own Anthropic API key on the **Privacy** tab (stored in the **Windows
-   Credential Manager**, never in a file).
+   paste your **access code** in *Settings → Access code*, or enable Developer mode to add
+   your own Anthropic API key (stored in the **Windows Credential Manager**, never in a file).
 
 Uninstall: Settings → Apps, like any other program. Your data file (see table above) is
 left behind unless you use **Erase all data** in the app first.
@@ -28,8 +28,8 @@ left behind unless you use **Erase all data** in the app first.
 ## Cutting a Windows release (maintainer)
 
 The installer is built by CI — [`.github/workflows/windows-release.yml`](../.github/workflows/windows-release.yml)
-on `windows-latest`. There is no relay token anywhere in CI (`.env.local` is gitignored and
-the workflow pins `VITE_RELAY_TOKEN=""`), so Windows artifacts are public-by-construction.
+on `windows-latest`. No secret is baked into any build — hosted-relay access is a user-entered
+access code, not a build-time token — so Windows artifacts are public-by-construction.
 
 One-time setup:
 

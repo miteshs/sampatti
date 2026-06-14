@@ -7,9 +7,10 @@
 #   • Manual run (workflow_dispatch): same build, but the .exe is attached to the run as an
 #     artifact for VM click-testing. No release is touched.
 #
-# Public-by-construction: .env.local is gitignored so CI can never see the relay token, and
-# VITE_RELAY_TOKEN is pinned empty below — the same guarantee scripts/release.sh enforces for
-# the macOS artifact. Public users bring their own Anthropic key (Credential Manager).
+# Public-by-construction: no secret is baked into any build — hosted-relay access is a
+# user-entered access code, never a build-time token — so Windows artifacts carry nothing a
+# stranger could extract. Users paste their access code (or add their own Anthropic key under
+# Developer mode, stored in the Credential Manager).
 #
 # The build is unsigned: first launch shows SmartScreen — "More info → Run anyway".
 
@@ -29,8 +30,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      VITE_RELAY_TOKEN: "" # never bake hosted-relay access into a public artifact
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 

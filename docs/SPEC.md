@@ -333,10 +333,10 @@ not leave the device at all.
   rendered model output is treated as untrusted (no live links, no HTML execution). Network egress is
   restricted to an explicit host allowlist, re-validated on every redirect hop, HTTPS enforced. The
   relay authenticates before reading any body, caps body size, and constant-time-compares tokens.
-  Public/distributable builds must carry **no** embedded relay credential (a distributable binary is
-  extractable, so a baked credential would let strangers spend the owner's AI budget) — enforced by a
-  build-time check that aborts the release if a credential is found. Distributable binaries must not
-  embed local filesystem paths or personal identifiers.
+  **No** build embeds any credential — hosted-relay access is a user-entered access code (matched
+  against the relay's `APP_TOKENS`), never a baked-in token, so an extractable binary carries nothing
+  a stranger could use to spend the owner's AI budget. Distributable binaries must not embed local
+  filesystem paths or personal identifiers (enforced by a build-time check that aborts the release).
 - **Privacy verification.** Automated scans assert no personal data and no secrets are committed; a contract test asserts the egress host set, the CSP, and the Brief key-allowlist are exactly as specified.
 - **Accessibility (MUST).** Meets WCAG A/AA (no serious/critical violations). Large, high-contrast type; semantic labels on all controls; respects reduced-motion; colors carry text-grade contrast for any color used to convey meaning.
 - **Determinism.** All displayed numbers and the Brief are reproducible from the same inputs. Visual output is reproducible for regression testing (time is freezable).

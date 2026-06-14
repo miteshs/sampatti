@@ -22,12 +22,12 @@ The source stays private; only the releases repo is public:
 (The Windows installer is built and uploaded by CI on tag push — see
 [windows.md](windows.md); this doc is the macOS release leg.)
 
-**Public builds carry no relay token.** The hosted-relay app-token (`VITE_RELAY_TOKEN`) is
-deliberately baked as empty by `scripts/release.sh`, because anything inside a public dmg is
-extractable — shipping the token would let anyone spend the relay owner's Anthropic credits.
-Public users add their **own** Anthropic key on the Settings screen (stored in the macOS
-Keychain); the app shows exactly that hint if a relay call comes back 401/403. Your personal
-build (`npm run tauri build`, which reads `.env.local`) still includes relay access.
+**No build carries any secret.** Hosted-relay access is a user-entered **access code**, never a
+baked-in token — so a public dmg and your personal build are identical in this respect, and there
+is nothing inside the binary for a stranger to extract and spend. To reach the hosted relay, paste
+the code (matched against the worker's `APP_TOKENS`) into *Settings → Access code*; the app shows
+exactly that hint if a relay call comes back 401/403. For zero third parties in the path, enable
+Developer mode and add your **own** Anthropic key (stored in the macOS Keychain).
 
 ## Cutting a release
 
@@ -40,13 +40,14 @@ scripts/release.sh --gh-release
 # 3. Windows leg — push the version tag; CI adds the NSIS exe to the same release:
 git tag v<version> && git push origin v<version>    # see docs/windows.md
 
-# 4. Rebuild your OWN copy with relay access and reinstall it:
+# 4. (Optional) install your own copy — same token-less build; paste your access code in Settings:
 npm run tauri build
 cp -R src-tauri/target/release/bundle/macos/Sampatti.app /Applications/
 ```
 
-`scripts/release.sh` refuses a dirty tree (every release maps to a commit), strips the build
-machine's home path from the binary, and aborts if the relay token leaks into the bundle.
+`scripts/release.sh` refuses a dirty tree (every release maps to a commit) and strips the build
+machine's home path from the binary (aborting if any `/Users/` path leaks). There is no relay
+token to guard against anymore — nothing secret is baked in.
 
 ## Signing + notarization
 

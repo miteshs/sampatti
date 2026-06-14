@@ -96,12 +96,15 @@ for legacy installs but is no longer the recommended path.
 
 ## How analysis reaches Claude
 
-Two modes, switchable on the Privacy screen:
+Two modes, configured in Settings (⚙). **Nothing is baked into the build** — no app secret ships
+in the binary.
 
-- **Relay (default)** — a tiny stateless [relay](../relay) holds the Anthropic key so clients
-  need nothing. It forwards the brief and stores nothing.
-- **My own key (max privacy)** — the app calls Anthropic directly with a key kept in the
-  macOS Keychain / Windows Credential Manager (desktop) and never touches the relay.
+- **Relay (default)** — a tiny stateless [relay](../relay) holds the Anthropic key. You paste the
+  **access code** the relay owner gave you (Settings → Access code); the relay checks it against
+  its `APP_TOKENS` before forwarding the brief, and stores nothing.
+- **My own key (max privacy)** — enable Developer mode in Settings, choose *My own key*, and the
+  app calls Anthropic directly with a key kept in the macOS Keychain / Windows Credential Manager
+  (desktop) and never touches the relay.
 
 ## Layout
 
