@@ -25,7 +25,9 @@ function setReady() {
   const p = emptyPortfolio();
   p.settings.claudeMode = "relay";
   p.settings.relayUrl = "https://relay.test/v1";
-  useStore.setState({ portfolio: p, loaded: true });
+  // Analysis history is a session-scoped store singleton — reset it so each test starts on the
+  // pre-analysis start screen (otherwise a run from a prior test leaks in as the active one).
+  useStore.setState({ portfolio: p, loaded: true, analyses: [], activeAnalysisId: null, analysisStreaming: false });
 }
 
 beforeEach(() => { setReady(); streamMock.mockClear(); engineMock.engine = "claude"; });

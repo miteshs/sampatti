@@ -20,9 +20,19 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const brief = useMemo(() => buildBrief(visiblePortfolio(portfolio)), [portfolio]);
   // What actually leaves the device: converted to the region's currency at the model edge.
   const outbound = useMemo(() => briefForModel(visiblePortfolio(portfolio)), [portfolio]);
-  const [turns, setTurns] = useState<Turn[]>([]);
-  const [streaming, setStreaming] = useState(false);
-  const [started, setStarted] = useState(false);
+  // Analysis conversation lives in the store (session-scoped) so it survives tab switches and
+  // a clickable history can re-open past runs. See AnalysisRun in store.ts.
+  const analyses = useStore((s) => s.analyses);
+  const activeId = useStore((s) => s.activeAnalysisId);
+  const streaming = useStore((s) => s.analysisStreaming);
+  const newAnalysis = useStore((s) => s.newAnalysis);
+  const setAnalysisTurns = useStore((s) => s.setAnalysisTurns);
+  const setAnalysisStreaming = useStore((s) => s.setAnalysisStreaming);
+  const selectAnalysis = useStore((s) => s.selectAnalysis);
+  const deleteAnalysis = useStore((s) => s.deleteAnalysis);
+  const active = useMemo(() => analyses.find((a) => a.id === activeId) ?? null, [analyses, activeId]);
+  const turns = active?.turns ?? [];
+  const started = !!active;
   const [question, setQuestion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showBrief, setShowBrief] = useState(false);
@@ -42,37 +52,46 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const toggleFocus = (f: string) =>
     setFocus((cur) => (cur.includes(f) ? cur.filter((x) => x !== f) : [...cur, f]));
 
-  const run = async (messages: Msg[], seedTurns: Turn[]) => {
+  // Stream into the STORE (by run id), not component state, so an in-flight analysis keeps
+  // filling in even if the user switches tabs (the component unmounts; the store doesn't).
+  const run = async (messages: Msg[], id: string, seedTurns: Turn[]) => {
     setError(null);
-    setStreaming(true);
-    setTurns([...seedTurns, { role: "assistant", text: "" }]);
+    setAnalysisStreaming(true);
+    setAnalysisTurns(id, [...seedTurns, { role: "assistant", text: "" }]);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     try {
       await streamAnalysis(
         { model: portfolio.settings.analysisModel, system, max_tokens: 4000, messages },
-        (delta) => setTurns((t) => {
-          const copy = [...t];
+        (delta) => {
+          const cur = useStore.getState().analyses.find((a) => a.id === id);
+          if (!cur || cur.turns.length === 0) return;
+          const copy = [...cur.turns];
           copy[copy.length - 1] = { role: "assistant", text: copy[copy.length - 1].text + delta };
-          return copy;
-        }),
+          setAnalysisTurns(id, copy);
+        },
         ctrl.signal,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setStreaming(false);
+      setAnalysisStreaming(false);
     }
   };
 
-  const start = () => { persistContext(); setStarted(true); void run(initialMessages(outbound, tailoring), []); };
+  const title = focus.length ? `Review · ${focus.join(", ")}` : "Portfolio review";
+  const start = () => {
+    persistContext();
+    const id = newAnalysis({ title, netWorth: brief.netWorth });
+    void run(initialMessages(outbound, tailoring), id, []);
+  };
 
   const askText = (q: string) => {
-    if (!q || streaming) return;
+    if (!q || streaming || !active) return;
     setQuestion("");
-    const history: Msg[] = turns.map((t) => ({ role: t.role, content: t.text }));
-    const seed: Turn[] = [...turns, { role: "user", text: q }];
-    void run(chatMessages(outbound, history, q, tailoring), seed);
+    const history: Msg[] = active.turns.map((t) => ({ role: t.role, content: t.text }));
+    const seed: Turn[] = [...active.turns, { role: "user", text: q }];
+    void run(chatMessages(outbound, history, q, tailoring), active.id, seed);
   };
   const ask = () => askText(question.trim());
 
@@ -186,6 +205,11 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
           </div>
         ) : (
           <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
+              <div className="eyebrow" style={{ margin: 0 }}>{active?.title ?? "Portfolio review"}</div>
+              <button className="btn btn-ghost" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}
+                disabled={streaming} onClick={() => selectAnalysis(null)}>＋ New analysis</button>
+            </div>
             {turns.map((t, i) => (
               <div key={i} className="card" style={t.role === "user" ? {
                 background: "var(--primary-soft)", border: "1px solid color-mix(in srgb, var(--primary) 22%, transparent)", marginLeft: "2rem",
@@ -226,6 +250,32 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
               tax specifics for your situation and tax year.
             </p>
           </>
+        )}
+
+        {analyses.length > 0 && (
+          <div className="card">
+            <div className="eyebrow">Saved analyses · this session</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", marginTop: "0.4rem" }}>
+              {[...analyses].reverse().map((a) => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <button
+                    className="qchip"
+                    onClick={() => selectAnalysis(a.id)}
+                    aria-pressed={a.id === activeId}
+                    style={{ flex: 1, textAlign: "left", cursor: "pointer", display: "flex", justifyContent: "space-between", gap: "0.6rem",
+                      ...(a.id === activeId ? { background: "var(--primary)", color: "var(--on-primary)", borderColor: "var(--primary)" } : {}) }}
+                  >
+                    <span style={{ fontWeight: 600 }}>{a.title}</span>
+                    <span style={{ opacity: 0.75, fontSize: "0.74rem", whiteSpace: "nowrap" }}>
+                      {fmtMoney(a.netWorth)} · {new Date(a.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                    </span>
+                  </button>
+                  <button className="btn btn-ghost" title="Delete this analysis" style={{ padding: "0.15rem 0.45rem" }}
+                    onClick={() => deleteAnalysis(a.id)}>✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 

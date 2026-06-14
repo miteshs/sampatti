@@ -49,10 +49,32 @@ function pushFlow(p: Portfolio, accountId: string, amount: number, kind: FlowKin
   if (p.flows.length > MAX_FLOWS) p.flows = p.flows.slice(-MAX_FLOWS);
 }
 
+// A saved AI analysis conversation. SESSION-SCOPED: kept in memory so it survives tab
+// switches, but deliberately NOT written to portfolio.json (an analysis is regenerable and the
+// transcript would bloat the data file). Lost on app restart.
+export interface AnalysisTurn { role: "assistant" | "user"; text: string }
+export interface AnalysisRun {
+  id: string;
+  at: string;       // ISO — when the analysis was started
+  title: string;
+  netWorth: number; // snapshot of net worth at run time, for the history label
+  turns: AnalysisTurn[];
+}
+const MAX_ANALYSES = 20;
+
 interface State {
   portfolio: Portfolio;
   loaded: boolean;
   load: () => Promise<void>;
+  // Session-scoped AI analysis history (see AnalysisRun) — not persisted to disk.
+  analyses: AnalysisRun[];
+  activeAnalysisId: string | null;
+  analysisStreaming: boolean;
+  newAnalysis: (meta: { title: string; netWorth: number }) => string;
+  setAnalysisTurns: (id: string, turns: AnalysisTurn[]) => void;
+  setAnalysisStreaming: (on: boolean) => void;
+  selectAnalysis: (id: string | null) => void;
+  deleteAnalysis: (id: string) => void;
   // newAccountMoney: when the draft creates a NEW account, is its value money you already
   // had (tracking — the safe default) or fresh savings (flow)? Asked on the review card.
   addDraft: (d: ImportDraft, mode?: "auto" | "new", newAccountMoney?: FlowKind) => void;
@@ -222,6 +244,28 @@ function commit(set: (fn: (s: State) => Partial<State>) => void, get: () => Stat
 export const useStore = create<State>((set, get) => ({
   portfolio: emptyPortfolio(),
   loaded: false,
+
+  // ---- session-scoped AI analysis history (not persisted; plain set, never commit) ----
+  analyses: [],
+  activeAnalysisId: null,
+  analysisStreaming: false,
+  newAnalysis: ({ title, netWorth }) => {
+    const id = uid();
+    set((s) => ({
+      analyses: [...s.analyses, { id, at: new Date().toISOString(), title, netWorth, turns: [] }].slice(-MAX_ANALYSES),
+      activeAnalysisId: id,
+    }));
+    return id;
+  },
+  setAnalysisTurns: (id, turns) =>
+    set((s) => ({ analyses: s.analyses.map((a) => (a.id === id ? { ...a, turns } : a)) })),
+  setAnalysisStreaming: (on) => set(() => ({ analysisStreaming: on })),
+  selectAnalysis: (id) => set(() => ({ activeAnalysisId: id })),
+  deleteAnalysis: (id) =>
+    set((s) => ({
+      analyses: s.analyses.filter((a) => a.id !== id),
+      activeAnalysisId: s.activeAnalysisId === id ? null : s.activeAnalysisId,
+    })),
 
   load: async () => {
     try {
