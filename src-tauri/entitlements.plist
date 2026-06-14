@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  App Sandbox entitlements for a Mac App Store build (EXPERIMENT — branch mas-app-sandbox).
+  Applied ONLY via tauri.sandbox.conf.json (`tauri build --config …`); the normal/public
+  Developer-ID download stays UN-sandboxed so existing users' data location doesn't move.
+
+  Each key is the minimum Sampatti actually needs — add nothing speculatively (App Review
+  rejects unjustified entitlements):
+-->
+<plist version="1.0">
+<dict>
+  <!-- Mandatory for the Mac App Store. Confines the app to its container; user data moves to
+       ~/Library/Containers/app.sampatti.desktop/Data/… -->
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+
+  <!-- Outbound network only (no server): the relay, market-data hosts (Yahoo/AMFI/mfapi),
+       Anthropic in BYO mode, and the on-demand HuggingFace model download. -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+
+  <!-- Statement import (CSV/Excel/CAS/PDF) and the native Save export reach user-picked paths
+       through the file dialogs (powerbox). No arbitrary filesystem access. -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+
+  <!-- Keychain for the BYO Anthropic key (keyring crate). The group is <team-id>.<bundle-id>,
+       which is also the sandbox default — listed explicitly so signing is unambiguous. -->
+  <key>keychain-access-groups</key>
+  <array>
+    <string>7LC9LFH33N.app.sampatti.desktop</string>
+  </array>
+</dict>
+</plist>
