@@ -3,7 +3,7 @@
 // asset class, units, value and currency. Auto-saves to the store on change (the app persists
 // on a debounce), so there's no separate "save" step; "Done" just collapses the editor.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
 import { currentProfile, fmtMoney } from "../regions/profile";
@@ -13,6 +13,21 @@ const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
 const ASSET_CLASSES = Object.keys(ASSET_CLASS_LABEL) as AssetClass[];
 const TAX_TYPES = Object.keys(TAX_LABEL) as TaxTreatment[];
 const REGIONS: Region[] = ["India", "US", "Other"];
+
+// Remaining-loan field: a text buffer that commits ONCE on blur (not per keystroke), so the
+// find-or-create of the paired liability account can't race itself into duplicate accounts.
+function MortgageField({ valueRaw, onCommit }: { valueRaw: number; onCommit: (n: number) => void }) {
+  const [str, setStr] = useState(valueRaw ? String(Math.round(valueRaw)) : "");
+  useEffect(() => { setStr(valueRaw ? String(Math.round(valueRaw)) : ""); }, [valueRaw]);
+  return (
+    <input
+      value={str} inputMode="decimal" placeholder="0"
+      onChange={(e) => setStr(e.target.value)}
+      onBlur={() => onCommit(Number(str.replace(/[₹$,\s]/g, "")) || 0)}
+      style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }}
+    />
+  );
+}
 
 // A number input that keeps its own text buffer so decimals/partial edits don't fight the
 // store (which holds a parsed number). Commits the parsed value on every valid change.
@@ -47,13 +62,40 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
   const updateHolding = useStore((s) => s.updateHolding);
   const removeHolding = useStore((s) => s.removeHolding);
   const addHolding = useStore((s) => s.addHolding);
+  const addAccount = useStore((s) => s.addAccount);
+  const removeAccount = useStore((s) => s.removeAccount);
   const logEdit = useStore((s) => s.logEdit);
 
   const account = useMemo(() => portfolio.accounts.find((a) => a.id === accountId), [portfolio.accounts, accountId]);
   const holdings = useMemo(() => portfolio.holdings.filter((h) => h.accountId === accountId), [portfolio.holdings, accountId]);
+  // The remaining loan/mortgage is modeled as a paired liability account, matched by name
+  // convention ("<account> — loan"). Find it so the field shows and edits the outstanding amount.
+  const loanName = account ? `${account.name} — loan` : "";
+  const loanAcct = useMemo(
+    () => portfolio.accounts.find((a) => a.accountType === "liability" && a.name === loanName),
+    [portfolio.accounts, loanName],
+  );
+  const loanHoldings = useMemo(
+    () => (loanAcct ? portfolio.holdings.filter((h) => h.accountId === loanAcct.id) : []),
+    [portfolio.holdings, loanAcct],
+  );
+  const loanTotal = loanHoldings.reduce((s, h) => s + h.marketValue, 0);
 
   if (!account) return null;
   const set = (patch: Parameters<typeof editAccount>[1]) => editAccount(accountId, patch);
+
+  // Create / update / clear the paired liability from the entered remaining-loan amount.
+  const setLoan = (amount: number) => {
+    if (loanAcct) {
+      if (amount <= 0) { removeAccount(loanAcct.id); return; }
+      if (loanHoldings.length >= 1) updateHolding(loanHoldings[0].id, { marketValue: amount });
+      else addHolding({ name: "Loan outstanding", assetClass: "other", marketValue: amount, currency: account.currency, accountId: loanAcct.id });
+    } else if (amount > 0) {
+      const id = addAccount({ name: loanName, institution: account.institution, accountType: "liability", taxTreatment: "na", region: account.region, currency: account.currency, asOf: account.asOf });
+      addHolding({ name: "Loan outstanding", assetClass: "other", marketValue: amount, currency: account.currency, accountId: id });
+    }
+  };
+  const showLoan = account.accountType !== "liability" && account.accountType !== "income";
 
   const addBlank = () => {
     const id = addHolding({
@@ -114,6 +156,18 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
           <div className="form-col" style={{ padding: "0.5rem 0.8rem" }}><label style={{ marginBottom: "0.15rem" }}>Note</label><input value={account.note ?? ""} onChange={(e) => set({ note: e.target.value || undefined })} placeholder="optional" style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
         </div>
       </div>
+
+      {showLoan && (
+        <div className="list-grouped" style={{ border: "1px solid var(--line-2)", marginTop: "0.6rem" }}>
+          <div className="form-col" style={{ padding: "0.5rem 0.8rem", display: "flex", flexDirection: "row", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+            <label style={{ marginBottom: 0 }}>Remaining loan / mortgage ({account.currency})</label>
+            <MortgageField valueRaw={loanTotal} onCommit={setLoan} />
+            <span className="muted" style={{ fontSize: "0.72rem", flex: "1 1 220px" }}>
+              Tracked as a separate liability ("{loanName}") so net worth subtracts what you still owe. Set to 0 to remove it.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Per-holding fields */}
       <div style={{ marginTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
