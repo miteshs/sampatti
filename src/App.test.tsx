@@ -42,6 +42,14 @@ describe("App integration (demo flow)", () => {
     expect(screen.getAllByText(/Tax-free \(EEE\)/i).length).toBeGreaterThan(0);
   });
 
+  it("Cmd-F opens the search palette", async () => {
+    render(<App />);
+    await screen.findByText("Sampatti");
+    expect(screen.queryByLabelText("Search holdings")).toBeNull();
+    fireEvent.keyDown(window, { key: "f", metaKey: true });
+    expect(screen.getByLabelText("Search holdings")).toBeTruthy();
+  });
+
   it("opens the per-account editor (Manage tab) without looping/blanking, and edits write through", async () => {
     render(<App />);
     fireEvent.click(await screen.findByText(/Load demo portfolio/i));

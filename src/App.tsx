@@ -7,6 +7,7 @@ import { Performance } from "./components/Performance";
 import { AnalysisChat } from "./components/AnalysisChat";
 import { Holdings } from "./components/Holdings";
 import { Settings } from "./components/Settings";
+import { SearchPalette } from "./components/SearchPalette";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import appIconUrl from "../src-tauri/icons/128x128.png";
 
@@ -29,8 +30,21 @@ export default function App() {
   const loaded = useStore((s) => s.loaded);
   const hasData = useStore((s) => s.portfolio.holdings.length > 0 || s.portfolio.accounts.length > 0);
   const [view, setView] = useState<View>("overview");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Cmd/Ctrl-F opens the in-app search palette (no native find bar in the desktop webview).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Opt-in dark mode: reflect the saved theme onto <html data-theme>. Default/absent ⇒ light,
   // so the app only goes dark when the user chooses it (never from the OS preference).
@@ -127,6 +141,8 @@ export default function App() {
           </button>
         ))}
       </nav>
+
+      <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} onOpenHoldings={() => go("holdings")} />
     </div>
   );
 }
