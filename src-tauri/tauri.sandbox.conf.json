@@ -1,8 +1,5 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "//": "Mac App Store sandbox experiment (branch mas-app-sandbox). Merge over tauri.conf.json:",
-  "//build": "npm run tauri build -- --config src-tauri/tauri.sandbox.conf.json",
-  "//note": "Only the .app target — the sandboxed bundle is what we test; a MAS .pkg comes later.",
   "bundle": {
     "targets": ["app"],
     "macOS": {
