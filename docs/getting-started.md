@@ -6,17 +6,10 @@ when you run the analysis.
 
 ## 1. Install
 
-**macOS (Apple Silicon):**
-
-```sh
-brew tap miteshs/sampatti
-brew trust miteshs/sampatti     # Homebrew asks this once for third-party taps
-brew install --cask sampatti
-```
-
-(No Homebrew? Download the `.dmg` from the [releases page](https://github.com/miteshs/sampatti-releases/releases),
-drag **Sampatti** into *Applications*, then right-click → **Open** on first launch — the build
-is unsigned for now.)
+**macOS (Apple Silicon):** download `Sampatti_<version>_aarch64.dmg` from the
+[releases page](https://github.com/miteshs/sampatti-releases/releases), open it, and drag
+**Sampatti** into *Applications*. The app is signed with an Apple Developer ID and notarized by
+Apple, so it opens normally on first launch — no Gatekeeper warning, no Homebrew, no extra steps.
 
 **Windows (x64):** download `Sampatti_<version>_x64-setup.exe` from the same
 [releases page](https://github.com/miteshs/sampatti-releases/releases) and run it. SmartScreen

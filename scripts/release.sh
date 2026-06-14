@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Cut a PUBLIC Sampatti release and prepare the Homebrew cask.
+# Cut a PUBLIC Sampatti release: signed + notarized dmg, published for direct download.
 #
-#   scripts/release.sh                 # public build (NO relay token), sha256, update the cask
+#   scripts/release.sh                 # public build (NO relay token), sign+notarize, sha256
 #   scripts/release.sh --gh-release    # also publish the GitHub Release on miteshs/sampatti-releases
-#   scripts/release.sh --tap ../homebrew-sampatti   # also copy the cask into a tap checkout
+#   scripts/release.sh --tap ../homebrew-sampatti   # (legacy) also copy the cask into a tap checkout
 #
 # Notes:
 #   • Version comes from src-tauri/tauri.conf.json.
@@ -119,8 +119,8 @@ echo "✓ Updated $CASK"
 
 if [ "$GH_RELEASE" = "1" ]; then
   echo "▶ Publishing release v${VERSION} on ${RELEASES_REPO} (public, dmg-only repo)…"
-  # Install instructions assume nothing: machines without Homebrew get the bootstrap
-  # line, and the no-brew path (plain dmg + Gatekeeper dance) is spelled out too.
+  # Direct download is the only install path: signed + notarized dmg opens on a plain
+  # double-click, no Gatekeeper dance.
   NOTES=$(cat <<NOTES_EOF
 **macOS (Apple Silicon)** — download \`Sampatti_${VERSION}_aarch64.dmg\` below, open it, and drag **Sampatti** into Applications. The app is signed with an Apple Developer ID and notarized by Apple, so it opens normally — no security warnings, no right-click dance.
 

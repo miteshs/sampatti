@@ -98,6 +98,6 @@ jobs:
           REPO="miteshs/sampatti-releases"
           if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$REPO" --title "Sampatti ${TAG#v}" \
-              --notes "Windows x64 installer. macOS: \`brew tap miteshs/sampatti && brew install --cask sampatti\`. AI analysis needs your own Anthropic API key (Privacy screen). All portfolio data stays on your device."
+              --notes "Windows x64 installer. macOS: download the signed, notarized \`.dmg\` below and drag Sampatti into Applications. AI analysis needs your own Anthropic API key (Settings screen). All portfolio data stays on your device."
           fi
           gh release upload "$TAG" "$EXE_PATH" --repo "$REPO" --clobber

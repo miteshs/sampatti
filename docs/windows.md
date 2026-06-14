@@ -5,7 +5,7 @@ privacy posture. Platform differences, all handled automatically:
 
 | | macOS | Windows |
 |---|---|---|
-| Installer | `.dmg` (Homebrew cask or direct) | `Sampatti_<version>_x64-setup.exe` (NSIS, per-user — no admin prompt) |
+| Installer | `.dmg` (direct download, signed + notarized) | `Sampatti_<version>_x64-setup.exe` (NSIS, per-user — no admin prompt) |
 | BYO Anthropic key | macOS Keychain | Windows Credential Manager |
 | Data file | `~/Library/Application Support/app.sampatti.desktop/portfolio.json` | `%APPDATA%\app.sampatti.desktop\portfolio.json` |
 | Disk encryption advice | FileVault | Device encryption / BitLocker |

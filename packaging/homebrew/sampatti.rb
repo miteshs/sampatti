@@ -8,7 +8,7 @@
 # computes its sha256, fills in the fields below, and (optionally) copies it into the tap
 # repo `miteshs/homebrew-sampatti` (Casks/sampatti.rb).
 #
-# NOTES (see docs/homebrew.md):
+# NOTES (see docs/release-macos.md):
 #   1. The dmg is served from the PUBLIC releases-only repo miteshs/sampatti-releases —
 #      the source repo stays private; brew can't fetch a private repo's assets anyway.
 #   2. Public builds ship WITHOUT the hosted-relay token: users bring their own Anthropic
