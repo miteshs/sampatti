@@ -476,6 +476,13 @@ export function Settings() {
           </div>
         </div>
       )}
+
+      {/* About footer: version + standard educational disclaimer + copyright. */}
+      <div className="muted" style={{ textAlign: "center", fontSize: "0.74rem", lineHeight: 1.65, padding: "0.6rem 0 0.2rem", borderTop: "1px solid var(--line-2)" }}>
+        <div><strong>Sampatti</strong> v{__APP_VERSION__}</div>
+        <div>For educational and personal use only — not investment advice, and not a substitute for a registered financial adviser.</div>
+        <div>© {new Date().getFullYear()} Sampatti · your data stays on your device.</div>
+      </div>
     </div>
   );
 }
