@@ -182,6 +182,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
             <thead>
               <tr>
                 <th style={{ minWidth: 160 }}>Name</th>
+                <th>Ticker</th>
                 <th>Class</th>
                 <th className="num">Units</th>
                 <th className="num">Value</th>
@@ -195,6 +196,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
               {holdings.map((h) => (
                 <tr key={h.id}>
                   <td><input value={h.name} onChange={(e) => editHolding(h.id, { name: e.target.value })} style={{ width: "100%", border: "none", padding: "0.1rem 0", background: "transparent", boxShadow: "none", fontSize: "0.88rem", fontWeight: 550 }} /></td>
+                  <td><input value={h.symbol ?? ""} onChange={(e) => editHolding(h.id, { symbol: e.target.value.trim() || undefined })} placeholder="e.g. INFY" style={{ width: 80, border: "none", padding: "0.1rem 0", background: "transparent", boxShadow: "none", fontSize: "0.82rem" }} /></td>
                   <td>
                     <select value={h.assetClass} onChange={(e) => editHolding(h.id, { assetClass: e.target.value as AssetClass })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none", fontSize: "0.82rem" }}>
                       {ASSET_CLASSES.map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}

@@ -856,6 +856,7 @@ function ManualAccount({ onAdd, usdInr }: {
   });
   const [money, setMoney] = useState<FlowKind>("tracking"); // pre-owned by default — see DraftReview
   const [hName, setHName] = useState("");
+  const [hSym, setHSym] = useState(""); // optional ticker for equities/ETFs
   const [hClass, setHClass] = useState<AssetClass>(currentProfile().region === "US" ? "us_equity" : "indian_equity");
   const [hValue, setHValue] = useState("");
   const [hBasis, setHBasis] = useState(""); // optional purchase cost
@@ -880,19 +881,20 @@ function ManualAccount({ onAdd, usdInr }: {
   const pendingHolding = (): ImportDraft["holdings"][number] | null => {
     if (!hName.trim()) return null;
     const basis = Number(hBasis.replace(/[₹,\s]/g, "")) || undefined; // optional
+    const symbol = hSym.trim() || undefined; // optional ticker
     if (goldWeighed) {
       const g = Number(hGrams.replace(/[,\s]/g, ""));
       if (!g || !goldPrice) return null;
-      return { name: hName.trim(), assetClass: hClass, marketValue: Math.round(g * goldPrice), units: g, costBasis: basis, currency: a.currency };
+      return { name: hName.trim(), symbol, assetClass: hClass, marketValue: Math.round(g * goldPrice), units: g, costBasis: basis, currency: a.currency };
     }
     const v = Number(hValue.replace(/[₹,\s]/g, ""));
-    return v ? { name: hName.trim(), assetClass: hClass, marketValue: v, costBasis: basis, currency: a.currency } : null;
+    return v ? { name: hName.trim(), symbol, assetClass: hClass, marketValue: v, costBasis: basis, currency: a.currency } : null;
   };
   const addH = () => {
     const h = pendingHolding();
     if (!h) return;
     setHoldings((all) => [...all, h]);
-    setHName(""); setHValue(""); setHBasis(""); setHGrams("");
+    setHName(""); setHSym(""); setHValue(""); setHBasis(""); setHGrams("");
   };
   // Save folds in a typed-but-unadded holding so the form doesn't silently refuse to save.
   const canSave = !!a.name.trim() && (holdings.length > 0 || pendingHolding() != null);
@@ -903,7 +905,7 @@ function ManualAccount({ onAdd, usdInr }: {
     const loanAmt = Number(loan.replace(/[₹$,\s]/g, "")) || 0;
     onAdd(a, all, money, loanAmt > 0 ? loanAmt : undefined);
     setA({ ...a, name: "", institution: "" });
-    setHoldings([]); setHName(""); setHValue(""); setHBasis(""); setHGrams(""); setLoan("");
+    setHoldings([]); setHName(""); setHSym(""); setHValue(""); setHBasis(""); setHGrams(""); setLoan("");
   };
 
   return (
@@ -950,6 +952,7 @@ function ManualAccount({ onAdd, usdInr }: {
 
       <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", alignItems: "flex-end", flexWrap: "wrap" }}>
         <div style={{ flex: "2 1 180px" }}><label>Holding / item name</label><input value={hName} onChange={(e) => setHName(e.target.value)} placeholder="e.g. Flat market value" /></div>
+        <div style={{ flex: "1 1 100px" }}><label>Ticker <span className="muted" style={{ fontWeight: 400 }}>opt.</span></label><input value={hSym} onChange={(e) => setHSym(e.target.value)} placeholder="e.g. INFY" /></div>
         <div style={{ flex: "1 1 140px" }}><label>Class</label>
           <select value={hClass} onChange={(e) => setHClass(e.target.value as AssetClass)}>
             {ASSET_CLASSES.filter((c) => currentProfile().inManualEntry(c) || c === hClass).map((c) => <option key={c} value={c}>{ASSET_CLASS_LABEL[c]}</option>)}
