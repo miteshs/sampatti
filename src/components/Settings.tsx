@@ -15,6 +15,7 @@ import type { AiEngine } from "../domain/types";
 import { fetchUsdInr } from "../domain/fx";
 import { profileFor } from "../regions/profile";
 import { PrivacyExplainer } from "./Privacy";
+import { checkForUpdate } from "../updater";
 
 const H3 = { fontSize: "1.05rem", marginBottom: "0.3rem" } as const;
 
@@ -29,6 +30,28 @@ export function Settings() {
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [pendingImport, setPendingImport] = useState<{ text: string; name: string } | null>(null);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
+  const runUpdateCheck = async () => {
+    setUpdating(true);
+    setUpdateMsg("Checking…");
+    try {
+      const upd = await checkForUpdate();
+      if (!upd) {
+        setUpdateMsg("You're on the latest version.");
+        setUpdating(false);
+        return;
+      }
+      setUpdateMsg(`Update ${upd.version} found — downloading…`);
+      await upd.install((pct, phase) =>
+        setUpdateMsg(phase === "installing" ? "Installing — the app will restart…" : `Downloading… ${pct}%`),
+      );
+      // install() relaunches the app on success; reaching here means it's restarting.
+    } catch (e) {
+      setUpdateMsg(`Update check failed: ${e instanceof Error ? e.message : String(e)}`);
+      setUpdating(false);
+    }
+  };
   // Region is a once-at-the-start choice: switching reframes the whole app (display currency,
   // tax buckets, manual-entry pickers, analyst persona). It never converts away data — values
   // are stored in a neutral unit (see THE UNIT RULE in regions/profile) — so this is a confirm,
@@ -480,6 +503,19 @@ export function Settings() {
       {/* About footer: version + standard educational disclaimer + copyright. */}
       <div className="muted" style={{ textAlign: "center", fontSize: "0.74rem", lineHeight: 1.65, padding: "0.6rem 0 0.2rem", borderTop: "1px solid var(--line-2)" }}>
         <div><strong>Sampatti</strong> v{__APP_VERSION__}</div>
+        {isTauri() && (
+          <div style={{ marginTop: "0.3rem" }}>
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize: "0.72rem", padding: "0.15rem 0.55rem" }}
+              disabled={updating}
+              onClick={runUpdateCheck}
+            >
+              {updating ? "Working…" : "Check for updates"}
+            </button>
+            {updateMsg && <div style={{ marginTop: "0.25rem" }}>{updateMsg}</div>}
+          </div>
+        )}
         <div>For educational and personal use only — not investment advice, and not a substitute for a registered financial adviser.</div>
         <div>© {new Date().getFullYear()} Sampatti · your data stays on your device.</div>
       </div>

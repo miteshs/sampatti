@@ -10,6 +10,7 @@ import { Settings } from "./components/Settings";
 import { SearchPalette } from "./components/SearchPalette";
 import { instrumentKey } from "./domain/aggregate";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { checkForUpdate, type PendingUpdate } from "./updater";
 import appIconUrl from "../src-tauri/icons/128x128.png";
 
 type View = "overview" | "performance" | "holdings" | "analysis" | "settings";
@@ -101,10 +102,50 @@ export default function App() {
     if (loaded && !hasData) setView("holdings");
   }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Quiet auto-update check once per launch (desktop only — checkForUpdate no-ops on the web).
+  // Only surfaces a banner when a newer signed release actually exists; offline/none → silent.
+  const [update, setUpdate] = useState<PendingUpdate | null>(null);
+  const [updStatus, setUpdStatus] = useState<string | null>(null);
+  const updChecked = useRef(false);
+  useEffect(() => {
+    if (updChecked.current) return;
+    updChecked.current = true;
+    void checkForUpdate().then(setUpdate).catch(() => {}); // network hiccup → stay quiet
+  }, []);
+  const installUpdate = () => {
+    if (!update) return;
+    setUpdStatus("Downloading…");
+    void update
+      .install((pct, phase) => setUpdStatus(phase === "installing" ? "Installing — restarting…" : `Downloading… ${pct}%`))
+      .catch((e) => setUpdStatus(`Update failed: ${e instanceof Error ? e.message : String(e)}`));
+  };
+
   const go = (v: View) => setView(v);
 
   return (
     <div className="app">
+      {update && (
+        <div
+          role="status"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.8rem",
+            padding: "0.45rem 0.9rem", fontSize: "0.8rem",
+            background: "var(--accent-soft, #eef3ee)", borderBottom: "1px solid var(--line-2)",
+          }}
+        >
+          <span>{updStatus ?? `Sampatti ${update.version} is available.`}</span>
+          {!updStatus && (
+            <>
+              <button className="btn btn-primary" style={{ padding: "0.15rem 0.7rem", fontSize: "0.76rem" }} onClick={installUpdate}>
+                Update now
+              </button>
+              <button className="btn btn-ghost" style={{ padding: "0.15rem 0.5rem", fontSize: "0.76rem" }} onClick={() => setUpdate(null)}>
+                Later
+              </button>
+            </>
+          )}
+        </div>
+      )}
       <div className="topbar">
         <div className="brand">
           <img className="logo" src={appIconUrl} alt="" aria-hidden="true" />

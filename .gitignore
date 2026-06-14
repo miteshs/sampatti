@@ -30,3 +30,6 @@ scripts/.pii-denylist
 .env.signing
 .stryker-tmp/
 scripts/demo-video/out/
+
+# Tauri updater signing private key (NEVER commit)
+.tauri/updater.key

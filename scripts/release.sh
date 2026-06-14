@@ -71,6 +71,17 @@ if [ -f .env.signing ]; then
 fi
 [ "$SIGNED" = "1" ] || echo "⚠ UNSIGNED build (no .env.signing) — first launch needs right-click → Open."
 
+# Auto-update signing: with createUpdaterArtifacts on, the build emits Sampatti.app.tar.gz + .sig
+# when TAURI_SIGNING_PRIVATE_KEY is set. Key is gitignored at .tauri/updater.key (password-less).
+UPDATER=0
+if [ -f .tauri/updater.key ]; then
+  export TAURI_SIGNING_PRIVATE_KEY="$(cat .tauri/updater.key)"
+  export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}"
+  UPDATER=1
+else
+  echo "⚠ No .tauri/updater.key — building without auto-update artifacts."
+fi
+
 echo "▶ Building PUBLIC Sampatti ${VERSION} (no baked secrets)…"
 # Strip the build machine's identity: Rust dependencies embed absolute panic/debug paths
 # (/Users/<name>/.cargo/…) into release binaries — 749 of them in the first 0.3.0 cut.
@@ -117,6 +128,42 @@ echo "  sha256: $SHA"
 /usr/bin/sed -i '' -E "s/^  sha256 \".*\"/  sha256 \"${SHA}\"/" "$CASK"
 echo "✓ Updated $CASK"
 
+# ---- Auto-update artifacts (macOS) ----
+# The build wrote Sampatti.app.tar.gz + .sig (signed with the updater key). Publish the tarball
+# under a versioned name plus latest.json — the manifest the running app polls at
+# …/releases/latest/download/latest.json (endpoint in tauri.conf.json). darwin-aarch64 only for
+# now; the Windows leg can add windows-x86_64 later.
+UPD_ASSETS=()
+if [ "$UPDATER" = "1" ]; then
+  UPD_TGZ="src-tauri/target/release/bundle/macos/Sampatti.app.tar.gz"
+  UPD_SIG="${UPD_TGZ}.sig"
+  if [ -f "$UPD_TGZ" ] && [ -f "$UPD_SIG" ]; then
+    UPD_NAME="Sampatti_${VERSION}_aarch64.app.tar.gz"
+    UPD_OUT="src-tauri/target/release/bundle/macos/${UPD_NAME}"
+    MANIFEST="src-tauri/target/release/bundle/macos/latest.json"
+    cp "$UPD_TGZ" "$UPD_OUT"
+    SIGCONTENT=$(cat "$UPD_SIG")
+    PUBDATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    cat > "$MANIFEST" <<JSON
+{
+  "version": "${VERSION}",
+  "pub_date": "${PUBDATE}",
+  "notes": "Update to Sampatti ${VERSION}. See the release page for details.",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "${SIGCONTENT}",
+      "url": "https://github.com/${RELEASES_REPO}/releases/download/v${VERSION}/${UPD_NAME}"
+    }
+  }
+}
+JSON
+    UPD_ASSETS=("$UPD_OUT" "$MANIFEST")
+    echo "✓ Updater manifest + tarball ready (${UPD_NAME})"
+  else
+    echo "⚠ createUpdaterArtifacts on but no .app.tar.gz produced — auto-update assets skipped."
+  fi
+fi
+
 if [ "$GH_RELEASE" = "1" ]; then
   echo "▶ Publishing release v${VERSION} on ${RELEASES_REPO} (public, dmg-only repo)…"
   # Direct download is the only install path: signed + notarized dmg opens on a plain
@@ -126,15 +173,18 @@ if [ "$GH_RELEASE" = "1" ]; then
 
 **Windows (x64)**: \`Sampatti_${VERSION}_x64-setup.exe\` below — SmartScreen will warn: **More info → Run anyway**.
 
+macOS builds **auto-update**: the app checks for a newer signed release and installs it in place (Settings → Check for updates, or automatically on launch).
+
 AI analysis is optional. Nothing secret is baked into the app: to use the hosted relay, paste the **access code** you were given into **Settings → Access code**; or enable **Developer mode** to use your own Anthropic API key (stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device. Built from \`${BUILT_FROM}\`.
 NOTES_EOF
 )
-  gh release create "v${VERSION}" "$DMG" \
+  gh release create "v${VERSION}" "$DMG" ${UPD_ASSETS[@]+"${UPD_ASSETS[@]}"} \
     --repo "$RELEASES_REPO" \
     --title "Sampatti ${VERSION}" \
     --notes "$NOTES" \
-    || gh release upload "v${VERSION}" "$DMG" --repo "$RELEASES_REPO" --clobber
+    || gh release upload "v${VERSION}" "$DMG" ${UPD_ASSETS[@]+"${UPD_ASSETS[@]}"} --repo "$RELEASES_REPO" --clobber
   echo "✓ Release v${VERSION} ready on ${RELEASES_REPO}"
+  [ "$UPDATER" = "1" ] && echo "  → auto-update manifest live at …/releases/latest/download/latest.json"
 fi
 
 if [ -n "$TAP_DIR" ]; then
