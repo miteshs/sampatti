@@ -158,11 +158,23 @@ function showVal(field: string, v: unknown): string {
   return String(v);
 }
 function pushEdit(p: Portfolio, entity: "account" | "holding", entityId: string, label: string, field: string, from?: unknown, to?: unknown) {
+  const fieldLabel = FIELD_LABEL[field] ?? field;
+  const toStr = to === undefined ? undefined : showVal(field, to);
+  // Coalesce a run of edits to the SAME field of the same entity into one entry — typing in a
+  // text input fires onChange per keystroke, which would otherwise log "Etra→Etrad", "Etrad→
+  // Etrade", … instead of a single "Etrad…→Etrade". Keep the original `from`, advance the `to`.
+  const last = p.edits[p.edits.length - 1];
+  if (last && last.entity === entity && last.entityId === entityId && last.field === fieldLabel) {
+    last.to = toStr;
+    last.at = new Date().toISOString();
+    if (last.from === last.to) p.edits.pop(); // typed back to where it started → no net change
+    return;
+  }
   p.edits.push({
     id: uid(), at: new Date().toISOString(), entity, entityId, label,
-    field: FIELD_LABEL[field] ?? field,
+    field: fieldLabel,
     from: from === undefined ? undefined : showVal(field, from),
-    to: to === undefined ? undefined : showVal(field, to),
+    to: toStr,
   });
   if (p.edits.length > 250) p.edits = p.edits.slice(-250); // bound the trail
 }

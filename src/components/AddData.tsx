@@ -108,6 +108,13 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
     } : p)));
   };
 
+  // Edit the account-level fields of a draft (name/institution) before saving — the parser's
+  // guess is often generic ("Mutual Funds — CAS"); let the user rename it on the review card.
+  const updateDraftAccount = (index: number, patch: Partial<ImportDraft["account"]>) =>
+    setDrafts((all) => all.map((p, j) => (j === index
+      ? { ...p, draft: { ...p.draft, account: { ...p.draft.account, ...patch } } }
+      : p)));
+
   // Edit a single holding inside a draft (fix an AI/parse mislabel before saving).
   const updateDraftHolding = (di: number, hi: number, patch: Partial<ImportDraft["holdings"][number]>) =>
     setDrafts((all) => all.map((p, j) => (j === di
@@ -436,6 +443,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
           accounts={portfolio.accounts}
           existingHoldings={portfolio.holdings}
           onCurrency={(c) => setDraftCurrency(i, c)}
+          onAccount={(patch) => updateDraftAccount(i, patch)}
           onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
           onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
           onApply={(target, money) => {
@@ -603,8 +611,9 @@ function GettingStarted({ expanded = false }: { expanded?: boolean }) {
 // are preselected to Update; otherwise they can still pick any existing account to overwrite,
 // or add as a new one. Updating replaces that account's holdings wholesale (items sold since
 // the last statement simply drop off; new items are added).
-function DraftReview({ draft, accounts, existingHoldings, onCurrency, onHolding, onRemoveHolding, onApply, onDiscard }: {
+function DraftReview({ draft, accounts, existingHoldings, onCurrency, onAccount, onHolding, onRemoveHolding, onApply, onDiscard }: {
   draft: ImportDraft; accounts: Account[]; existingHoldings: Holding[]; onCurrency: (currency: string) => void;
+  onAccount: (patch: Partial<ImportDraft["account"]>) => void;
   onHolding: (hi: number, patch: Partial<ImportDraft["holdings"][number]>) => void;
   onRemoveHolding: (hi: number) => void;
   onApply: (target: "new" | string, money: FlowKind) => void; onDiscard: () => void;
@@ -639,11 +648,22 @@ function DraftReview({ draft, accounts, existingHoldings, onCurrency, onHolding,
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
         <div>
           <div className="eyebrow">Review draft · {draft.source}</div>
-          <h3 style={{ fontSize: "1.05rem", marginTop: "0.15rem" }}>{draft.account.name}</h3>
-          <div className="muted" style={{ fontSize: "0.8rem" }}>
-            {draft.account.institution} · {ACCOUNT_TYPE_LABEL[draft.account.accountType]} ·{" "}
-            {TAX_LABEL[draft.account.taxTreatment]} · {draft.account.region}
-            {draft.account.asOf ? ` · as of ${draft.account.asOf}` : ""}
+          <input
+            value={draft.account.name} onChange={(e) => onAccount({ name: e.target.value })}
+            aria-label="Account name" placeholder="Account name"
+            style={{ fontSize: "1.05rem", fontFamily: "var(--font-display)", fontWeight: 600,
+              marginTop: "0.15rem", padding: "0.1rem 0.3rem", background: "transparent",
+              border: "1px solid var(--line-2)", borderRadius: 6, width: "min(320px, 100%)" }}
+          />
+          <div className="muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.3rem", flexWrap: "wrap" }}>
+            <input
+              value={draft.account.institution} onChange={(e) => onAccount({ institution: e.target.value })}
+              aria-label="Institution" placeholder="institution"
+              style={{ fontSize: "0.8rem", padding: "0.05rem 0.3rem", background: "transparent",
+                border: "1px solid var(--line-2)", borderRadius: 6, width: "min(180px, 100%)" }}
+            />
+            <span>· {ACCOUNT_TYPE_LABEL[draft.account.accountType]} · {TAX_LABEL[draft.account.taxTreatment]} · {draft.account.region}
+            {draft.account.asOf ? ` · as of ${draft.account.asOf}` : ""}</span>
           </div>
           <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", marginTop: "0.45rem" }}>
             <span className="muted" style={{ fontSize: "0.76rem" }}>Currency:</span>

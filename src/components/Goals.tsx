@@ -3,12 +3,13 @@
 // to fund a desired income (25× / 4% rule). Assumptions persist in settings.retirement. India-
 // first: figures are in the base currency. A read/estimate, not advice.
 import { useStore } from "../storage/store";
-import { fmtMoney } from "../regions/profile";
+import { fmtMoney, profileFor } from "../regions/profile";
 import { projectRetirement } from "../domain/retirement";
 
-// India-typical defaults used until the user sets their own.
+// India-typical defaults used until the user sets their own. Money values are INR internally
+// (the unit rule) — desiredMonthlyIncome's display default is adjusted per region below.
 const D = {
-  currentAge: 35,
+  currentAge: 55,
   retireAge: 60,
   monthlyContribution: 0,
   desiredMonthlyIncome: 50_000,
@@ -39,10 +40,42 @@ function NumField({ label, value, onChange }: { label: string; value: number; on
   );
 }
 
+// A money field for retirement amounts. The value is stored in INR (the app's internal unit),
+// but the user types and reads it in their region's currency: ₹ for India, $ for the US. We
+// convert at this edge only (matching fmtMoney), and the label carries the currency symbol.
+function MoneyField({ label, valueInr, onChangeInr, usdInr, usd, symbol }: {
+  label: string; valueInr: number; onChangeInr: (inr: number) => void;
+  usdInr: number; usd: boolean; symbol: string;
+}) {
+  const rate = usdInr || 1;
+  const shown = usd ? Math.round(valueInr / rate) : Math.round(valueInr);
+  return (
+    <>
+      <label>{label} ({symbol})</label>
+      <input
+        type="text" inputMode="decimal" aria-label={`${label} in ${symbol}`}
+        value={shown === 0 ? "" : String(shown)} placeholder="0"
+        onChange={(e) => {
+          const cleaned = e.target.value.replace(/[^0-9.]/g, "");
+          const n = Number(cleaned);
+          const entered = cleaned === "" || !Number.isFinite(n) ? 0 : n;
+          onChangeInr(usd ? Math.round(entered * rate) : entered);
+        }}
+      />
+    </>
+  );
+}
+
 export function Goals({ currentCorpus }: { currentCorpus: number }) {
-  const ret = useStore((s) => s.portfolio.settings.retirement);
+  const settings = useStore((s) => s.portfolio.settings);
+  const ret = settings.retirement;
   const updateSettings = useStore((s) => s.updateSettings);
-  const v = { ...D, ...ret };
+  const profile = profileFor(settings);
+  const usd = profile.baseCurrency === "USD";
+  const usdInr = settings.usdInr;
+  // Region-appropriate default desired income (stored INR): ~₹50k/mo in India, ~$4k/mo in the US.
+  const defaults = { ...D, desiredMonthlyIncome: usd ? Math.round(4_000 * (usdInr || 1)) : D.desiredMonthlyIncome };
+  const v = { ...defaults, ...ret };
   const save = (patch: Partial<typeof D>) => updateSettings({ retirement: { ...ret, ...patch } });
 
   const p = projectRetirement({ currentCorpus, ...v });
@@ -60,8 +93,8 @@ export function Goals({ currentCorpus }: { currentCorpus: number }) {
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 0 }}>
           <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Age now" value={v.currentAge} onChange={(n) => save({ currentAge: n })} /></div>
           <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Retire at" value={v.retireAge} onChange={(n) => save({ retireAge: n })} /></div>
-          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Invest / month" value={v.monthlyContribution} onChange={(n) => save({ monthlyContribution: n })} /></div>
-          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Target income / mo." value={v.desiredMonthlyIncome} onChange={(n) => save({ desiredMonthlyIncome: n })} /></div>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><MoneyField label="Invest / month" valueInr={v.monthlyContribution} onChangeInr={(n) => save({ monthlyContribution: n })} usdInr={usdInr} usd={usd} symbol={profile.symbol} /></div>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><MoneyField label="Target income / mo." valueInr={v.desiredMonthlyIncome} onChangeInr={(n) => save({ desiredMonthlyIncome: n })} usdInr={usdInr} usd={usd} symbol={profile.symbol} /></div>
           <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)" }}><NumField label="Return % / yr" value={v.expectedReturnPct} onChange={(n) => save({ expectedReturnPct: n })} /></div>
           <div className="form-col" style={{ padding: "0.55rem 0.8rem" }}><NumField label="Inflation % / yr" value={v.inflationPct} onChange={(n) => save({ inflationPct: n })} /></div>
         </div>
