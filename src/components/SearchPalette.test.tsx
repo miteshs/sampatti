@@ -18,51 +18,50 @@ beforeEach(() => {
     hold({ id: "2", accountId: "i", name: "HDFC Bank", symbol: "HDFCBANK", assetClass: "indian_equity", marketValue: 300000 }),
     hold({ id: "3", accountId: "z", name: "Parag Parikh Flexi Cap", assetClass: "equity_mf", marketValue: 800000 }),
   ];
-  useStore.setState({ portfolio: p, loaded: true });
+  useStore.setState({ portfolio: p, loaded: true, focusHoldingId: null });
 });
 afterEach(() => { cleanup(); localStorage.clear(); });
 
 describe("SearchPalette", () => {
   it("renders nothing when closed", () => {
-    const { container } = render(<SearchPalette open={false} onClose={() => {}} onOpenHoldings={() => {}} />);
+    const { container } = render(<SearchPalette open={false} onClose={() => {}} />);
     expect(container.firstChild).toBeNull();
   });
 
   it("filters by holding name", () => {
-    render(<SearchPalette open onClose={() => {}} onOpenHoldings={() => {}} />);
+    render(<SearchPalette open onClose={() => {}} />);
     fireEvent.change(screen.getByLabelText("Search holdings"), { target: { value: "infos" } });
     expect(screen.getByText("Infosys")).toBeTruthy();
     expect(screen.queryByText("HDFC Bank")).toBeNull();
   });
 
   it("filters by ticker", () => {
-    render(<SearchPalette open onClose={() => {}} onOpenHoldings={() => {}} />);
+    render(<SearchPalette open onClose={() => {}} />);
     fireEvent.change(screen.getByLabelText("Search holdings"), { target: { value: "hdfcbank" } });
     expect(screen.getByText("HDFC Bank")).toBeTruthy();
     expect(screen.queryByText("Infosys")).toBeNull();
   });
 
   it("filters by account name", () => {
-    render(<SearchPalette open onClose={() => {}} onOpenHoldings={() => {}} />);
+    render(<SearchPalette open onClose={() => {}} />);
     fireEvent.change(screen.getByLabelText("Search holdings"), { target: { value: "icici" } });
     expect(screen.getByText("HDFC Bank")).toBeTruthy();
     expect(screen.queryByText("Infosys")).toBeNull();
   });
 
   it("shows 'No matches' for a miss, and nothing for an empty query", () => {
-    render(<SearchPalette open onClose={() => {}} onOpenHoldings={() => {}} />);
+    render(<SearchPalette open onClose={() => {}} />);
     expect(screen.queryByText(/No matches/)).toBeNull(); // empty query → no list, no message
     fireEvent.change(screen.getByLabelText("Search holdings"), { target: { value: "zzzzz" } });
     expect(screen.getByText(/No matches/)).toBeTruthy();
   });
 
-  it("clicking a result opens Holdings and closes", () => {
-    const onOpenHoldings = vi.fn();
+  it("clicking a result sets the focus signal and closes", () => {
     const onClose = vi.fn();
-    render(<SearchPalette open onClose={onClose} onOpenHoldings={onOpenHoldings} />);
+    render(<SearchPalette open onClose={onClose} />);
     fireEvent.change(screen.getByLabelText("Search holdings"), { target: { value: "infosys" } });
     fireEvent.click(screen.getByText("Infosys"));
-    expect(onOpenHoldings).toHaveBeenCalled();
+    expect(useStore.getState().focusHoldingId).toBe("1"); // App then scrolls/flashes this row
     expect(onClose).toHaveBeenCalled();
   });
 });

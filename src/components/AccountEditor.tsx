@@ -194,7 +194,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
             </thead>
             <tbody>
               {holdings.map((h) => (
-                <tr key={h.id}>
+                <tr key={h.id} data-focus-key={`id:${h.id}`}>
                   <td><input value={h.name} onChange={(e) => editHolding(h.id, { name: e.target.value })} style={{ width: "100%", border: "none", padding: "0.1rem 0", background: "transparent", boxShadow: "none", fontSize: "0.88rem", fontWeight: 550 }} /></td>
                   <td><input value={h.symbol ?? ""} onChange={(e) => editHolding(h.id, { symbol: e.target.value.trim() || undefined })} placeholder="e.g. INFY" style={{ width: 80, border: "none", padding: "0.1rem 0", background: "transparent", boxShadow: "none", fontSize: "0.82rem" }} /></td>
                   <td>

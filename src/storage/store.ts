@@ -70,6 +70,9 @@ interface State {
   analyses: AnalysisRun[];
   activeAnalysisId: string | null;
   analysisStreaming: boolean;
+  // Search → "surface this holding on the current page" signal (scroll + flash); UI clears it.
+  focusHoldingId: string | null;
+  focusHolding: (id: string | null) => void;
   newAnalysis: (meta: { title: string; netWorth: number }) => string;
   setAnalysisTurns: (id: string, turns: AnalysisTurn[]) => void;
   setAnalysisStreaming: (on: boolean) => void;
@@ -249,6 +252,8 @@ export const useStore = create<State>((set, get) => ({
   analyses: [],
   activeAnalysisId: null,
   analysisStreaming: false,
+  focusHoldingId: null,
+  focusHolding: (id) => set(() => ({ focusHoldingId: id })),
   newAnalysis: ({ title, netWorth }) => {
     const id = uid();
     set((s) => ({

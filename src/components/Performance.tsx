@@ -92,7 +92,7 @@ function SortTH({ col, colSort, onSort, num, style, children }: {
 function HoldingRow({ row: { h, a, value, g }, grouped }: { row: RowData; grouped?: boolean }) {
   const held = heldFor(h.buyDate);
   return (
-    <tr style={{ borderTop: "1px solid var(--line-2)" }}>
+    <tr style={{ borderTop: "1px solid var(--line-2)" }} data-focus-key={`id:${h.id}`}>
       <td style={grouped ? { paddingLeft: "1.6rem" } : undefined}>
         <span style={{ fontWeight: 600 }}>{h.name}</span>
         {tickerOf(h.symbol, h.assetClass) && <span className="muted" style={{ fontSize: "0.78rem" }}> ({tickerOf(h.symbol, h.assetClass)})</span>}
@@ -132,7 +132,7 @@ function compareClubbed(col: ColKey, dir: "asc" | "desc") {
 // accounts/buy-dates). Value/P&L are summed over the real-basis legs.
 function ClubbedRow({ g }: { g: GroupedHolding }) {
   return (
-    <tr style={{ borderTop: "1px solid var(--line-2)" }}>
+    <tr style={{ borderTop: "1px solid var(--line-2)" }} data-focus-key={g.key}>
       <td>
         <span style={{ fontWeight: 600 }}>{g.name}</span>
         {tickerOf(g.symbol, g.assetClass) && <span className="muted" style={{ fontSize: "0.78rem" }}> ({tickerOf(g.symbol, g.assetClass)})</span>}

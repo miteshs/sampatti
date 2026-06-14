@@ -8,6 +8,7 @@ import { AnalysisChat } from "./components/AnalysisChat";
 import { Holdings } from "./components/Holdings";
 import { Settings } from "./components/Settings";
 import { SearchPalette } from "./components/SearchPalette";
+import { instrumentKey } from "./domain/aggregate";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import appIconUrl from "../src-tauri/icons/128x128.png";
 
@@ -45,6 +46,34 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Search → surface a holding: flash its row if it's on the CURRENT page; otherwise navigate to
+  // Holdings (which lists every holding), let Manage expand its account, then flash. Polls a few
+  // times to cover the navigate → expand → render gap.
+  const focusHoldingId = useStore((s) => s.focusHoldingId);
+  const focusHolding = useStore((s) => s.focusHolding);
+  useEffect(() => {
+    if (!focusHoldingId) return;
+    const h = useStore.getState().portfolio.holdings.find((x) => x.id === focusHoldingId);
+    const selectors = [`[data-focus-key="id:${CSS.escape(focusHoldingId)}"]`];
+    if (h) selectors.push(`[data-focus-key="${CSS.escape(instrumentKey(h))}"]`);
+    let tries = 0, navigated = false, timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const el = document.querySelector(selectors.join(",")) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        el.classList.add("row-flash");
+        setTimeout(() => el.classList.remove("row-flash"), 2000);
+        focusHolding(null);
+        return;
+      }
+      if (!navigated) { navigated = true; setView("holdings"); } // not on this page → go where it lives
+      if (tries++ < 14) timer = setTimeout(tick, 120);
+      else focusHolding(null);
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [focusHoldingId, focusHolding]);
 
   // Opt-in dark mode: reflect the saved theme onto <html data-theme>. Default/absent ⇒ light,
   // so the app only goes dark when the user chooses it (never from the OS preference).
@@ -142,7 +171,7 @@ export default function App() {
         ))}
       </nav>
 
-      <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} onOpenHoldings={() => go("holdings")} />
+      <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

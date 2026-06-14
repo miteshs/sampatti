@@ -8,10 +8,9 @@ import { fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { tickerOf } from "../domain/aggregate";
 
-export function SearchPalette({ open, onClose, onOpenHoldings }: {
-  open: boolean; onClose: () => void; onOpenHoldings: () => void;
-}) {
+export function SearchPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const portfolio = useStore((s) => s.portfolio);
+  const focusHolding = useStore((s) => s.focusHolding);
   const usdInr = portfolio.settings.usdInr;
   const [q, setQ] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +53,7 @@ export function SearchPalette({ open, onClose, onOpenHoldings }: {
           {q.trim() && results.length === 0 && <p className="muted" style={{ fontSize: "0.85rem", padding: "0.3rem" }}>No matches.</p>}
           {results.map(({ h, a, value, ticker, cls }) => (
             <button
-              key={h.id} onClick={() => { onOpenHoldings(); onClose(); }}
+              key={h.id} onClick={() => { focusHolding(h.id); onClose(); }}
               style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", width: "100%", textAlign: "left",
                 padding: "0.45rem 0.5rem", border: "none", borderBottom: "1px solid var(--line-2)", background: "transparent", cursor: "pointer" }}
             >
@@ -67,7 +66,7 @@ export function SearchPalette({ open, onClose, onOpenHoldings }: {
             </button>
           ))}
         </div>
-        <p className="muted" style={{ fontSize: "0.72rem", marginTop: "0.5rem" }}>Esc to close · click a result to open it in Holdings</p>
+        <p className="muted" style={{ fontSize: "0.72rem", marginTop: "0.5rem" }}>Esc to close · click a result to jump to it</p>
       </div>
     </div>
   );

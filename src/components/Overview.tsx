@@ -141,8 +141,8 @@ export function Overview() {
     [assetHoldings, acctById, usdInr],
   );
   const topRows = byInstrument
-    ? clubbed.slice(0, 10).map((g) => ({ name: g.name, ticker: tickerOf(g.symbol, g.assetClass), cls: ASSET_CLASS_LABEL[g.assetClass], acct: g.accounts.join(" · "), value: g.value, pctOfAssets: pct(g.value, brief.totalAssets), legs: g.legs }))
-    : perAccount.map(({ h, a, value }) => ({ name: h.name, ticker: tickerOf(h.symbol, h.assetClass), cls: ASSET_CLASS_LABEL[h.assetClass], acct: a?.name ?? "—", value, pctOfAssets: pct(value, brief.totalAssets), legs: 1 }));
+    ? clubbed.slice(0, 10).map((g) => ({ name: g.name, ticker: tickerOf(g.symbol, g.assetClass), cls: ASSET_CLASS_LABEL[g.assetClass], acct: g.accounts.join(" · "), value: g.value, pctOfAssets: pct(g.value, brief.totalAssets), legs: g.legs, fkey: g.key }))
+    : perAccount.map(({ h, a, value }) => ({ name: h.name, ticker: tickerOf(h.symbol, h.assetClass), cls: ASSET_CLASS_LABEL[h.assetClass], acct: a?.name ?? "—", value, pctOfAssets: pct(value, brief.totalAssets), legs: 1, fkey: `id:${h.id}` }));
   const topRowsValue = topRows.reduce((s, r) => s + r.value, 0);
   const topRowsPct = pct(topRowsValue, brief.totalAssets);
   // One-glance health read, built from the same three verdicts shown in the cards below.
@@ -346,7 +346,7 @@ export function Overview() {
             </thead>
             <tbody>
               {topRows.map((h, i) => (
-                <tr key={i} style={{ borderTop: "1px solid var(--line-2)" }}>
+                <tr key={i} data-focus-key={h.fkey} style={{ borderTop: "1px solid var(--line-2)" }}>
                   <td className="muted num">{i + 1}</td>
                   <td style={{ fontWeight: 600 }}>{h.name}{h.ticker && <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> ({h.ticker})</span>}</td>
                   <td><span className="badge badge-gray">{h.cls}</span></td>

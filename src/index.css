@@ -427,6 +427,10 @@ tr:last-child td { border-bottom: none; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .blink { animation: pulse 1.5s ease-in-out infinite; }
 
+/* Search → "surface this row": a brief highlight when a result is scrolled into view. */
+@keyframes rowFlash { 0% { background: var(--primary-soft); } 100% { background: transparent; } }
+.row-flash > td { animation: rowFlash 2s ease-out; }
+
 /* ======================================================================
    Responsive / touch — one codebase from phone to desktop (SPEC §10).
    Desktop is the default above; everything below adapts narrow + coarse.

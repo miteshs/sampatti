@@ -2,7 +2,7 @@
 // inline per-account/holding editor), plus the manual-edit history log. Kept separate from
 // Overview so the dashboard stays a clean read-only view.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../storage/store";
 import { holdingBase } from "../domain/format";
 import { fmtMoney } from "../regions/profile";
@@ -20,6 +20,15 @@ export function Manage() {
   const usdInr = portfolio.settings.usdInr;
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // When search surfaces a holding, expand the account that holds it so its row is on screen
+  // (App then scrolls + flashes the row).
+  const focusHoldingId = useStore((s) => s.focusHoldingId);
+  useEffect(() => {
+    if (!focusHoldingId) return;
+    const acctId = portfolio.holdings.find((h) => h.id === focusHoldingId)?.accountId;
+    if (acctId) setEditingId(acctId);
+  }, [focusHoldingId, portfolio.holdings]);
 
   // Freshness over the *visible* accounts (matches the dashboard's net-worth scope).
   const staleAccounts = useMemo(() => visiblePortfolio(portfolio).accounts
