@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupHoldings, instrumentKey } from "./aggregate";
+import { groupHoldings, instrumentKey, tickerOf } from "./aggregate";
 import type { Account, Holding } from "./types";
 
 const acct = (id: string, name: string, accountType: Account["accountType"] = "demat"): Account => ({
@@ -49,5 +49,33 @@ describe("groupHoldings — club same instrument across accounts", () => {
 
   it("symbol identity ignores case/whitespace", () => {
     expect(instrumentKey(hold({ accountId: "z", symbol: " hdfcbank " }))).toBe(instrumentKey(hold({ accountId: "i", symbol: "HDFCBANK" })));
+  });
+
+  it("carries a representative symbol onto the group", () => {
+    const g = groupHoldings([
+      hold({ accountId: "z", symbol: "INFY", name: "Infosys", assetClass: "indian_equity", marketValue: 10 }),
+      hold({ accountId: "i", symbol: "INFY", name: "Infosys", assetClass: "indian_equity", marketValue: 20 }),
+    ], accounts, 90);
+    expect(g[0].symbol).toBe("INFY");
+  });
+});
+
+describe("tickerOf — only real tickers, only equities/ETFs", () => {
+  it("shows a ticker for equity/ETF classes", () => {
+    expect(tickerOf("INFY", "indian_equity")).toBe("INFY");
+    expect(tickerOf("aapl", "us_equity")).toBe("AAPL"); // upper-cased
+    expect(tickerOf("NIFTYBEES", "index_etf")).toBe("NIFTYBEES");
+  });
+  it("hides ISINs and numeric scheme codes", () => {
+    expect(tickerOf("INE009A01021", "indian_equity")).toBeNull(); // 12-char ISIN
+    expect(tickerOf("120503", "index_etf")).toBeNull();           // AMFI scheme code
+  });
+  it("hides symbols for non-equity classes (MF folios, FDs, etc.)", () => {
+    expect(tickerOf("HDFCTOP100", "equity_mf")).toBeNull();
+    expect(tickerOf("ANYTHING", "fd_rd")).toBeNull();
+  });
+  it("returns null for a missing/empty symbol", () => {
+    expect(tickerOf(undefined, "indian_equity")).toBeNull();
+    expect(tickerOf("  ", "us_equity")).toBeNull();
   });
 });

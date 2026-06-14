@@ -9,7 +9,7 @@ import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { holdingBase, holdingGain, pct, type HoldingGain } from "../domain/format";
 import { currentProfile, fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
-import { groupHoldings, type GroupedHolding } from "../domain/aggregate";
+import { groupHoldings, tickerOf, type GroupedHolding } from "../domain/aggregate";
 import { AccountStack } from "./AccountStack";
 
 const GREEN = "var(--up-ink)", RED = "var(--down-ink)"; // theme tokens (light/dark, text-grade ≥4.5:1)
@@ -95,6 +95,7 @@ function HoldingRow({ row: { h, a, value, g }, grouped }: { row: RowData; groupe
     <tr style={{ borderTop: "1px solid var(--line-2)" }}>
       <td style={grouped ? { paddingLeft: "1.6rem" } : undefined}>
         <span style={{ fontWeight: 600 }}>{h.name}</span>
+        {tickerOf(h.symbol, h.assetClass) && <span className="muted" style={{ fontSize: "0.78rem" }}> ({tickerOf(h.symbol, h.assetClass)})</span>}
         {!grouped && <span className="muted" style={{ fontSize: "0.78rem" }}> · {a?.name}</span>}
         {h.currency !== "INR" && <span className="muted" style={{ fontSize: "0.78rem" }}> · {h.currency}</span>}
       </td>
@@ -134,6 +135,7 @@ function ClubbedRow({ g }: { g: GroupedHolding }) {
     <tr style={{ borderTop: "1px solid var(--line-2)" }}>
       <td>
         <span style={{ fontWeight: 600 }}>{g.name}</span>
+        {tickerOf(g.symbol, g.assetClass) && <span className="muted" style={{ fontSize: "0.78rem" }}> ({tickerOf(g.symbol, g.assetClass)})</span>}
         {g.legs > 1 && <span className="badge badge-gray" style={{ marginLeft: "0.35rem", fontSize: "0.66rem" }} title={g.accounts.join(", ")}>{g.legs} accounts</span>}
       </td>
       <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[g.assetClass]}</span></td>

@@ -6,7 +6,7 @@ import { holdingBase, pct } from "../domain/format";
 import { fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { bucketSegments } from "../domain/buckets";
-import { groupHoldings } from "../domain/aggregate";
+import { groupHoldings, tickerOf } from "../domain/aggregate";
 import { concentrationVerdict, equityVerdict, liquidityVerdict, type Verdict } from "../domain/verdicts";
 import { portfolioHealth } from "../domain/health";
 import { Goals } from "./Goals";
@@ -131,16 +131,18 @@ export function Overview() {
 
   // Top-holdings table: club the same instrument across accounts (default) or list per-account.
   const [byInstrument, setByInstrument] = useState(true);
-  const clubbed = useMemo(() => {
-    const assetHoldings = view.holdings.filter((h) => {
-      const t = acctById.get(h.accountId)?.accountType;
-      return t !== "liability" && t !== "income";
-    });
-    return groupHoldings(assetHoldings, view.accounts, usdInr);
-  }, [view.holdings, view.accounts, acctById, usdInr]);
+  const assetHoldings = useMemo(() => view.holdings.filter((h) => {
+    const t = acctById.get(h.accountId)?.accountType;
+    return t !== "liability" && t !== "income";
+  }), [view.holdings, acctById]);
+  const clubbed = useMemo(() => groupHoldings(assetHoldings, view.accounts, usdInr), [assetHoldings, view.accounts, usdInr]);
+  const perAccount = useMemo(
+    () => [...assetHoldings].map((h) => ({ h, a: acctById.get(h.accountId), value: holdingBase(h, usdInr) })).sort((x, y) => y.value - x.value).slice(0, 10),
+    [assetHoldings, acctById, usdInr],
+  );
   const topRows = byInstrument
-    ? clubbed.slice(0, 10).map((g) => ({ name: g.name, cls: ASSET_CLASS_LABEL[g.assetClass], acct: g.accounts.join(" · "), value: g.value, pctOfAssets: pct(g.value, brief.totalAssets), legs: g.legs }))
-    : brief.concentration.topHoldings.map((h) => ({ name: h.name, cls: h.assetClass, acct: h.account, value: h.value, pctOfAssets: h.pctOfAssets, legs: 1 }));
+    ? clubbed.slice(0, 10).map((g) => ({ name: g.name, ticker: tickerOf(g.symbol, g.assetClass), cls: ASSET_CLASS_LABEL[g.assetClass], acct: g.accounts.join(" · "), value: g.value, pctOfAssets: pct(g.value, brief.totalAssets), legs: g.legs }))
+    : perAccount.map(({ h, a, value }) => ({ name: h.name, ticker: tickerOf(h.symbol, h.assetClass), cls: ASSET_CLASS_LABEL[h.assetClass], acct: a?.name ?? "—", value, pctOfAssets: pct(value, brief.totalAssets), legs: 1 }));
   const topRowsValue = topRows.reduce((s, r) => s + r.value, 0);
   const topRowsPct = pct(topRowsValue, brief.totalAssets);
   // One-glance health read, built from the same three verdicts shown in the cards below.
@@ -346,7 +348,7 @@ export function Overview() {
               {topRows.map((h, i) => (
                 <tr key={i} style={{ borderTop: "1px solid var(--line-2)" }}>
                   <td className="muted num">{i + 1}</td>
-                  <td style={{ fontWeight: 600 }}>{h.name}</td>
+                  <td style={{ fontWeight: 600 }}>{h.name}{h.ticker && <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> ({h.ticker})</span>}</td>
                   <td><span className="badge badge-gray">{h.cls}</span></td>
                   <td className="muted" style={{ fontSize: "0.84rem" }}>
                     {h.acct}
