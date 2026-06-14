@@ -126,7 +126,7 @@ if [ "$GH_RELEASE" = "1" ]; then
 
 **Windows (x64)**: \`Sampatti_${VERSION}_x64-setup.exe\` below — SmartScreen will warn: **More info → Run anyway**.
 
-AI analysis is optional: in **Settings**, use the relay or add your own Anthropic API key (stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device. Built from \`${BUILT_FROM}\`.
+AI analysis is optional. Nothing secret is baked into the app: to use the hosted relay, paste the **access code** you were given into **Settings → Access code**; or enable **Developer mode** to use your own Anthropic API key (stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device. Built from \`${BUILT_FROM}\`.
 NOTES_EOF
 )
   gh release create "v${VERSION}" "$DMG" \
