@@ -51,13 +51,12 @@ fn truncate_chars(s: &str, n: usize) -> &str {
 
 // The brief (and the app token, when present) travel to the relay URL, which is a user
 // setting — require https so a tampered/social-engineered setting can't downgrade the
-// transport to plaintext. Loopback http stays allowed for local relay development.
+// transport to plaintext. https-only, with no loopback exception: the app never talks to a
+// local dev relay, so there is no reason to allow plaintext http to any host.
 fn allowed_relay_url(u: &str) -> Result<reqwest::Url, String> {
     let parsed = reqwest::Url::parse(u).map_err(|_| format!("Relay URL is not a valid URL: {u}"))?;
-    let loopback = matches!(parsed.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
     match parsed.scheme() {
         "https" => Ok(parsed),
-        "http" if loopback => Ok(parsed),
         s => Err(format!("Relay URL must be https (got {s}://) — refusing to send the brief over plaintext.")),
     }
 }
@@ -242,12 +241,12 @@ mod tests {
     }
 
     #[test]
-    fn relay_url_requires_https_except_loopback() {
+    fn relay_url_requires_https() {
         assert!(allowed_relay_url("https://sampatti-relay.sampatti.workers.dev").is_ok());
         assert!(allowed_relay_url("https://my-own-relay.example.workers.dev/path").is_ok());
-        assert!(allowed_relay_url("http://localhost:8787").is_ok()); // wrangler dev
-        assert!(allowed_relay_url("http://127.0.0.1:8787").is_ok());
         for bad in [
+            "http://localhost:8787",             // no loopback exception anymore
+            "http://127.0.0.1:8787",
             "http://evil.example/collect",       // plaintext to a remote host
             "ftp://relay.example",               // non-http scheme
             "file:///etc/passwd",                // local scheme

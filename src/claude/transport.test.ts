@@ -9,16 +9,16 @@ const tauriWindow = () => vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("relayHint", () => {
-  it("decorates a relay 401 with the BYO-key hint", () => {
+  it("decorates a relay 401 with the access-code hint", () => {
     const e = relayHint("relay", "Claude request failed (401). ");
-    expect(e.message).toContain("doesn't include hosted-relay access");
+    expect(e.message).toContain("needs the access code");
     expect(e.message).toContain("Settings tab");
   });
 
   it("decorates a relay 403, including Rust-style status text", () => {
     // The desktop error path formats the status as e.g. "(403 Forbidden)".
     const e = relayHint("relay", "Claude request failed (403 Forbidden). nope");
-    expect(e.message).toContain("doesn't include hosted-relay access");
+    expect(e.message).toContain("needs the access code");
   });
 
   it("names the Windows Credential Manager on a Windows desktop build", () => {
@@ -59,26 +59,21 @@ describe("relayHint", () => {
   });
 });
 
-// A friend on the public (token-less) build pastes the relay code you gave them; it must win
-// over the empty build-time token so their requests carry x-app-token. Blank → build token.
-describe("effectiveAppToken — user relay code vs build token", () => {
-  it("uses the user-entered code when present (the friend's-relay case)", () => {
-    expect(effectiveAppToken("friend-code", "")).toBe("friend-code");
-    expect(effectiveAppToken("friend-code", "BUILT_IN")).toBe("friend-code"); // overrides build token
+// Relay access is ONLY the user-entered access code — nothing is baked into the build. The
+// code is sent as x-app-token; blank/whitespace/unset → "" so no header goes out and the relay
+// rejects the code-less request.
+describe("effectiveAppToken — user access code only", () => {
+  it("uses the user-entered code when present", () => {
+    expect(effectiveAppToken("friend-code")).toBe("friend-code");
   });
 
   it("trims the entered code", () => {
-    expect(effectiveAppToken("  abc  ", "")).toBe("abc");
+    expect(effectiveAppToken("  abc  ")).toBe("abc");
   });
 
-  it("falls back to the build token when the code is blank, whitespace, or unset", () => {
-    expect(effectiveAppToken("", "BUILT_IN")).toBe("BUILT_IN");
-    expect(effectiveAppToken("   ", "BUILT_IN")).toBe("BUILT_IN");
-    expect(effectiveAppToken(undefined, "BUILT_IN")).toBe("BUILT_IN");
-  });
-
-  it("is empty (so no x-app-token header is sent) when neither is set", () => {
-    expect(effectiveAppToken(undefined, "")).toBe("");
-    expect(effectiveAppToken("  ", "")).toBe("");
+  it("is empty (so no x-app-token header is sent) when blank, whitespace, or unset", () => {
+    expect(effectiveAppToken("")).toBe("");
+    expect(effectiveAppToken("   ")).toBe("");
+    expect(effectiveAppToken(undefined)).toBe("");
   });
 });

@@ -1,27 +1,24 @@
 #!/usr/bin/env bash
 # Cut a PUBLIC Sampatti release: signed + notarized dmg, published for direct download.
 #
-#   scripts/release.sh                 # public build (NO relay token), sign+notarize, sha256
+#   scripts/release.sh                 # public build (no baked secrets), sign+notarize, sha256
 #   scripts/release.sh --gh-release    # also publish the GitHub Release on miteshs/sampatti-releases
 #   scripts/release.sh --tap ../homebrew-sampatti   # (legacy) also copy the cask into a tap checkout
 #
 # Notes:
 #   • Version comes from src-tauri/tauri.conf.json.
-#   • PUBLIC builds bake an EMPTY VITE_RELAY_TOKEN: anyone can download the dmg, so it must
-#     not carry the relay app-token (that would let strangers spend the relay owner's API
-#     credits). Public users add their own Anthropic key on the Privacy screen.
-#     → After cutting a release, rebuild WITHOUT the override (plain `npm run tauri build`,
-#       which reads .env.local) before reinstalling YOUR OWN /Applications copy.
+#   • NO secrets are baked into any build. Relay access is via the access code the user pastes
+#     into Settings (matched against the worker's APP_TOKENS); BYO Anthropic keys live in the OS
+#     keychain. So a downloaded dmg carries nothing a stranger could spend — and personal and
+#     public builds are byte-identical in this respect.
 #   • The dmg is Apple-Silicon only. It is signed (Developer ID) + notarized + stapled when
 #     .env.signing is present (see .env.signing.example); absent → unsigned, as before.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# MUTUAL EXCLUSION: a concurrent `npm run tauri build` (personal, token-ful) once rewrote
-# dist/ mid-release and contaminated the public bundle — caught by the token grep below,
-# but don't even allow the race. (A binary-level grep is NOT used: Tauri brotli-compresses
-# embedded assets, so `strings` can't see the token; the dist grep after a solo build is
-# the sound check.)
+# MUTUAL EXCLUSION: don't let a concurrent `npm run tauri build` rewrite dist/ mid-release and
+# ship a half-built bundle. (No secrets are baked in anymore, so there's no token to leak — but
+# a clean, reproducible artifact still demands one build at a time.)
 LOCK="/tmp/sampatti-release.lock.d"
 if ! mkdir "$LOCK" 2>/dev/null; then
   echo "✗ Another build appears to be running ($LOCK held) — finish it first."; exit 1
@@ -68,29 +65,20 @@ if [ -f .env.signing ]; then
 fi
 [ "$SIGNED" = "1" ] || echo "⚠ UNSIGNED build (no .env.signing) — the cask postflight strips quarantine instead."
 
-echo "▶ Building PUBLIC Sampatti ${VERSION} (relay token excluded)…"
+echo "▶ Building PUBLIC Sampatti ${VERSION} (no baked secrets)…"
 # Strip the build machine's identity: Rust dependencies embed absolute panic/debug paths
 # (/Users/<name>/.cargo/…) into release binaries — 749 of them in the first 0.3.0 cut.
 # Remap everything under $HOME for rustc and for the C/C++ in llama.cpp alike.
 export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME=/build"
 export CFLAGS="${CFLAGS:-} -ffile-prefix-map=$HOME=/build"
 export CXXFLAGS="${CXXFLAGS:-} -ffile-prefix-map=$HOME=/build"
-VITE_RELAY_TOKEN="" npm run tauri build >/dev/null
+npm run tauri build >/dev/null
 [ -f "$DMG" ] || { echo "✗ dmg not found at $DMG"; exit 1; }
 
 # Binary-level PII gate: the published executable must not contain the builder's home path.
 if strings "$APP/Contents/MacOS/sampatti" | grep -q "/Users/"; then
   echo "✗ ABORT: build paths leak the build machine's identity — check the remap flags."
   exit 1
-fi
-
-# Belt & braces: the published bundle must not contain the relay token from .env.local.
-if [ -f .env.local ]; then
-  TOKEN=$(sed -n 's/^VITE_RELAY_TOKEN=//p' .env.local | tr -d '"' | tr -d "'")
-  if [ -n "$TOKEN" ] && grep -rqs "$TOKEN" dist/assets 2>/dev/null; then
-    echo "✗ ABORT: relay token found in the built bundle — refusing to release."
-    exit 1
-  fi
 fi
 
 # When signed, prove it before publishing: Gatekeeper assessment + stapled notarization
@@ -149,4 +137,4 @@ echo "  • Windows build:   git tag v${VERSION} && git push origin v${VERSION}"
 echo "                     (CI builds the NSIS exe and adds it to the same release — docs/windows.md)"
 echo "  • Users install:   download the dmg from the release, open it, drag to Applications"
 echo "                     (signed + notarized — opens with no Gatekeeper warning)"
-echo "  • Your own copy:   npm run tauri build   (re-bakes the relay token from .env.local)"
+echo "  • Your own copy:   npm run tauri build   (same token-less build; paste your access code in Settings)"
