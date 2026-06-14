@@ -455,9 +455,14 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
         />
       ))}
 
-      <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings, money) => {
+      <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings, money, loanAmount) => {
         const id = addAccount(acct);
         for (const h of holdings) addHolding({ ...h, accountId: id }, money);
+        // A remaining loan becomes a paired liability account so net worth nets it out.
+        if (loanAmount && loanAmount > 0) {
+          const loanId = addAccount({ ...acct, name: `${acct.name} — loan`, accountType: "liability", taxTreatment: "na" });
+          addHolding({ name: "Loan outstanding", assetClass: "other", marketValue: loanAmount, currency: acct.currency, accountId: loanId }, "tracking");
+        }
       }} />
 
       <IncomeForm onAdd={addIncome} />
@@ -841,7 +846,7 @@ function DraftNum({ value, onChange }: { value: number; onChange: (n: number) =>
 
 // ---- manual account + holdings entry ----
 function ManualAccount({ onAdd, usdInr }: {
-  onAdd: (a: ImportDraft["account"], h: ImportDraft["holdings"], money: FlowKind) => void;
+  onAdd: (a: ImportDraft["account"], h: ImportDraft["holdings"], money: FlowKind, loanAmount?: number) => void;
   usdInr: number;
 }) {
   const [a, setA] = useState<ImportDraft["account"]>({
@@ -855,6 +860,7 @@ function ManualAccount({ onAdd, usdInr }: {
   const [hValue, setHValue] = useState("");
   const [hBasis, setHBasis] = useState(""); // optional purchase cost
   const [hGrams, setHGrams] = useState("");
+  const [loan, setLoan] = useState(""); // optional remaining loan → paired liability account
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [goldBusy, setGoldBusy] = useState(false);
   const [holdings, setHoldings] = useState<ImportDraft["holdings"]>([]);
@@ -894,9 +900,10 @@ function ManualAccount({ onAdd, usdInr }: {
     const extra = pendingHolding();
     const all = extra ? [...holdings, extra] : holdings;
     if (!a.name.trim() || all.length === 0) return;
-    onAdd(a, all, money);
+    const loanAmt = Number(loan.replace(/[₹$,\s]/g, "")) || 0;
+    onAdd(a, all, money, loanAmt > 0 ? loanAmt : undefined);
     setA({ ...a, name: "", institution: "" });
-    setHoldings([]); setHName(""); setHValue(""); setHBasis(""); setHGrams("");
+    setHoldings([]); setHName(""); setHValue(""); setHBasis(""); setHGrams(""); setLoan("");
   };
 
   return (
@@ -929,6 +936,16 @@ function ManualAccount({ onAdd, usdInr }: {
           <div className="form-col" style={{ padding: "0.45rem 0.8rem", borderRight: "1px solid var(--line-2)" }}><label style={{ marginBottom: "0.15rem" }}>Currency</label><input value={a.currency} onChange={(e) => setA({ ...a, currency: e.target.value.toUpperCase() })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
           <div className="form-col" style={{ padding: "0.45rem 0.8rem" }}><label style={{ marginBottom: "0.15rem" }}>Date</label><input type="date" value={a.asOf} onChange={(e) => setA({ ...a, asOf: e.target.value })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
         </div>
+      </div>
+
+      <div style={{ display: "flex", gap: "0.6rem", alignItems: "flex-end", flexWrap: "wrap", marginBottom: "1rem" }}>
+        <div style={{ flex: "1 1 200px" }}>
+          <label>Remaining loan ({a.currency}) <span className="muted" style={{ fontWeight: 400 }}>— optional</span></label>
+          <input value={loan} onChange={(e) => setLoan(e.target.value)} placeholder="e.g. home loan still owed" inputMode="decimal" />
+        </div>
+        <span className="muted" style={{ fontSize: "0.74rem", flex: "2 1 240px" }}>
+          For a house, car, or anything with a loan against it — creates a matching <strong>liability</strong> so your net worth subtracts what you still owe.
+        </span>
       </div>
 
       <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", alignItems: "flex-end", flexWrap: "wrap" }}>
