@@ -5,9 +5,9 @@ AIF, debt funds, EPF/PPF, NPS, FDs, gold/SGB, insurance, US RSUs, real estate �
 allocation view, and gives you an **interactive AI portfolio review** acting as a top Indian
 financial analyst. Your data lives on your machine; only a compact summary goes to Claude.
 
-Built on a **Tauri + React** core: the desktop app ships for **macOS** (`.dmg`, Homebrew
-cask) and **Windows** (`.exe`, NSIS installer built by CI), and the same code runs as a
-plain web app for development.
+Built on a **Tauri + React** core: the desktop app ships for **macOS** (signed + notarized
+`.dmg`, direct download) and **Windows** (`.exe`, NSIS installer built by CI), and the same
+code runs as a plain web app for development.
 
 ## What it does
 
@@ -80,19 +80,19 @@ Actions → *windows-release* → Run workflow. On an actual Windows machine a p
 `npm run tauri build` works (`tauri.windows.conf.json` selects the NSIS target).
 Install/runbook details: [`docs/windows.md`](docs/windows.md).
 
-## Install with Homebrew
+## Install (macOS)
 
-Once a release is published to a tap (see [`docs/homebrew.md`](docs/homebrew.md)):
+Download `Sampatti_<version>_aarch64.dmg` from the
+[latest release](https://github.com/miteshs/sampatti-releases/releases/latest), open it, and
+drag **Sampatti** into Applications. The app is signed with an Apple Developer ID and notarized
+by Apple, so it opens normally on first launch — no Gatekeeper warnings, no `brew`, no install
+scripts.
 
-```
-brew tap miteshs/sampatti
-brew install --cask sampatti
-```
-
-The cask lives at [`packaging/homebrew/sampatti.rb`](packaging/homebrew/sampatti.rb);
-`scripts/release.sh` builds the dmg, computes its sha256, and updates the cask. Publishing
-needs a **public** download URL for the dmg and (ideally) Developer-ID **signing + notarization**
-— details and the unsigned-build workaround are in `docs/homebrew.md`.
+`scripts/release.sh` builds the dmg, signs + notarizes it (credentials from a gitignored
+`.env.signing` — see [`.env.signing.example`](.env.signing.example)), staples the ticket, and
+publishes it to the public [releases repo](https://github.com/miteshs/sampatti-releases). The
+Homebrew cask at [`packaging/homebrew/sampatti.rb`](packaging/homebrew/sampatti.rb) is retained
+for legacy installs but is no longer the recommended path.
 
 ## How analysis reaches Claude
 

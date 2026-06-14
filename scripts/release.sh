@@ -12,7 +12,8 @@
 #     credits). Public users add their own Anthropic key on the Privacy screen.
 #     → After cutting a release, rebuild WITHOUT the override (plain `npm run tauri build`,
 #       which reads .env.local) before reinstalling YOUR OWN /Applications copy.
-#   • The dmg is Apple-Silicon only and (today) unsigned/un-notarized — see docs/homebrew.md.
+#   • The dmg is Apple-Silicon only. It is signed (Developer ID) + notarized + stapled when
+#     .env.signing is present (see .env.signing.example); absent → unsigned, as before.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -121,14 +122,7 @@ if [ "$GH_RELEASE" = "1" ]; then
   # Install instructions assume nothing: machines without Homebrew get the bootstrap
   # line, and the no-brew path (plain dmg + Gatekeeper dance) is spelled out too.
   NOTES=$(cat <<NOTES_EOF
-**macOS (Apple Silicon)** — with Homebrew (recommended; updates via \`brew upgrade\`):
-
-    # Only if you don't have Homebrew yet (check with: brew --version):
-    /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-    brew tap miteshs/sampatti && brew trust miteshs/sampatti && brew install --cask sampatti
-
-**No Homebrew?** Download the dmg below, drag **Sampatti** into Applications, then right-click → **Open** on first launch (unsigned build; newer macOS may also need System Settings → Privacy & Security → **Open Anyway**).
+**macOS (Apple Silicon)** — download \`Sampatti_${VERSION}_aarch64.dmg\` below, open it, and drag **Sampatti** into Applications. The app is signed with an Apple Developer ID and notarized by Apple, so it opens normally — no security warnings, no right-click dance.
 
 **Windows (x64)**: \`Sampatti_${VERSION}_x64-setup.exe\` below — SmartScreen will warn: **More info → Run anyway**.
 
@@ -153,6 +147,6 @@ echo
 echo "Next:"
 echo "  • Windows build:   git tag v${VERSION} && git push origin v${VERSION}"
 echo "                     (CI builds the NSIS exe and adds it to the same release — docs/windows.md)"
-echo "  • Push the tap:    cd <tap checkout> && git commit -am 'sampatti ${VERSION}' && git push"
-echo "  • Users install:   brew tap miteshs/sampatti && brew install --cask sampatti"
+echo "  • Users install:   download the dmg from the release, open it, drag to Applications"
+echo "                     (signed + notarized — opens with no Gatekeeper warning)"
 echo "  • Your own copy:   npm run tauri build   (re-bakes the relay token from .env.local)"

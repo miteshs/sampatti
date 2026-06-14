@@ -13,9 +13,9 @@
 #      the source repo stays private; brew can't fetch a private repo's assets anyway.
 #   2. Public builds ship WITHOUT the hosted-relay token: users bring their own Anthropic
 #      key (Privacy screen → macOS Keychain). Keeps strangers off the relay owner's bill.
-#   3. The build is currently UNSIGNED + UN-NOTARIZED. The postflight below strips the
-#      quarantine flag so it still launches, but the proper fix is an Apple Developer ID
-#      signature + notarization (then the postflight can be removed).
+#   3. The build is signed with an Apple Developer ID and notarized, so Gatekeeper accepts it
+#      on first launch — no quarantine-stripping postflight needed. Direct download is now the
+#      recommended install (see README); this cask is retained for legacy `brew` users.
 cask "sampatti" do
   version "0.7.0"
   sha256 "e9c45d7078bc65c73baf6842bae4f750d19ab5c045868243819d455c7090a4ac" # set per-release by scripts/release.sh
@@ -30,14 +30,6 @@ cask "sampatti" do
   depends_on macos: :big_sur
 
   app "Sampatti.app"
-
-  # Unsigned build: remove the quarantine attribute so Gatekeeper doesn't block first launch.
-  # Once the app is signed + notarized with an Apple Developer ID, delete this block.
-  postflight do
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/Sampatti.app"],
-                   sudo: false
-  end
 
   uninstall quit: "app.sampatti.desktop"
 
