@@ -9,6 +9,7 @@ import { visiblePortfolio, type Account, type Holding } from "../domain/types";
 import { holdingBase, holdingGain, pct, type HoldingGain } from "../domain/format";
 import { currentProfile, fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
+import { groupHoldings, type GroupedHolding } from "../domain/aggregate";
 import { AccountStack } from "./AccountStack";
 
 const GREEN = "var(--up-ink)", RED = "var(--down-ink)"; // theme tokens (light/dark, text-grade ≥4.5:1)
@@ -107,6 +108,44 @@ function HoldingRow({ row: { h, a, value, g }, grouped }: { row: RowData; groupe
   );
 }
 
+// Column comparator for the instrument-clubbed view (mirrors compareRows over GroupedHolding).
+function compareClubbed(col: ColKey, dir: "asc" | "desc") {
+  const sgn = dir === "asc" ? 1 : -1;
+  return (a: GroupedHolding, b: GroupedHolding) => {
+    let va: string | number, vb: string | number;
+    switch (col) {
+      case "name": va = a.name.toLowerCase(); vb = b.name.toLowerCase(); break;
+      case "class": va = ASSET_CLASS_LABEL[a.assetClass]; vb = ASSET_CLASS_LABEL[b.assetClass]; break;
+      case "invested": va = a.gain?.invested ?? 0; vb = b.gain?.invested ?? 0; break;
+      case "gain": va = a.gain?.gain ?? 0; vb = b.gain?.gain ?? 0; break;
+      case "gainPct": va = a.gain?.gainPct ?? -Infinity; vb = b.gain?.gainPct ?? -Infinity; break;
+      case "held": return 0; // a clubbed row spans accounts/dates — no single held-for
+      case "value": default: va = a.value; vb = b.value; break;
+    }
+    if (typeof va === "string") return sgn * va.localeCompare(vb as string);
+    return sgn * (va - (vb as number));
+  };
+}
+
+// One instrument-clubbed P&L row (same columns as HoldingRow; held-for is blank since it spans
+// accounts/buy-dates). Value/P&L are summed over the real-basis legs.
+function ClubbedRow({ g }: { g: GroupedHolding }) {
+  return (
+    <tr style={{ borderTop: "1px solid var(--line-2)" }}>
+      <td>
+        <span style={{ fontWeight: 600 }}>{g.name}</span>
+        {g.legs > 1 && <span className="badge badge-gray" style={{ marginLeft: "0.35rem", fontSize: "0.66rem" }} title={g.accounts.join(", ")}>{g.legs} accounts</span>}
+      </td>
+      <td><span className="badge badge-gray">{ASSET_CLASS_LABEL[g.assetClass]}</span></td>
+      <td className="num muted" style={{ fontSize: "0.84rem" }}>—</td>
+      <td className="num">{g.gain ? fmtMoney(g.gain.invested) : "—"}</td>
+      <td className="num" style={{ fontWeight: 600 }}>{fmtMoney(g.value)}</td>
+      <td className="num" style={{ fontWeight: 600, color: g.gain ? signColor(g.gain.gain) : undefined }}>{g.gain ? signed(g.gain.gain) : "—"}</td>
+      <td className="num" style={{ color: g.gain ? signColor(g.gain.gain) : undefined }}>{g.gain?.gainPct != null ? signedPct(g.gain.gainPct) : "—"}</td>
+    </tr>
+  );
+}
+
 type SortKey = "gainers" | "losers" | "largest" | "by_account";
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "gainers", label: "Top gainers" },
@@ -179,6 +218,22 @@ export function Performance() {
       })
       .sort((x, y) => y.value - x.value);
   }, [sort, sorted]);
+
+  // Instrument-clubbed view for the gainers/losers/largest sorts: the same instrument held in
+  // several accounts becomes one row (value + P&L summed). "By account" stays per-account.
+  const clubbedSorted = useMemo(() => {
+    const list = groupHoldings(rows.map((r) => r.h), view.accounts, usdInr);
+    if (sort === "largest") list.sort((a, b) => b.value - a.value);
+    else list.sort((a, b) => {
+      const pa = a.gain?.gainPct ?? null, pb = b.gain?.gainPct ?? null;
+      if (pa == null && pb == null) return b.value - a.value;
+      if (pa == null) return 1;
+      if (pb == null) return -1;
+      return sort === "gainers" ? pb - pa : pa - pb;
+    });
+    if (colSort) list.sort(compareClubbed(colSort.col, colSort.dir));
+    return list;
+  }, [rows, view.accounts, usdInr, sort, colSort]);
 
   const totals = useMemo(() => {
     let invested = 0, gain = 0, up = 0, down = 0;
@@ -287,7 +342,7 @@ export function Performance() {
                     {grp.rows.map((r) => <HoldingRow key={r.h.id} row={r} grouped />)}
                   </Fragment>
                 ))
-                : sorted.map((r) => <HoldingRow key={r.h.id} row={r} />)}
+                : clubbedSorted.map((g) => <ClubbedRow key={g.key} g={g} />)}
             </tbody>
           </table>
         </div>

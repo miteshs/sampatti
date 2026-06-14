@@ -6,6 +6,7 @@ import { holdingBase, pct } from "../domain/format";
 import { fmtMoney } from "../regions/profile";
 import { ASSET_CLASS_LABEL } from "../domain/classify";
 import { bucketSegments } from "../domain/buckets";
+import { groupHoldings } from "../domain/aggregate";
 import { concentrationVerdict, equityVerdict, liquidityVerdict, type Verdict } from "../domain/verdicts";
 import { portfolioHealth } from "../domain/health";
 import { Goals } from "./Goals";
@@ -127,6 +128,21 @@ export function Overview() {
   const top10Value = brief.concentration.topHoldings.reduce((s, h) => s + h.value, 0);
   const top10Pct = pct(top10Value, brief.totalAssets);
   const top10Count = brief.concentration.topHoldings.length;
+
+  // Top-holdings table: club the same instrument across accounts (default) or list per-account.
+  const [byInstrument, setByInstrument] = useState(true);
+  const clubbed = useMemo(() => {
+    const assetHoldings = view.holdings.filter((h) => {
+      const t = acctById.get(h.accountId)?.accountType;
+      return t !== "liability" && t !== "income";
+    });
+    return groupHoldings(assetHoldings, view.accounts, usdInr);
+  }, [view.holdings, view.accounts, acctById, usdInr]);
+  const topRows = byInstrument
+    ? clubbed.slice(0, 10).map((g) => ({ name: g.name, cls: ASSET_CLASS_LABEL[g.assetClass], acct: g.accounts.join(" · "), value: g.value, pctOfAssets: pct(g.value, brief.totalAssets), legs: g.legs }))
+    : brief.concentration.topHoldings.map((h) => ({ name: h.name, cls: h.assetClass, acct: h.account, value: h.value, pctOfAssets: h.pctOfAssets, legs: 1 }));
+  const topRowsValue = topRows.reduce((s, r) => s + r.value, 0);
+  const topRowsPct = pct(topRowsValue, brief.totalAssets);
   // One-glance health read, built from the same three verdicts shown in the cards below.
   const health = portfolioHealth({ equityPct, top10Pct, liquidPct: brief.liquidPct });
   // Investable corpus for the (optional) retirement projection: net worth excluding property,
@@ -307,26 +323,35 @@ export function Overview() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.5rem" }}>
           <div>
             <div className="eyebrow">Concentration</div>
-            <h2 style={{ fontSize: "1.3rem", marginTop: "0.15rem" }}>Your {top10Count} biggest holding{top10Count === 1 ? "" : "s"}</h2>
+            <h2 style={{ fontSize: "1.3rem", marginTop: "0.15rem" }}>Your {topRows.length} biggest holding{topRows.length === 1 ? "" : "s"}</h2>
           </div>
-          <span className="muted" style={{ fontSize: "0.8rem" }}>{top10Pct}% of everything you own</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "0.25rem" }}>
+              <button className={`chip ${byInstrument ? "active" : ""}`} style={{ padding: "0.12rem 0.55rem", fontSize: "0.74rem" }} onClick={() => setByInstrument(true)}>By instrument</button>
+              <button className={`chip ${!byInstrument ? "active" : ""}`} style={{ padding: "0.12rem 0.55rem", fontSize: "0.74rem" }} onClick={() => setByInstrument(false)}>By account</button>
+            </div>
+            <span className="muted" style={{ fontSize: "0.8rem" }}>{topRowsPct}% of everything you own</span>
+          </div>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead>
               <tr>
                 <th style={{ width: "1.5rem" }}>#</th>
-                <th>Holding</th><th>Type</th><th>Account</th>
+                <th>Holding</th><th>Type</th><th>{byInstrument ? "Account(s)" : "Account"}</th>
                 <th className="num">Value</th><th className="num">% assets</th>
               </tr>
             </thead>
             <tbody>
-              {brief.concentration.topHoldings.map((h, i) => (
+              {topRows.map((h, i) => (
                 <tr key={i} style={{ borderTop: "1px solid var(--line-2)" }}>
                   <td className="muted num">{i + 1}</td>
                   <td style={{ fontWeight: 600 }}>{h.name}</td>
-                  <td><span className="badge badge-gray">{h.assetClass}</span></td>
-                  <td className="muted" style={{ fontSize: "0.84rem" }}>{h.account}</td>
+                  <td><span className="badge badge-gray">{h.cls}</span></td>
+                  <td className="muted" style={{ fontSize: "0.84rem" }}>
+                    {h.acct}
+                    {h.legs > 1 && <span className="badge badge-gray" style={{ marginLeft: "0.35rem", fontSize: "0.66rem" }}>{h.legs} accounts</span>}
+                  </td>
                   <td className="num" style={{ fontWeight: 600 }}>{fmtMoney(h.value)}</td>
                   <td className="num muted">{h.pctOfAssets}%</td>
                 </tr>
