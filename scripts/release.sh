@@ -53,17 +53,23 @@ BUILT_FROM=$(git rev-parse --short HEAD)
 # Thorough clean: a stale bundle must never be mistaken for (or shipped as) this cut.
 rm -rf src-tauri/target/release/bundle dist
 
-# Signing + notarization are fully handled by Tauri when the env vars exist — source them
-# from the gitignored .env.signing (see .env.signing.example). Absent → unsigned, as before.
+# Signing is done by Tauri during the build (it reads APPLE_SIGNING_IDENTITY). Notarization is
+# done HERE with notarytool after the build, NOT by Tauri's built-in notarizer — that wrapper has
+# thrown spurious HTTP 401s even with creds that authenticate fine via notarytool directly. So we
+# build SIGN-ONLY (keep APPLE_SIGNING_IDENTITY in the env, remove the APPLE_API_* / APPLE_ID vars
+# so Tauri skips notarization), then `notarytool submit --wait` + staple the dmg below.
+# Source creds from the gitignored .env.signing (see .env.signing.example). Absent → unsigned.
 SIGNED=0
 if [ -f .env.signing ]; then
   set -a; . ./.env.signing; set +a
   if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
     SIGNED=1
-    echo "▶ Signing as: $APPLE_SIGNING_IDENTITY (notarization via Tauri)"
+    NOTARY_KEY="${APPLE_API_KEY_PATH:-}"; NOTARY_KEY_ID="${APPLE_API_KEY:-}"; NOTARY_ISSUER="${APPLE_API_ISSUER:-}"
+    unset APPLE_API_KEY_PATH APPLE_API_KEY APPLE_API_ISSUER APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+    echo "▶ Signing as: $APPLE_SIGNING_IDENTITY (sign-only build; notarize via notarytool)"
   fi
 fi
-[ "$SIGNED" = "1" ] || echo "⚠ UNSIGNED build (no .env.signing) — the cask postflight strips quarantine instead."
+[ "$SIGNED" = "1" ] || echo "⚠ UNSIGNED build (no .env.signing) — first launch needs right-click → Open."
 
 echo "▶ Building PUBLIC Sampatti ${VERSION} (no baked secrets)…"
 # Strip the build machine's identity: Rust dependencies embed absolute panic/debug paths
@@ -81,14 +87,20 @@ if strings "$APP/Contents/MacOS/sampatti" | grep -q "/Users/"; then
   exit 1
 fi
 
-# When signed, prove it before publishing: Gatekeeper assessment + stapled notarization
-# ticket. Fail the release rather than ship a half-signed artifact.
+# Notarize the dmg directly, then prove it before publishing: notary Accepted, stapled ticket,
+# and Gatekeeper accepts the app. Fail the release rather than ship a half-notarized artifact.
 if [ "$SIGNED" = "1" ]; then
+  [ -n "${NOTARY_KEY:-}" ] && [ -n "${NOTARY_KEY_ID:-}" ] && [ -n "${NOTARY_ISSUER:-}" ] \
+    || { echo "✗ notary creds (APPLE_API_*) missing from .env.signing — can't notarize."; exit 1; }
+  echo "▶ Notarizing $DMG via notarytool (--wait; minutes once the account is warm)…"
+  NLOG=$(mktemp)
+  xcrun notarytool submit "$DMG" --key "$NOTARY_KEY" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER" --wait | tee "$NLOG"
+  grep -q "status: Accepted" "$NLOG" || { echo "✗ notarization not Accepted — not releasing."; rm -f "$NLOG"; exit 1; }
+  rm -f "$NLOG"
+  xcrun stapler staple "$DMG" >/dev/null || { echo "✗ stapling the dmg failed — not releasing."; exit 1; }
+  xcrun stapler validate "$DMG" >/dev/null 2>&1 || { echo "✗ no stapled ticket on the dmg — not releasing."; exit 1; }
   spctl -a -vv "$APP" 2>&1 | grep -q "accepted" || { echo "✗ spctl did not accept the app — not releasing."; exit 1; }
-  xcrun stapler validate "$DMG" >/dev/null 2>&1 || xcrun stapler validate "$APP" >/dev/null 2>&1 \
-    || { echo "✗ no stapled notarization ticket — not releasing."; exit 1; }
   echo "✓ Signed, notarized & stapled (spctl accepted)"
-  echo "  → once this release ships, DELETE the postflight block from the cask."
 fi
 
 # Artifact sanity: the bundled app must carry exactly the version being released.
