@@ -71,53 +71,33 @@ function renderByoSettings() {
   return render(<Settings />);
 }
 
-describe("Settings names the right key store (relay/own-key under developer mode)", () => {
-  it("Windows desktop: Credential Manager, no Keychain talk", async () => {
-    desktopOn(UA.windows);
+function renderRelaySettings(relayUrl: string) {
+  const p = emptyPortfolio();
+  p.settings.claudeMode = "relay";
+  p.settings.developerMode = true;
+  p.settings.relayUrl = relayUrl;
+  useStore.setState({ portfolio: p, loaded: true });
+  return render(<Settings />);
+}
+
+describe("AI connection controls (relay / own-key under developer mode)", () => {
+  it("own-key mode exposes the API key field", async () => {
     renderByoSettings();
-    expect(await screen.findByText(/Stored in the Windows Credential Manager/)).toBeTruthy();
-    expect(screen.queryByText(/macOS Keychain/)).toBeNull();
+    expect(await screen.findByText("API Key")).toBeTruthy();
   });
 
-  it("macOS desktop: Keychain", async () => {
-    desktopOn(UA.macos);
-    renderByoSettings();
-    expect(await screen.findByText(/Stored in the macOS Keychain/)).toBeTruthy();
-    expect(screen.queryByText(/Credential Manager/)).toBeNull();
-  });
-
-  it("web preview: tab-only key, no OS store named", async () => {
-    renderByoSettings();
-    expect(await screen.findByText(/kept in this tab's memory only/)).toBeTruthy();
-    expect(screen.queryByText(/Stored in the macOS Keychain/)).toBeNull();
-  });
-});
-
-describe("custom-relay warning (relay controls under developer mode)", () => {
-  function renderRelaySettings(relayUrl: string) {
-    const p = emptyPortfolio();
-    p.settings.claudeMode = "relay";
-    p.settings.developerMode = true;
-    p.settings.relayUrl = relayUrl;
-    useStore.setState({ portfolio: p, loaded: true });
-    return render(<Settings />);
-  }
-
-  it("no warning on the official default relay", () => {
+  it("relay mode exposes the relay URL and access-code fields", async () => {
     renderRelaySettings(emptyPortfolio().settings.relayUrl);
-    expect(screen.queryByText(/Custom relay/)).toBeNull();
+    expect(await screen.findByText("Relay URL")).toBeTruthy();
+    expect(screen.getByText("Relay access code")).toBeTruthy();
   });
 
-  it("warns when the relay URL is changed to anything else", () => {
-    renderRelaySettings("https://totally-legit-relay.example.workers.dev");
-    expect(screen.getByText(/Custom relay/)).toBeTruthy();
-    expect(screen.getByText(/Only use a relay you run or fully trust/)).toBeTruthy();
-  });
-
-  it("no warning when the URL is empty (the not-configured note shows instead)", () => {
-    renderRelaySettings("");
-    expect(screen.queryByText(/Custom relay/)).toBeNull();
-    expect(screen.getByText(/No relay is set yet/)).toBeTruthy();
+  it("without developer mode, only the simple access-code field shows", () => {
+    useStore.setState({ portfolio: emptyPortfolio(), loaded: true });
+    render(<Settings />);
+    expect(screen.getByText("Access code")).toBeTruthy();
+    expect(screen.queryByText("Relay URL")).toBeNull();
+    expect(screen.queryByText("API Key")).toBeNull();
   });
 });
 

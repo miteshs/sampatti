@@ -13,7 +13,6 @@ import { flowsInWindow, incomeOverWindow } from "../domain/flows";
 import { fmtMoney } from "../regions/profile";
 import { TrendChart } from "./TrendChart";
 
-const GREEN = "var(--up-ink)", RED = "var(--down-ink)"; // theme tokens (light/dark, text-grade ≥4.5:1)
 const signedInr = (n: number) => `${n >= 0 ? "+" : "−"}${fmtMoney(Math.abs(n))}`;
 
 export function NetWorthTrend() {
@@ -86,39 +85,32 @@ export function NetWorthTrend() {
           purchase costs, account by account.
         </p>
       ) : (
-        <div style={{ marginTop: "0.8rem" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "0.8rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 750, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{fmtMoney(points[points.length - 1].netWorth)}</div>
-            <div style={{ fontWeight: 700, color: change.abs >= 0 ? GREEN : RED }}>
+        <div style={{ marginTop: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "0.8rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+            <div className="hero-num" style={{ fontSize: "1.8rem", color: "var(--ink)" }}>{fmtMoney(points[points.length - 1].netWorth)}</div>
+            <div style={{ fontWeight: 700, color: change.abs >= 0 ? "var(--up-ink)" : "var(--down-ink)", fontSize: "1rem" }}>
               {change.abs >= 0 ? "▲" : "▼"} {fmtMoney(Math.abs(change.abs))}{change.pct != null ? ` · ${change.pct >= 0 ? "+" : ""}${change.pct}%` : ""}
-              <span className="muted" style={{ fontWeight: 400, fontSize: "0.8rem" }}> over {zoom ? "the selected range" : period}</span>
+              <span className="muted" style={{ fontWeight: 500, fontSize: "0.82rem", textTransform: "lowercase", opacity: 0.8 }}> over {zoom ? "selected range" : period}</span>
             </div>
           </div>
           <TrendChart points={points} onBrush={(from, to) => setZoom({ from, to })} onResetZoom={() => setZoom(null)} />
           {anyFlows && split && (
-            <div style={{ marginTop: "0.6rem", padding: "0.55rem 0.8rem", background: "var(--surface-2)", borderRadius: "10px", fontSize: "0.84rem", display: "flex", gap: "1.1rem", flexWrap: "wrap", alignItems: "baseline" }}>
+            <div className="card-pressed" style={{ marginTop: "1rem", padding: "0.75rem 1rem", borderRadius: "14px", fontSize: "0.84rem", display: "flex", gap: "1.5rem", flexWrap: "wrap", alignItems: "baseline" }}>
               <span>
-                <span className="muted" style={{ fontSize: "0.72rem" }}>market growth </span>
-                <strong style={{ color: split.growth >= 0 ? GREEN : RED, fontVariantNumeric: "tabular-nums" }}>{signedInr(split.growth)}</strong>
+                <span className="muted eyebrow" style={{ fontSize: "0.68rem", display: "block", marginBottom: "0.15rem" }}>market growth</span>
+                <strong style={{ color: split.growth >= 0 ? "var(--up-ink)" : "var(--down-ink)", fontVariantNumeric: "tabular-nums", fontSize: "0.9rem" }}>{signedInr(split.growth)}</strong>
               </span>
               {split.flow !== 0 && (
                 <span>
-                  <span className="muted" style={{ fontSize: "0.72rem" }}>{split.flow >= 0 ? "money added " : "money withdrawn "}</span>
-                  <strong style={{ fontVariantNumeric: "tabular-nums" }}>{signedInr(split.flow)}</strong>
-                  {split.savingsRate != null && <span className="muted" style={{ fontSize: "0.74rem" }}> · ≈{split.savingsRate}% of your income</span>}
+                  <span className="muted eyebrow" style={{ fontSize: "0.68rem", display: "block", marginBottom: "0.15rem" }}>{split.flow >= 0 ? "money added" : "money withdrawn"}</span>
+                  <strong style={{ fontVariantNumeric: "tabular-nums", fontSize: "0.9rem" }}>{signedInr(split.flow)}</strong>
+                  {split.savingsRate != null && <span className="muted" style={{ fontSize: "0.76rem" }}> · ≈{split.savingsRate}% of income</span>}
                 </span>
               )}
               {split.tracking !== 0 && (
                 <span>
-                  <span className="muted" style={{ fontSize: "0.72rem" }}>tracking changes </span>
-                  <strong style={{ fontVariantNumeric: "tabular-nums" }}>{signedInr(split.tracking)}</strong>
-                  <span className="muted" style={{ fontSize: "0.74rem" }}> (assets you started/stopped tracking — not savings, not growth)</span>
-                </span>
-              )}
-              {split.unclassified !== 0 && (
-                <span>
-                  <span className="muted" style={{ fontSize: "0.72rem" }}>unclassified </span>
-                  <strong style={{ fontVariantNumeric: "tabular-nums" }}>{signedInr(split.unclassified)}</strong>
+                  <span className="muted eyebrow" style={{ fontSize: "0.68rem", display: "block", marginBottom: "0.15rem" }}>tracking changes</span>
+                  <strong style={{ fontVariantNumeric: "tabular-nums", fontSize: "0.9rem" }}>{signedInr(split.tracking)}</strong>
                 </span>
               )}
             </div>

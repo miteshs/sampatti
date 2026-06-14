@@ -49,13 +49,13 @@ export function TrendChart({ points, onBrush, onResetZoom }: {
       >
         <defs>
           <linearGradient id="trendfill-rec" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={stroke} stopOpacity={0.22} />
+            <stop offset="0%" stopColor={stroke} stopOpacity={0.08} />
             <stop offset="100%" stopColor={stroke} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={area} fill="url(#trendfill-rec)" />
-        <path d={line} fill="none" stroke={stroke} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
-        {last && <circle cx={x(last.t)} cy={y(last.netWorth)} r="3.2" fill={stroke} />}
+        <path d={line} fill="none" stroke={stroke} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        {last && <circle cx={x(last.t)} cy={y(last.netWorth)} r="3.5" fill={stroke} stroke="#fff" strokeWidth="2" />}
         {drag && Math.abs(drag.b - drag.a) > 0 && (
           <rect
             x={Math.min(x(drag.a), x(drag.b))} y={PAD}

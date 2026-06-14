@@ -79,6 +79,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
 
   const hasData = portfolio.holdings.length > 0 || portfolio.accounts.length > 0;
   const [showHow, setShowHow] = useState(false); // "How it works" modal (when data already exists)
+  const [confirmDemo, setConfirmDemo] = useState(false);
 
   // The folder picker is a plain file input with the (non-standard) webkitdirectory
   // attribute — supported by the desktop webview and browsers, no extra permissions.
@@ -86,11 +87,10 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
     folderRef.current?.setAttribute("webkitdirectory", "");
   }, []);
 
-  // Loading the demo replaces everything, so guard it when real data is present — this is
-  // how the demo used to get mixed into a real portfolio.
+  // Loading the demo replaces everything, so guard it when real data is present.
   const loadDemo = () => {
-    if (hasData && !window.confirm("Replace your current data with the sample demo portfolio? This clears what's there now.")) return;
-    replaceAll(demoPortfolio(portfolio.settings.country)); // the demo speaks the chosen region's language
+    replaceAll(demoPortfolio(portfolio.settings.country));
+    setConfirmDemo(false);
   };
 
   const clearAll = () => { void wipe(); setDrafts([]); setConfirmClear(false); };
@@ -242,8 +242,18 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
           )}
         </div>
         <h2 style={{ fontSize: "1.3rem", margin: "0.2rem 0 0.9rem" }}>Bring in your portfolio</h2>
-        <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-          {hasData && <button className="btn" onClick={loadDemo}>▶ Load demo portfolio ({currentProfile().region === "US" ? "$2.3M" : "₹14 Cr"})</button>}
+        <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
+          {hasData && (
+            confirmDemo ? (
+              <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center", background: "var(--surface-2)", padding: "0.4rem 0.75rem", borderRadius: "10px", border: "1px solid var(--line)" }}>
+                <span className="muted" style={{ fontSize: "0.8rem" }}>Overwrite existing data?</span>
+                <button className="btn btn-danger" style={{ padding: "0.2rem 0.6rem", fontSize: "0.75rem" }} onClick={loadDemo}>Yes, replace</button>
+                <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => setConfirmDemo(false)}>Cancel</button>
+              </span>
+            ) : (
+              <button className="btn" onClick={() => setConfirmDemo(true)}>▶ Load demo portfolio ({currentProfile().region === "US" ? "$2.3M" : "₹14 Cr"})</button>
+            )
+          )}
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import files (CSV / Excel / PDF / image)</button>
           <button className="btn" onClick={() => folderRef.current?.click()}>📁 Import a whole folder</button>
           <button className="btn btn-ghost" onClick={downloadTemplate}>Download CSV template</button>
@@ -464,6 +474,14 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
 // so this screen makes exactly ONE ask — try the sample, or bring your own files — and
 // keeps the step-by-step under a collapsed "How it works".
 function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => void }) {
+  const [confirmDemo, setConfirmDemo] = useState(false);
+  const hasData = useStore((s) => s.portfolio.holdings.length > 0 || s.portfolio.accounts.length > 0);
+
+  const onDemoClick = () => {
+    if (hasData) setConfirmDemo(true);
+    else onDemo();
+  };
+
   // Subscribing to country makes the copy below swap live when a chip is clicked.
   const country = useStore((s) => s.portfolio.settings.country);
   const updateSettings = useStore((s) => s.updateSettings);
@@ -484,10 +502,18 @@ function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => voi
           : "Stocks, mutual funds, PF, FDs, property, gold — added up, explained in plain words, and reviewed by AI when you ask."}{" "}
         Everything stays on this computer; nothing is uploaded.
       </p>
-      <div style={{ display: "flex", gap: "0.7rem", justifyContent: "center", flexWrap: "wrap" }}>
-        <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onDemo}>
-          ▶ Load demo portfolio — see it working first
-        </button>
+      <div style={{ display: "flex", gap: "0.7rem", justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
+        {confirmDemo ? (
+          <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center", background: "var(--surface-2)", padding: "0.6rem 1rem", borderRadius: "12px", border: "1px solid var(--line)" }}>
+            <span className="muted" style={{ fontSize: "0.85rem" }}>Overwrite existing data?</span>
+            <button className="btn btn-danger" onClick={onDemo}>Yes, replace</button>
+            <button className="btn btn-ghost" onClick={() => setConfirmDemo(false)}>Cancel</button>
+          </span>
+        ) : (
+          <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onDemoClick}>
+            ▶ Load demo portfolio — see it working first
+          </button>
+        )}
         <button className="btn" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onImport}>
           📁 Add my own statements
         </button>
@@ -856,33 +882,36 @@ function ManualAccount({ onAdd, usdInr }: {
   return (
     <div className="card">
       <div className="eyebrow">Manual entry</div>
-      <h2 style={{ fontSize: "1.1rem", margin: "0.2rem 0 0.9rem" }}>Add an account by hand</h2>
-      <p className="muted" style={{ fontSize: "0.78rem", marginTop: "-0.6rem", marginBottom: "0.9rem" }}>
-        Use this for real estate, cash, a PMS, an insurance policy, or anything without a clean export.
+      <h2 style={{ fontSize: "1.15rem", margin: "0.2rem 0 0.8rem", fontFamily: "var(--font-display)" }}>Add an account by hand</h2>
+      <p className="muted" style={{ fontSize: "0.8rem", marginTop: "-0.5rem", marginBottom: "1rem" }}>
+        Real estate, cash, or anything without a clean export.
       </p>
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(150px, 100%), 1fr))" }}>
-        <div><label>Account name</label><input value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} placeholder="e.g. Mumbai flat" /></div>
-        <div><label>Institution</label><input value={a.institution} onChange={(e) => setA({ ...a, institution: e.target.value })} /></div>
-        <div><label>Type</label>
-          <select value={a.accountType} onChange={(e) => setA({ ...a, accountType: e.target.value as AccountType })}>
-            {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{ACCOUNT_TYPE_LABEL[t]}</option>)}
-          </select>
+
+      <div className="list-grouped" style={{ border: "1px solid var(--line-2)", marginBottom: "1rem" }}>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 0 }}>
+          <div className="form-col" style={{ padding: "0.45rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><label style={{ marginBottom: "0.15rem" }}>Account name</label><input value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} placeholder="e.g. Mumbai flat" style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
+          <div className="form-col" style={{ padding: "0.45rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><label style={{ marginBottom: "0.15rem" }}>Institution</label><input value={a.institution} onChange={(e) => setA({ ...a, institution: e.target.value })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
+          <div className="form-col" style={{ padding: "0.45rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><label style={{ marginBottom: "0.15rem" }}>Type</label>
+            <select value={a.accountType} onChange={(e) => setA({ ...a, accountType: e.target.value as AccountType })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }}>
+              {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{ACCOUNT_TYPE_LABEL[t]}</option>)}
+            </select>
+          </div>
+          <div className="form-col" style={{ padding: "0.45rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><label style={{ marginBottom: "0.15rem" }}>Tax</label>
+            <select value={a.taxTreatment} onChange={(e) => setA({ ...a, taxTreatment: e.target.value as TaxTreatment })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }}>
+              {TAX_TYPES.filter((t) => currentProfile().taxTreatments.includes(t) || t === a.taxTreatment).map((t) => <option key={t} value={t}>{TAX_LABEL[t]}</option>)}
+            </select>
+          </div>
+          <div className="form-col" style={{ padding: "0.45rem 0.8rem", borderRight: "1px solid var(--line-2)" }}><label style={{ marginBottom: "0.15rem" }}>Region</label>
+            <select value={a.region} onChange={(e) => setA({ ...a, region: e.target.value as Region })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }}>
+              {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div className="form-col" style={{ padding: "0.45rem 0.8rem", borderRight: "1px solid var(--line-2)" }}><label style={{ marginBottom: "0.15rem" }}>Currency</label><input value={a.currency} onChange={(e) => setA({ ...a, currency: e.target.value.toUpperCase() })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
+          <div className="form-col" style={{ padding: "0.45rem 0.8rem" }}><label style={{ marginBottom: "0.15rem" }}>Date</label><input type="date" value={a.asOf} onChange={(e) => setA({ ...a, asOf: e.target.value })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
         </div>
-        <div><label>Tax</label>
-          <select value={a.taxTreatment} onChange={(e) => setA({ ...a, taxTreatment: e.target.value as TaxTreatment })}>
-            {TAX_TYPES.filter((t) => currentProfile().taxTreatments.includes(t) || t === a.taxTreatment).map((t) => <option key={t} value={t}>{TAX_LABEL[t]}</option>)}
-          </select>
-        </div>
-        <div><label>Region</label>
-          <select value={a.region} onChange={(e) => setA({ ...a, region: e.target.value as Region })}>
-            {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
-        <div><label>Currency</label><input value={a.currency} onChange={(e) => setA({ ...a, currency: e.target.value.toUpperCase() })} /></div>
-        <div><label>Statement date</label><input type="date" value={a.asOf} onChange={(e) => setA({ ...a, asOf: e.target.value })} /></div>
       </div>
 
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.9rem", alignItems: "flex-end", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", alignItems: "flex-end", flexWrap: "wrap" }}>
         <div style={{ flex: "2 1 180px" }}><label>Holding / item name</label><input value={hName} onChange={(e) => setHName(e.target.value)} placeholder="e.g. Flat market value" /></div>
         <div style={{ flex: "1 1 140px" }}><label>Class</label>
           <select value={hClass} onChange={(e) => setHClass(e.target.value as AssetClass)}>
@@ -891,18 +920,18 @@ function ManualAccount({ onAdd, usdInr }: {
         </div>
         {goldWeighed ? (
           <>
-            <div style={{ flex: "1 1 100px" }}><label>Weight (grams)</label><input value={hGrams} onChange={(e) => setHGrams(e.target.value)} placeholder="50" inputMode="decimal" /></div>
-            <div style={{ flex: "1 1 130px" }}><label>₹/gram (24K, live)</label>
-              <input value={goldPrice ?? ""} onChange={(e) => setGoldPrice(Number(e.target.value) || null)} placeholder={goldBusy ? "fetching…" : "price"} inputMode="decimal" />
+            <div style={{ flex: "1 1 100px" }}><label>Weight (g)</label><input value={hGrams} onChange={(e) => setHGrams(e.target.value)} placeholder="50" inputMode="decimal" /></div>
+            <div style={{ flex: "1 1 120px" }}><label>₹/gram</label>
+              <input value={goldPrice ?? ""} onChange={(e) => setGoldPrice(Number(e.target.value) || null)} placeholder={goldBusy ? "..." : "price"} inputMode="decimal" />
             </div>
           </>
         ) : (
           <>
-            <div style={{ flex: "1 1 130px" }}><label>Value ({a.currency})</label><input value={hValue} onChange={(e) => setHValue(e.target.value)} placeholder="2500000" /></div>
-            <div style={{ flex: "1 1 130px" }}><label>Invested (optional)</label><input value={hBasis} onChange={(e) => setHBasis(e.target.value)} placeholder="purchase cost" inputMode="decimal" /></div>
+            <div style={{ flex: "1 1 120px" }}><label>Value ({a.currency})</label><input value={hValue} onChange={(e) => setHValue(e.target.value)} placeholder="2500000" /></div>
+            <div style={{ flex: "1 1 120px" }}><label>Invested</label><input value={hBasis} onChange={(e) => setHBasis(e.target.value)} placeholder="optional" inputMode="decimal" /></div>
           </>
         )}
-        <button className="btn" onClick={addH}>+ Add item</button>
+        <button className="btn" style={{ padding: "0.5rem 0.8rem" }} onClick={addH}>+ Add item</button>
       </div>
       {goldWeighed && (
         <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>

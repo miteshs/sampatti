@@ -174,13 +174,13 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
                 </div>
               </>
             ) : (
-              <div style={{ maxWidth: 460, margin: "0 auto", background: "var(--primary-soft)", border: "1px solid #e0e0ff", borderRadius: 12, padding: "1rem 1.1rem" }}>
+              <div style={{ maxWidth: 460, margin: "0 auto", background: "var(--primary-soft)", border: "1px solid color-mix(in srgb, var(--primary) 22%, transparent)", borderRadius: 12, padding: "1rem 1.1rem" }}>
                 <div style={{ fontWeight: 700, fontSize: "0.92rem", marginBottom: "0.3rem" }}>One quick step to enable AI analysis</div>
                 <p className="muted" style={{ fontSize: "0.82rem", margin: "0 0 0.8rem" }}>
                   Connect Claude on the Settings tab (⚙) — add <strong>your own Anthropic key</strong> (most
                   private; it stays on this device) or a <strong>relay URL</strong>. Nothing runs until you do.
                 </p>
-                <button className="btn btn-primary" onClick={() => onConfigure?.()}>Open Privacy &amp; connect →</button>
+                <button className="btn btn-primary" onClick={() => onConfigure?.()}>Open Settings to connect →</button>
               </div>
             )}
           </div>
@@ -188,7 +188,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
           <>
             {turns.map((t, i) => (
               <div key={i} className="card" style={t.role === "user" ? {
-                background: "var(--primary-soft)", border: "1px solid #e0e0ff", marginLeft: "2rem",
+                background: "var(--primary-soft)", border: "1px solid color-mix(in srgb, var(--primary) 22%, transparent)", marginLeft: "2rem",
               } : {}}>
                 {t.role === "user"
                   ? <div style={{ fontWeight: 600, color: "var(--primary)" }}>You: {t.text}</div>

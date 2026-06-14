@@ -230,7 +230,7 @@ export function emptyPortfolio(): Portfolio {
       relayUrl: DEFAULT_RELAY_URL, // hosted relay; override or switch to your own key in Settings
       usdInr: 95, // fallback; refresh to a live rate in Settings
       byoKeySet: false,
-      analysisModel: "claude-sonnet-4-6", // balanced default; pick Opus/Haiku in Settings
+      analysisModel: "claude-sonnet-4-6", // Standard (Sonnet) default; pick Advanced (Opus) in Settings
       analysisContext: "", // client's own goals/context; tailors the AI review (see Settings type)
       theme: "light", // opt-in dark mode; light is the default everywhere
       insights: {}, // optional insight features are all off until the user opts in

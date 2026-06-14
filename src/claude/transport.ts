@@ -12,13 +12,12 @@ import { useStore } from "../storage/store";
 export const EXTRACT_MODEL_CHEAP = "claude-haiku-4-5";
 export const EXTRACT_MODEL_STRONG = "claude-sonnet-4-6";
 
-// User-selectable analysis model (cost vs. quality). Approx cost is for one analysis;
-// output tokens dominate, so the model choice is the real cost lever. Labels speak to a
-// non-technical user; the hint carries the model name for those who care.
+// The two analysis depths the user can pick (cost vs. quality). Single source of truth: the
+// Settings picker renders this, and contracts.test asserts the relay accepts every id here.
+// Output tokens dominate cost, so the model choice is the real cost lever; "Standard" is default.
 export const ANALYSIS_MODELS = [
-  { id: "claude-opus-4-8", label: "Most thorough", hint: "Opus · deepest reasoning, strongest on tax nuance" },
-  { id: "claude-sonnet-4-6", label: "Balanced — recommended", hint: "Sonnet · great quality, quicker to respond" },
-  { id: "claude-haiku-4-5", label: "Quickest", hint: "Haiku · lightest and fastest" },
+  { id: "claude-sonnet-4-6", label: "Standard analysis", hint: "Balanced speed and depth — recommended" },
+  { id: "claude-opus-4-8", label: "Advanced analysis", hint: "Maximum reasoning for complex tax and wealth nuance" },
 ] as const;
 
 export type Block =

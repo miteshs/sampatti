@@ -148,19 +148,6 @@ export function resolverFromData(data: ResolverData, holdings: Holding[]): Resol
   return { resolve, tracked: holdings.filter((h) => resolve(h)).length, total: holdings.length, data };
 }
 
-// Whether a persisted cache still covers a portfolio: every holding that COULD be priced has a
-// series in the cache (so adding a new tracked holding invalidates it, but editing values/
-// excluding accounts does not).
-export function coversHoldings(data: ResolverData, holdings: Holding[]): boolean {
-  for (const h of holdings) {
-    const sig = holdingSig(h);
-    if (data.keyBySig[sig]) continue; // already have a series for it
-    // No series cached for this holding — does it even have one to fetch?
-    if (isMfLike(h) || yahooSymbolFor(h)) return false; // a priceable holding is missing
-  }
-  return true;
-}
-
 // Fetch every price series the portfolio needs (deduped) and return a resolver. Best-effort:
 // any single fetch failing just leaves that holding flat. Call once for ALL holdings so the
 // chart can recompute on account include/exclude without re-fetching.

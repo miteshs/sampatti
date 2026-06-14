@@ -1,0 +1,87 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sampatti dock icon: a bold Devanagari brand mark on a private ledger tile.
+       The small gold/emerald allocation marks keep the portfolio/growth cue without
+       turning the icon into a generic finance chart. -->
+  <defs>
+    <linearGradient id="paper" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbfaf6"/>
+      <stop offset="1" stop-color="#e9dfcf"/>
+    </linearGradient>
+    <radialGradient id="paperGlow" cx="0.8" cy="0.03" r="0.78">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.62"/>
+      <stop offset="0.48" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="goldWash" cx="0.2" cy="0.92" r="0.66">
+      <stop offset="0" stop-color="#d9a514" stop-opacity="0.2"/>
+      <stop offset="0.72" stop-color="#d9a514" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tile" x1="268" y1="204" x2="756" y2="744" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6f67ff"/>
+      <stop offset="0.48" stop-color="#4845e5"/>
+      <stop offset="1" stop-color="#302fb8"/>
+    </linearGradient>
+    <linearGradient id="tileEdge" x1="512" y1="164" x2="512" y2="796" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="growth" x1="328" y1="704" x2="728" y2="554" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d98324"/>
+      <stop offset="0.58" stop-color="#d9a514"/>
+      <stop offset="1" stop-color="#0e9f6e"/>
+    </linearGradient>
+    <filter id="panelShadow" x="20" y="0" width="984" height="980" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="30" flood-color="#23211b" flood-opacity="0.18"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#23211b" flood-opacity="0.1"/>
+    </filter>
+    <filter id="glyphShadow" x="140" y="110" width="744" height="624" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#17144f" flood-opacity="0.22"/>
+    </filter>
+    <clipPath id="iconClip">
+      <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224"/>
+    </clipPath>
+    <clipPath id="tileClip">
+      <rect x="226" y="226" width="572" height="572" rx="148" ry="148"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#iconClip)">
+    <rect width="1024" height="1024" fill="url(#paper)"/>
+    <rect width="1024" height="1024" fill="url(#paperGlow)"/>
+    <rect width="1024" height="1024" fill="url(#goldWash)"/>
+
+    <ellipse cx="512" cy="866" rx="330" ry="62" fill="#23211b" fill-opacity="0.11"/>
+
+    <g transform="translate(512 512) scale(1.35) translate(-512 -512)">
+      <g filter="url(#panelShadow)">
+        <rect x="226" y="226" width="572" height="572" rx="148" fill="url(#tile)"/>
+        <rect x="226" y="226" width="572" height="572" rx="148" fill="url(#tileEdge)"/>
+        <rect x="241" y="241" width="542" height="542" rx="134" stroke="#ffffff" stroke-opacity="0.2" stroke-width="5"/>
+      </g>
+
+      <g clip-path="url(#tileClip)">
+        <circle cx="302" cy="230" r="162" fill="#ffffff" fill-opacity="0.08"/>
+        <circle cx="746" cy="760" r="172" fill="#161368" fill-opacity="0.2"/>
+        <path d="M 274 664 C 380 642 450 608 516 616 C 608 626 674 572 760 510"
+              stroke="#ffffff" stroke-opacity="0.13" stroke-width="118" stroke-linecap="round"/>
+        <path d="M 298 698 C 408 674 458 634 530 644 C 614 656 680 596 740 548"
+              stroke="url(#growth)" stroke-width="34" stroke-linecap="round"/>
+        <circle cx="332" cy="702" r="34" fill="#d98324"/>
+        <circle cx="528" cy="644" r="34" fill="#d9a514"/>
+        <circle cx="730" cy="552" r="34" fill="#0e9f6e"/>
+      </g>
+
+      <g filter="url(#glyphShadow)">
+        <text x="512" y="512"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-family="'Noto Sans Devanagari', 'Kohinoor Devanagari', 'Devanagari Sangam MN', 'Arial Unicode MS', sans-serif"
+              font-size="292"
+              font-weight="800"
+              fill="#fffdf6">सं</text>
+      </g>
+
+      <path d="M 294 752 C 388 784 480 796 574 782 C 650 771 708 744 760 710"
+            stroke="#fffdf6" stroke-opacity="0.24" stroke-width="12" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

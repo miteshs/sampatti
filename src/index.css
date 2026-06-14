@@ -29,14 +29,14 @@
   --down: #d6455d;
   --up-ink: #137a52; /* TEXT-grade variants: ≥4.5:1 on white/paper */
   --down-ink: #c22f4c;
-  --shadow: 0 1px 2px rgba(26, 31, 23, 0.05);
-  --shadow-lg: 0 2px 6px rgba(26, 31, 23, 0.05), 0 16px 40px rgba(26, 31, 23, 0.09);
-  --radius: 14px;
+  --shadow: 0 1px 2px rgba(26, 31, 23, 0.05), 0 0 0 1px rgba(26, 31, 23, 0.03);
+  --shadow-lg: 0 4px 12px rgba(26, 31, 23, 0.04), 0 12px 32px rgba(26, 31, 23, 0.08), 0 0 0 1px rgba(26, 31, 23, 0.03);
+  --radius: 16px;
   --radius-sm: 10px;
   /* Horizontal page gutter — one token so the full-bleed topbar/tabbar negative-margin math
      tracks the .app padding at every breakpoint. Shrinks on phones (see the media query). */
-  --gutter: 1.6rem;
-  --tabbar-h: 60px; /* height of the mobile bottom navigation (excludes the safe-area inset) */
+  --gutter: 1.25rem;
+  --tabbar-h: 56px; /* height of the mobile bottom navigation (excludes the safe-area inset) */
   --font: "Inter Variable", "InterVariable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", sans-serif;
   --font-display: "Fraunces Variable", Fraunces, Georgia, "Times New Roman", serif;
@@ -50,27 +50,35 @@ html, body, #root { height: 100%; }
 body {
   margin: 0;
   font-family: var(--font);
+  font-size: 14px; /* Reduced from default (~16px) for higher density */
   color: var(--ink);
   background: var(--bg-grad);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "tnum" 1, "cv01" 1, "cv10" 1;
+  font-feature-settings: "tnum" 1, "cv01" 1, "cv10" 1, "ss01" 1;
 }
 
 ::selection { background: var(--primary-soft); color: var(--ink); }
 
 h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; font-weight: 700; }
 /* Section headlines get the editorial serif; h3/h4 stay Inter for dense UI. */
-h1, h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+h1 { font-size: 1.6rem; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
 .display { font-family: var(--font-display); }
+.hero-num {
+  font-family: var(--font);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
 
 button { font-family: inherit; }
 
 .app {
-  max-width: 1160px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 0 var(--gutter) 4rem;
+  padding: 0 var(--gutter) 3rem;
 }
 
 /* ---- top bar (sticky, translucent) ---- */
@@ -80,47 +88,101 @@ button { font-family: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin: 0 calc(-1 * var(--gutter)) 1.4rem;
-  padding: 0.9rem var(--gutter);
+  margin: 0 calc(-1 * var(--gutter)) 1rem;
+  padding: 0.65rem var(--gutter);
   /* pad the sticky bar out from under the iOS status bar / notch */
-  padding-top: calc(0.9rem + env(safe-area-inset-top));
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  padding-top: calc(0.65rem + env(safe-area-inset-top));
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 0.65rem; }
+.brand { display: flex; align-items: center; gap: 0.5rem; }
 .brand .logo {
-  width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(140deg, var(--primary), var(--primary-2));
-  color: #fff; font-weight: 750; font-size: 1.15rem;
-  display: grid; place-items: center;
-  box-shadow: 0 4px 12px rgba(72, 69, 229, 0.32);
+  width: 28px; height: 28px; border-radius: 8px;
+  display: block; flex: 0 0 auto;
+  object-fit: cover;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.brand .name { font-size: 1.18rem; font-weight: 750; letter-spacing: -0.02em; }
-.brand .tag { font-size: 0.7rem; color: var(--ink-3); margin-top: -1px; }
+.brand .name { font-size: 1.05rem; font-weight: 850; letter-spacing: -0.03em; font-family: var(--font-display); }
+.brand .tag { font-size: 0.64rem; color: var(--ink-3); margin-top: -1px; font-weight: 550; opacity: 0.8; }
+
+.vault-glyph {
+  color: var(--emerald);
+  opacity: 0.6;
+  margin-top: 1px;
+}
+
+/* ---- Utility Tray (Top-Right) ---- */
+.top-tray {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-left: auto;
+  margin-right: 1.25rem;
+}
+
+.theme-switch {
+  width: 40px; height: 20px; border-radius: 99px;
+  padding: 0; margin: 0; appearance: none; -webkit-appearance: none;
+  background: var(--line-2);
+  border: 1.5px solid var(--line);
+  position: relative; cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+.theme-switch:hover { border-color: var(--ink-3); }
+.theme-switch:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.switch-knob {
+  position: absolute; top: 1px; left: 1px;
+  width: 15px; height: 15px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #fff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.switch-knob.light { left: 1px; background: #f0b84d; }
+.switch-knob.dark { left: calc(100% - 16px); background: #4845e5; }
+
+/* ---- List Grouping (Apple-style) ---- */
+.list-grouped {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+  gap: 0.75rem;
+  transition: background 0.15s ease;
+}
+.list-row:not(:last-child) { border-bottom: 1px solid var(--line-2); }
+.list-row:hover { background: var(--surface-2); }
 
 /* ---- pill nav ---- */
 .nav {
-  display: inline-flex; gap: 2px; padding: 3px;
+  display: inline-flex; gap: 3px; padding: 3px;
   background: color-mix(in srgb, #fff 86%, transparent);
   border: 1px solid var(--line);
   border-radius: 999px; box-shadow: var(--shadow);
 }
 .nav button {
   border: none; background: transparent; cursor: pointer;
-  padding: 0.42rem 0.95rem; border-radius: 999px;
-  font-size: 0.84rem; font-weight: 600; color: var(--ink-2);
-  letter-spacing: -0.005em;
-  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0.4rem 1rem; border-radius: 999px;
+  font-size: 0.82rem; font-weight: 650; color: var(--ink-2);
+  letter-spacing: -0.01em;
+  transition: all 0.2s ease;
 }
-.nav button.active { background: var(--ink); color: #fff; }
+.nav button.active { background: var(--ink); color: #fff; box-shadow: 0 2px 8px rgba(35, 33, 27, 0.2); }
 .nav button:not(.active):hover { background: var(--line-2); color: var(--ink); }
 
 /* ---- view switch ---- */
 .view { animation: rise 0.22s cubic-bezier(0.2, 0.7, 0.3, 1); }
 @keyframes rise {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -131,39 +193,48 @@ button { font-family: inherit; }
 .card {
   background: var(--card); border: 1px solid var(--line);
   border-radius: var(--radius); box-shadow: var(--shadow);
-  padding: 1.25rem 1.4rem;
+  padding: 1rem 1.1rem;
 }
-.card-pad-lg { padding: 1.6rem 1.75rem; }
-.grid { display: grid; gap: 1rem; }
+.card:hover {
+  box-shadow: 0 4px 12px rgba(26, 31, 23, 0.04), 0 0 0 1px rgba(26, 31, 23, 0.03);
+}
+.card-pressed {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 2px rgba(26, 31, 23, 0.04);
+}
+.card-pad-lg { padding: 1.4rem 1.5rem; }
+.grid { display: grid; gap: 0.85rem; }
 
-/* A main column + fixed aside (e.g. the AI analysis + its context panel). Collapses to a
-   single column once the aside would crowd the content. */
-.split-aside { grid-template-columns: minmax(0, 1fr) 300px; gap: 1.25rem; align-items: start; }
+/* A main column + fixed aside (e.g. the AI analysis + its context panel). */
+.split-aside { grid-template-columns: minmax(0, 1fr) 280px; gap: 1rem; align-items: start; }
 @media (max-width: 860px) { .split-aside { grid-template-columns: 1fr; } }
 
-/* Wrap wide data tables so they scroll horizontally inside their card on narrow screens
-   instead of overflowing the viewport. Desktop is unaffected (content fits, no scrollbar). */
+/* Wrap wide data tables so they scroll horizontally inside their card on narrow screens. */
 .t-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-@media (max-width: 720px) { .t-scroll > table { min-width: 460px; } }
+@media (max-width: 720px) { .t-scroll > table { min-width: 440px; } }
 
 /* ---- buttons ---- */
 .btn {
   border: 1px solid var(--line); background: #fff; color: var(--ink);
-  padding: 0.52rem 0.95rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;
+  padding: 0.45rem 0.85rem; border-radius: 9px; font-size: 0.8rem; font-weight: 650;
   cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
-.btn:hover { border-color: #d8d4c8; background: #fdfcf9; }
-.btn:active { transform: translateY(1px); }
+.btn:hover { border-color: #d8d4c8; background: #fdfcf9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.btn:active { transform: translateY(0.5px); box-shadow: none; }
 .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
 .btn-primary {
   background: var(--primary); color: #fff; border-color: var(--primary);
-  box-shadow: 0 1px 2px rgba(72, 69, 229, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 6px rgba(72, 69, 229, 0.2);
 }
-.btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); }
-.btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
-.btn-ghost:hover { background: var(--line-2); border-color: transparent; color: var(--ink); }
-.btn-danger { color: #b3263f; border-color: var(--rose-soft); background: var(--rose-soft); }
+.btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); box-shadow: 0 2px 8px rgba(72, 69, 229, 0.25); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--ink-3); box-shadow: none; }
+.btn-ghost:hover { background: var(--line-2); border-color: transparent; color: var(--ink-2); box-shadow: none; }
+.btn-ghost.active { color: var(--ink); font-weight: 750; }
+.btn-danger { color: #b3263f; border-color: var(--rose-soft); background: var(--rose-soft); box-shadow: none; }
 .btn-danger:hover { border-color: var(--rose); background: var(--rose-soft); }
 
 :is(.btn, .chip, .nav button):focus-visible {
@@ -171,72 +242,91 @@ button { font-family: inherit; }
   outline-offset: 2px;
 }
 
+/* Keyboard focus for the non-native interactive elements: expandable table rows and the
+   donut legend (both carry role="button" + tabindex so they're reachable by Tab). */
+[role="button"][tabindex]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
+tr[role="button"][tabindex]:focus-visible { outline-offset: -2px; border-radius: 0; }
+
 /* ---- chips / pills ---- */
 .chip {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  padding: 0.28rem 0.68rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+  padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 650;
   border: 1px solid var(--line); background: #fff; color: var(--ink-2); cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: all 0.2s ease;
 }
 .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 .chip:not(.active):hover { background: var(--line-2); }
-.badge {
-  display: inline-flex; align-items: center; padding: 0.14rem 0.5rem; border-radius: 999px;
-  font-size: 0.7rem; font-weight: 650; letter-spacing: 0.01em;
-}
-.badge-green { background: var(--emerald-soft); color: var(--emerald); }
-.badge-amber { background: #fbf1e2; color: #8a5210; }
-.badge-rose { background: var(--rose-soft); color: #b3263f; }
-.badge-gray { background: var(--line-2); color: var(--ink-3); }
 
 /* ---- inputs ---- */
 input, select, textarea {
-  font-family: inherit; font-size: 0.85rem; color: var(--ink);
-  padding: 0.48rem 0.62rem; border: 1px solid var(--line); border-radius: 8px;
+  appearance: none; -webkit-appearance: none;
+  font-family: var(--font); font-size: 0.88rem; color: var(--ink);
+  padding: 0.5rem 0.75rem; border: 1.5px solid var(--line); border-radius: 9px;
   background: #fff; outline: none;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  transition: all 0.15s ease;
   width: 100%;
+  box-shadow: inset 0 1px 2px rgba(26, 31, 23, 0.02);
 }
+input[type="number"] { font-family: var(--font); font-weight: 650; font-variant-numeric: tabular-nums; }
 input:hover, select:hover, textarea:hover { border-color: #d8d4c8; }
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 8%, transparent), inset 0 1px 2px rgba(26, 31, 23, 0.02);
 }
-input::placeholder, textarea::placeholder { color: #a5a092; }
-/* Checkboxes/radios must not inherit the full-width text-input styling above. */
+input::placeholder, textarea::placeholder { color: #a5a092; font-weight: 400; opacity: 0.7; }
 input[type="checkbox"], input[type="radio"] {
-  width: auto; padding: 0; margin: 0; border-radius: 0; box-shadow: none;
-  accent-color: var(--primary);
+  appearance: checkbox; -webkit-appearance: checkbox;
+  width: auto; padding: 0; margin: 0; border-radius: 3px; box-shadow: none;
+  accent-color: var(--primary); cursor: pointer;
 }
-label { font-size: 0.78rem; color: var(--ink-3); font-weight: 600; display: block; margin-bottom: 0.25rem; }
+label {
+  font-size: 0.65rem; color: var(--ink-3); font-weight: 750;
+  display: block; margin-bottom: 0.3rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+/* Ensure form rows in grids don't stretch vertically; keeps labels at top, inputs aligned at bottom.
+   Using justify-content: flex-end ensures inputs stay level across rows with varying label heights. */
+.form-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Resting affordance for the borderless inputs inside grouped lists (account editor, manual
+   entry, access code): the value can read as static text, so reveal it as interactive on
+   hover/focus with a faint fill. The always-visible field label carries the resting signal. */
+.list-grouped .form-col { transition: background 0.15s ease; }
+.list-grouped .form-col:hover,
+.list-grouped .form-col:focus-within { background: var(--surface-2); }
 
 /* ---- tables ---- */
 table { width: 100%; border-collapse: collapse; }
 th {
-  text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--ink-3); font-weight: 650; padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--line);
+  text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-3); font-weight: 750; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
-td { padding: 0.66rem 0.5rem; font-size: 0.88rem; border-bottom: 1px solid var(--line-2); }
+td { padding: 0.65rem 0.4rem; font-size: 0.82rem; border-bottom: 1px solid var(--line-2); }
 tbody tr { transition: background 0.1s ease; }
-tbody tr:hover { background: color-mix(in srgb, var(--line-2) 55%, transparent); }
+tbody tr:hover { background: color-mix(in srgb, var(--line-2) 65%, transparent); }
 tr:last-child td { border-bottom: none; }
-.num { text-align: right; font-variant-numeric: tabular-nums; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .muted { color: var(--ink-3); }
 /* Sentence-case section labels — the old ALL-CAPS micro-eyebrows read like a terminal and
    were hard on older eyes. The JSX already writes sentence case; CSS no longer shouts it. */
 .eyebrow {
-  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.005em;
-  color: var(--ink-3);
+  font-size: 0.75rem; font-weight: 650; letter-spacing: 0.01em;
+  color: var(--ink-3); text-transform: uppercase;
 }
 
 /* ---- verdict sublines: a number, then what it MEANS, in plain words ---- */
-.verdict { display: flex; align-items: baseline; gap: 0.4rem; margin-top: 0.3rem; font-size: 0.8rem; line-height: 1.45; }
-.verdict .dot { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; transform: translateY(-1px); }
-.verdict.good { color: #19724f; } .verdict.good .dot { background: var(--up); }
+.verdict { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem; font-size: 0.78rem; line-height: 1.45; font-weight: 600; }
+.verdict .dot { width: 6px; height: 6px; border-radius: 99px; flex-shrink: 0; }
+.verdict.good { color: var(--up-ink); } .verdict.good .dot { background: var(--up); }
 .verdict.ok { color: var(--ink-2); } .verdict.ok .dot { background: #b3ae9f; }
-.verdict.watch { color: #9a5a10; } .verdict.watch .dot { background: var(--amber); }
+.verdict.watch { color: #d98324; } .verdict.watch .dot { background: var(--amber); }
 
 /* ---- the Overview hero: the one number they open the app for ----
    The one card that gets a signature: a paper-grain wash and a hairline indigo→gold rule,
@@ -245,95 +335,97 @@ tr:last-child td { border-bottom: none; }
   position: relative;
   z-index: 0;
   overflow: hidden;
-  box-shadow: var(--shadow), 0 14px 36px rgba(38, 33, 20, 0.06);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, var(--line));
 }
 .hero-card::before {
   content: "";
   position: absolute; inset: 0; z-index: -1;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E"),
-    linear-gradient(160deg, rgba(72, 69, 229, 0.035) 0%, rgba(255, 255, 255, 0) 38%, rgba(217, 165, 20, 0.03) 100%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+    linear-gradient(160deg, rgba(72, 69, 229, 0.03) 0%, rgba(255, 255, 255, 0) 40%, rgba(217, 165, 20, 0.03) 100%);
   background-size: 160px 160px, cover;
   mix-blend-mode: multiply;
   pointer-events: none;
 }
 .hero-card::after {
   content: "";
-  position: absolute; top: 0; left: 1.75rem; right: 1.75rem; height: 2px; z-index: -1;
-  border-radius: 0 0 2px 2px;
-  background: linear-gradient(90deg, var(--primary) 0%, #b8921f 55%, rgba(184, 146, 31, 0) 95%);
-  opacity: 0.85;
+  position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: -1;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--amber) 50%, var(--emerald) 100%);
+  opacity: 0.8;
 }
 
 /* Verdict-toned stat cards read like margin notes: a hairline rule in the verdict's ink.
    :has() is fine here — the desktop WebView and the audit Chrome both support it. */
-.card:has(.verdict.good) { box-shadow: inset 3px 0 0 var(--up), var(--shadow); }
-.card:has(.verdict.watch) { box-shadow: inset 3px 0 0 var(--amber), var(--shadow); }
-.card:has(.verdict.ok) { box-shadow: inset 3px 0 0 #c9c4b4, var(--shadow); }
+.card:has(.verdict.good) { border-left: 3px solid var(--up); }
+.card:has(.verdict.watch) { border-left: 3px solid var(--amber); }
+.card:has(.verdict.ok) { border-left: 3px solid #c9c4b4; }
 
-/* Inter, not the display serif: figures must be instantly readable, and matching the other
-   numerals keeps the whole screen speaking one numeric voice. The serif stays on prose. */
+/* The main editorial gravity for hero figures — high-weight sans for maximum legibility. */
 .hero-figure {
-  font-weight: 800;
-  font-size: clamp(2.3rem, 5vw, 2.9rem);
+  font-family: var(--font);
+  font-weight: 850;
+  font-size: clamp(2.1rem, 5vw, 2.6rem);
   letter-spacing: -0.04em;
-  line-height: 1.05;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 .delta-chip {
   display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.22rem 0.6rem; border-radius: 999px; font-size: 0.82rem; font-weight: 650;
+  padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.78rem; font-weight: 750;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
-.delta-chip.up { background: var(--emerald-soft); color: #155f43; }
-.delta-chip.down { background: var(--rose-soft); color: #ad2742; }
+.delta-chip.up { background: var(--emerald-soft); color: var(--up-ink); border: 1px solid color-mix(in srgb, var(--emerald) 15%, transparent); }
+.delta-chip.down { background: var(--rose-soft); color: var(--down-ink); border: 1px solid color-mix(in srgb, var(--rose) 15%, transparent); }
 .delta-chip.flat { background: var(--line-2); color: var(--ink-2); }
 
 /* ---- staggered reveal for the Overview load (one orchestrated moment) ---- */
-@keyframes settle { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
-.stagger > * { animation: settle 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-.stagger > *:nth-child(1) { animation-delay: 0.02s; }
-.stagger > *:nth-child(2) { animation-delay: 0.09s; }
-.stagger > *:nth-child(3) { animation-delay: 0.16s; }
-.stagger > *:nth-child(4) { animation-delay: 0.23s; }
-.stagger > *:nth-child(n + 5) { animation-delay: 0.3s; }
+@keyframes settle { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.stagger > * { animation: settle 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger > *:nth-child(n + 5) { animation-delay: 0.25s; }
 @media (prefers-reduced-motion: reduce) {
   .stagger > * { animation: none; }
 }
 
 /* ---- example-question chips on the AI screen ---- */
 .qchip {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  padding: 0.45rem 0.85rem; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  padding: 0.45rem 0.8rem; border-radius: 999px;
   border: 1px solid var(--line); background: #fff; color: var(--ink-2);
-  font-size: 0.84rem; font-weight: 550; cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.2s ease;
 }
 .qchip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
 .qchip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ---- thin scrollbars for overflow tables/panes ---- */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #d6d2c6; border-radius: 99px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #d6d2c6; border-radius: 99px; border: 2px solid transparent; background-clip: content-box; }
 ::-webkit-scrollbar-thumb:hover { background: #c2bdae; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ---- analysis markdown ---- */
-.md h1, .md h2, .md h3 { margin: 1.1rem 0 0.5rem; }
-.md h2 { font-size: 1.05rem; }
-.md h3 { font-size: 0.95rem; }
-.md p { line-height: 1.65; color: var(--ink-2); margin: 0.5rem 0; }
-.md ul, .md ol { margin: 0.4rem 0; padding-left: 1.2rem; color: var(--ink-2); line-height: 1.65; }
-.md li { margin: 0.25rem 0; }
-.md strong { color: var(--ink); }
-.md code { background: var(--line-2); padding: 0.1rem 0.3rem; border-radius: 5px; font-size: 0.85em; }
+.md h1, .md h2, .md h3 { margin: 1.1rem 0 0.5rem; font-family: var(--font-display); }
+.md h2 { font-size: 1.1rem; }
+.md h3 { font-size: 1rem; }
+.md p { line-height: 1.6; color: var(--ink-2); margin: 0.6rem 0; font-size: 0.9rem; }
+.md ul, .md ol { margin: 0.45rem 0; padding-left: 1.2rem; color: var(--ink-2); line-height: 1.6; }
+.md li { margin: 0.3rem 0; }
+.md strong { color: var(--ink); font-weight: 700; }
+.md code { background: var(--line-2); padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.86em; border: 1px solid var(--line); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner {
-  width: 16px; height: 16px; border: 2px solid var(--primary-soft);
-  border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite;
+  width: 16px; height: 16px; border: 2.2px solid var(--primary-soft);
+  border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   display: inline-block;
 }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-.blink { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.blink { animation: pulse 1.5s ease-in-out infinite; }
 
 /* ======================================================================
    Responsive / touch — one codebase from phone to desktop (SPEC §10).
@@ -361,175 +453,124 @@ tr:last-child td { border-bottom: none; }
     padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 1.25rem);
     padding-left: max(var(--gutter), env(safe-area-inset-left));
     padding-right: max(var(--gutter), env(safe-area-inset-right));
-    overflow-x: hidden; /* belt: never let the page scroll sideways on a phone */
+    overflow-x: hidden;
   }
-  /* Let grid/flex children shrink below their intrinsic content width so a long figure or
-     label wraps instead of blowing the track out to two cramped, clipped columns. The default
-     min-width:auto on grid/flex items is what made the Overview stat cards render 2-up. */
   .view :where(.grid, .card, .grid > *) { min-width: 0; }
 
-  /* the desktop pill nav lives in the topbar — hide it; the tab bar takes over */
   .topbar .nav { display: none; }
-  .topbar { margin-bottom: 1rem; }
+  .topbar { margin-bottom: 1.1rem; padding-bottom: 0.9rem; }
   .brand .tag { font-size: 0.66rem; }
+  .vault-status { display: none; } /* Hide vault status on small phones to save space */
 
-  /* cards go edge-to-edge-ish and lose some inner padding on small screens */
-  .card { padding: 1.05rem 1.05rem; border-radius: 12px; }
-  .card-pad-lg { padding: 1.2rem 1.15rem; }
+  .card { padding: 1.1rem 1.1rem; border-radius: 14px; }
+  .card-pad-lg { padding: 1.35rem 1.35rem; }
 
   .tabbar {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-    padding: 6px max(6px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-right));
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4);
-    backdrop-filter: blur(18px) saturate(1.4);
-    border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+    padding: 7px max(7px, env(safe-area-inset-left)) calc(7px + env(safe-area-inset-bottom)) max(7px, env(safe-area-inset-right));
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
   }
   .tabbar button {
     position: relative;
     appearance: none; border: none; background: transparent; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3.5px;
     min-height: var(--tabbar-h); padding: 4px 2px; border-radius: 12px;
-    color: var(--ink-3); font-family: inherit; font-size: 0.66rem; font-weight: 600;
-    letter-spacing: -0.01em; line-height: 1;
-    transition: color 0.15s ease, background 0.15s ease;
+    color: var(--ink-3); font-family: inherit; font-size: 0.68rem; font-weight: 700;
+    transition: all 0.2s ease;
   }
-  .tabbar button svg { width: 23px; height: 23px; stroke-width: 1.9; transition: transform 0.15s ease; }
+  .tabbar button svg { width: 22px; height: 22px; stroke-width: 2; transition: transform 0.2s ease; }
   .tabbar button.active { color: var(--primary); }
-  .tabbar button.active svg { stroke-width: 2.3; transform: translateY(-1px); }
-  /* a small indigo pill above the active tab — the one bit of motion the bar gets */
+  .tabbar button.active svg { stroke-width: 2.5; transform: translateY(-2px); }
   .tabbar button.active::after {
-    content: ""; position: absolute; top: 3px; width: 20px; height: 3px;
-    border-radius: 99px; background: var(--primary);
+    content: ""; position: absolute; top: 0; width: 22px; height: 3px;
+    border-radius: 0 0 4px 4px; background: var(--primary);
   }
-  @media (prefers-reduced-motion: reduce) { .tabbar button svg { transition: none; } }
   .tabbar button:active { background: var(--line-2); }
-  .tabbar button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 
-  /* ---- the "More" bottom sheet ---- */
-  .tabbar-more-sheet { display: block; }
-  .sheet-backdrop {
-    position: fixed; inset: 0; z-index: 60;
-    background: rgba(26, 31, 23, 0.32);
-    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
-    animation: fade 0.18s ease both;
-  }
   .sheet {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
-    background: var(--card);
-    border-radius: 18px 18px 0 0;
-    border-top: 1px solid var(--line);
-    box-shadow: 0 -8px 40px rgba(26, 31, 23, 0.18);
-    padding: 0.5rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
-    animation: sheet-up 0.24s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+    border-radius: 20px 20px 0 0;
+    padding: 0.65rem 0.9rem calc(0.9rem + env(safe-area-inset-bottom));
   }
-  .sheet-grip { width: 38px; height: 4px; border-radius: 99px; background: var(--line); margin: 0.45rem auto 0.6rem; }
-  .sheet button {
-    width: 100%; appearance: none; border: none; background: transparent; cursor: pointer;
-    display: flex; align-items: center; gap: 0.8rem;
-    padding: 0.85rem 0.7rem; border-radius: 12px;
-    font-family: inherit; font-size: 0.98rem; font-weight: 600; color: var(--ink);
-    text-align: left;
-  }
-  .sheet button svg { width: 22px; height: 22px; color: var(--ink-3); flex-shrink: 0; }
-  .sheet button.active { color: var(--primary); background: var(--primary-soft); }
-  .sheet button.active svg { color: var(--primary); }
-  .sheet button:active { background: var(--line-2); }
-}
-@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
-@media (prefers-reduced-motion: reduce) {
-  .sheet, .sheet-backdrop { animation: none; }
-}
-
-/* ---- narrow-phone safety: stop wide inline-grid layouts from overflowing ---- */
-@media (max-width: 520px) {
-  .hero-figure { font-size: clamp(2rem, 9vw, 2.6rem); }
+  .sheet button { padding: 0.9rem 0.75rem; border-radius: 12px; font-size: 1rem; }
 }
 
 /* ======================================================================
-   Optional dark mode — opt-in via Settings (sets data-theme="dark" on
-   <html>), NEVER from the OS preference. A warm, editorial dark: charcoal-
-   brown surfaces, the same indigo + serif identity, contrast tuned for AA.
-   Kept entirely in this block so the light theme stays byte-identical.
+   Optional dark mode
    ====================================================================== */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #16140f;
+  --bg: #12100d;
   --bg-grad:
-    radial-gradient(1100px 420px at 85% -8%, rgba(124, 108, 246, 0.12) 0%, rgba(124, 108, 246, 0) 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(217, 165, 20, 0.07) 0%, rgba(217, 165, 20, 0) 55%),
-    #16140f;
-  --card: #211e18;
-  --surface-2: #2a261e;
-  --ink: #f2eee4;
-  --ink-2: #cdc6b6;
-  --ink-3: #a39c8b; /* ~6.9:1 on --bg — muted but AA */
-  --line: #38332b;
-  --line-2: #2c281f;
-  --primary: #9b97ff; /* indigo lightened for a dark ground */
-  --primary-down: #b3afff;
-  --primary-2: #c3b9ff;
-  --primary-soft: #2a2740;
-  --on-primary: #15130f; /* dark text on the light indigo accent */
-  --emerald: #2fbd83;
-  --emerald-soft: #16332a;
-  --amber: #e0a83c;
-  --amber-soft: #352a14;
-  --rose: #f56b80;
-  --rose-soft: #3a1e23;
-  --up: #34c98a;
-  --down: #f56b80;
-  --up-ink: #57d59c; /* text-grade up/down on dark */
-  --down-ink: #ff8b9c;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.6);
+    radial-gradient(1100px 420px at 85% -8%, rgba(155, 151, 255, 0.12) 0%, rgba(155, 151, 255, 0) 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(224, 168, 60, 0.08) 0%, rgba(224, 168, 60, 0) 55%),
+    #12100d;
+  --card: #1c1a15;
+  --surface-2: #24211a;
+  --ink: #f7f3eb;
+  --ink-2: #d1cbc0;
+  --ink-3: #9c9688;
+  --line: #332f28;
+  --line-2: #28251f;
+  --primary: #a8a5ff;
+  --primary-down: #c1bfff;
+  --primary-2: #cfccff;
+  --primary-soft: #28263d;
+  --on-primary: #0f0d0a;
+  --emerald: #3ed194;
+  --emerald-soft: #183328;
+  --amber: #f0b84d;
+  --amber-soft: #352a12;
+  --rose: #ff7d92;
+  --rose-soft: #3d1f23;
+  --up: #42e0a0;
+  --down: #ff7d92;
+  --up-ink: #65f0b8;
+  --down-ink: #ff9fb0;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 16px 48px rgba(0, 0, 0, 0.7);
 }
-/* surfaces that hardcode white in light mode → the dark card surface */
 :root[data-theme="dark"] :is(.btn, .chip, .qchip, input, select, textarea) { background: var(--card); }
-:root[data-theme="dark"] .nav { background: color-mix(in srgb, var(--card) 86%, transparent); }
+:root[data-theme="dark"] .nav { background: color-mix(in srgb, var(--card) 90%, transparent); }
 :root[data-theme="dark"] .btn:hover { background: var(--surface-2); border-color: var(--line); }
-/* the indigo accent is LIGHT in dark mode, so glyphs/text on it go dark, not white */
 :root[data-theme="dark"] :is(.nav button.active, .chip.active) {
-  background: var(--primary); color: #15130f; border-color: var(--primary);
+  background: var(--primary); color: var(--on-primary); border-color: var(--primary);
 }
-/* Button VARIANTS keep their own fills — the broad .btn rule above otherwise flattens
-   .btn-primary/.btn-danger to the card surface (dark fill + dark text = an invisible CTA,
-   only the border showing). Re-assert them here (after the broad rule, so order wins). */
 :root[data-theme="dark"] .btn-primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 :root[data-theme="dark"] .btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); }
 :root[data-theme="dark"] .btn-ghost { background: transparent; }
 :root[data-theme="dark"] .btn-ghost:hover { background: var(--line-2); }
 :root[data-theme="dark"] .btn-danger { background: var(--rose-soft); color: var(--down-ink); border-color: var(--rose-soft); }
-/* tones whose text colour was hardcoded for a light ground */
 :root[data-theme="dark"] .badge-amber { background: var(--amber-soft); color: var(--amber); }
 :root[data-theme="dark"] .badge-rose { background: var(--rose-soft); color: var(--down-ink); }
-:root[data-theme="dark"] .delta-chip.up { color: var(--up-ink); }
-:root[data-theme="dark"] .delta-chip.down { color: var(--down-ink); }
+:root[data-theme="dark"] .delta-chip.up { color: var(--up-ink); border-color: color-mix(in srgb, var(--emerald) 30%, transparent); }
+:root[data-theme="dark"] .delta-chip.down { color: var(--down-ink); border-color: color-mix(in srgb, var(--rose) 30%, transparent); }
 :root[data-theme="dark"] .verdict.good { color: var(--up-ink); }
 :root[data-theme="dark"] .verdict.watch { color: var(--amber); }
-/* the paper-grain wash multiplies to mud on a dark ground — drop it (the hairline rule stays) */
-:root[data-theme="dark"] .hero-card::before { display: none; }
+:root[data-theme="dark"] .hero-card::before { opacity: 0.1; mix-blend-mode: overlay; }
 :root[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--line); }
-:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #4a4438; }
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #454036; }
 
-/* ---- modal dialog (centered) — e.g. the privacy explainer opened from Settings ---- */
+/* ---- modal dialog ---- */
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 70;
   display: flex; align-items: center; justify-content: center; padding: 1.25rem;
-  background: rgba(26, 31, 23, 0.4);
-  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  background: rgba(18, 16, 13, 0.5);
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
   animation: fade 0.16s ease both;
 }
 .modal {
   position: relative;
   background: var(--card); color: var(--ink);
-  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow-lg);
   width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
-  padding: 1.5rem 1.6rem;
+  padding: 1.75rem 1.85rem;
   animation: rise 0.2s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 @media (prefers-reduced-motion: reduce) { .modal, .modal-backdrop { animation: none; } }

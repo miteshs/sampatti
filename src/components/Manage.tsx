@@ -51,7 +51,7 @@ export function Manage() {
       <div className="card card-pad-lg" style={{ textAlign: "center", padding: "3rem" }}>
         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>No accounts yet</div>
         <p className="muted" style={{ maxWidth: 440, margin: "0.5rem auto 0" }}>
-          Go to <strong>Add data</strong> to import a statement or enter accounts manually — then come back here to
+          Go to <strong>Holdings</strong> to import a statement or enter accounts manually — then come back here to
           edit, include/exclude, or remove them.
         </p>
       </div>
@@ -59,48 +59,49 @@ export function Manage() {
   }
 
   return (
-    <div className="grid" style={{ gap: "1.25rem" }}>
+    <div className="grid" style={{ gap: "1rem" }}>
       {/* Accounts — include/exclude from the view & analysis, edit, or remove entirely */}
-      <div className="card">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+      <div className="card" style={{ paddingBottom: "0.2rem" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
           <div>
             <div className="eyebrow">Accounts</div>
-            <h2 style={{ fontSize: "1.3rem", marginTop: "0.15rem" }}>Edit, include &amp; remove accounts</h2>
+            <h2 style={{ fontSize: "1.2rem", marginTop: "0.15rem", fontFamily: "var(--font-display)" }}>Manage your ledger</h2>
           </div>
-          <span className="muted" style={{ fontSize: "0.8rem", maxWidth: 320, textAlign: "right" }}>
-            Untick an account to leave it out of totals &amp; the AI review. <strong>Edit</strong> fixes any field.
+          <span className="muted" style={{ fontSize: "0.78rem", maxWidth: 300, textAlign: "right" }}>
+            Untick to exclude from analysis. Actions appear when needed.
           </span>
         </div>
-        <div style={{ marginTop: "0.5rem" }}>
-          {portfolio.accounts.map((a) => {
+        
+        <div className="list-grouped" style={{ marginTop: "0.5rem", border: "none", boxShadow: "none" }}>
+          {portfolio.accounts.map((a, i) => {
             const excluded = !!a.excluded;
             const editing = editingId === a.id;
             return (
               <div key={a.id}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.5rem 0", borderTop: "1px solid var(--line-2)", opacity: excluded ? 0.55 : 1 }}>
+                <div className="list-row" style={{ padding: "0.55rem 0", borderTop: i === 0 ? "none" : "1px solid var(--line-2)", opacity: excluded ? 0.5 : 1 }}>
                   <input type="checkbox" checked={!excluded} onChange={() => updateAccount(a.id, { excluded: !excluded })}
                     aria-label={`Include ${a.name} in totals and analysis`} title="Include in totals & analysis"
-                    style={{ flexShrink: 0, cursor: "pointer" }} />
+                    style={{ flexShrink: 0, width: "16px", height: "16px" }} />
                   <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
-                    <span style={{ fontWeight: 600 }}>{a.name}</span>
-                    {editedAccountIds.has(a.id) && <span className="badge badge-amber" style={{ marginLeft: "0.4rem", fontSize: "0.66rem" }} title="Has manual edits">✎ edited</span>}
-                    <span className="muted" style={{ fontSize: "0.8rem" }}> · {a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+                    <div style={{ fontWeight: 650, fontSize: "0.9rem", color: "var(--ink)" }}>{a.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginTop: "0.05rem" }}>
+                      {editedAccountIds.has(a.id) && <span className="badge badge-amber" style={{ fontSize: "0.6rem", padding: "0.05rem 0.35rem" }}>edited</span>}
+                      <span className="muted eyebrow" style={{ fontSize: "0.62rem" }}>{a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+                    </div>
                   </div>
-                  <span className="num muted" style={{ fontSize: "0.84rem", flexShrink: 0 }}>{fmtMoney(acctTotals.get(a.id) ?? 0)}</span>
-                  <button className={`btn btn-ghost ${editing ? "active" : ""}`} style={{ padding: "0.2rem 0.6rem", flexShrink: 0 }} title="Edit account & holdings"
-                    onClick={() => setEditingId(editing ? null : a.id)}>✎ Edit</button>
+                  <span className="hero-num" style={{ fontSize: "0.95rem", flexShrink: 0, color: "var(--ink)" }}>{fmtMoney(acctTotals.get(a.id) ?? 0)}</span>
+                  <button className={`btn btn-ghost ${editing ? "active" : ""}`} style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }}
+                    onClick={() => setEditingId(editing ? null : a.id)}>Edit</button>
                   {confirmRemove === a.id ? (
-                    <span style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexShrink: 0 }}>
-                      <span className="muted" style={{ fontSize: "0.78rem" }}>Remove this account?</span>
-                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.55rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Yes, remove</button>
-                      <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem" }} onClick={() => setConfirmRemove(null)}>Cancel</button>
+                    <span style={{ display: "flex", gap: "0.2rem" }}>
+                      <button className="btn btn-danger" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => { removeAccount(a.id); setConfirmRemove(null); }}>Remove</button>
+                      <button className="btn btn-ghost" style={{ padding: "0.2rem 0.4rem", fontSize: "0.75rem" }} onClick={() => setConfirmRemove(null)}>✕</button>
                     </span>
                   ) : (
-                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.55rem", flexShrink: 0, color: "var(--ink-3)" }}
-                      title="Remove this account from Sampatti" aria-label={`Remove ${a.name}`} onClick={() => setConfirmRemove(a.id)}>✕</button>
+                    <button className="btn btn-ghost" style={{ padding: "0.2rem 0.4rem" }} onClick={() => setConfirmRemove(a.id)}>✕</button>
                   )}
                 </div>
-                {editing && <AccountEditor accountId={a.id} onClose={() => setEditingId(null)} />}
+                {editing && <div style={{ padding: "0 0 1rem" }}><AccountEditor accountId={a.id} onClose={() => setEditingId(null)} /></div>}
               </div>
             );
           })}
@@ -110,29 +111,23 @@ export function Manage() {
       <RefreshPrices />
 
       <div className="card">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ fontSize: "1.05rem" }}>Data freshness</h2>
-          <span className="muted" style={{ fontSize: "0.8rem" }}>
-            {staleAccounts.length === 0 ? "Everything is current" : `${staleAccounts.length} account(s) could use a fresh statement`}
-          </span>
-        </div>
-        {staleAccounts.length > 0 && (
-          <div style={{ marginTop: "0.75rem" }}>
+        <h2 style={{ fontSize: "1rem", fontFamily: "var(--font-display)", marginBottom: "0.75rem" }}>Data freshness</h2>
+        {staleAccounts.length > 0 ? (
+          <div className="list-grouped">
             {staleAccounts.map(({ a, f }) => (
-              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.45rem 0", borderTop: "1px solid var(--line-2)" }}>
-                <span style={{ fontWeight: 600 }}>{a.name}</span>
-                <span style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
-                  <span className="muted" style={{ fontSize: "0.8rem" }}>
-                    {a.asOf ? `as of ${a.asOf}${f.days != null ? ` · ${f.days}d ago` : ""}` : "no date"}
+              <div key={a.id} className="list-row" style={{ justifyContent: "space-between", padding: "0.5rem 0.8rem" }}>
+                <span style={{ fontWeight: 550, fontSize: "0.85rem" }}>{a.name}</span>
+                <span style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+                  <span className="muted" style={{ fontSize: "0.78rem" }}>
+                    {a.asOf ? f.days != null ? `${f.days}d ago` : a.asOf : "no date"}
                   </span>
-                  <span className={`badge ${FRESH_BADGE[f.status]}`}>{f.status}</span>
+                  <span className={`badge ${FRESH_BADGE[f.status]}`} style={{ fontSize: "0.65rem" }}>{f.status}</span>
                 </span>
               </div>
             ))}
-            <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.6rem" }}>
-              Statement values are held until you import a newer one. Amber ≈ 1–4 months old, red ≈ older.
-            </p>
           </div>
+        ) : (
+          <p className="muted" style={{ fontSize: "0.8rem" }}>Everything is current.</p>
         )}
       </div>
 

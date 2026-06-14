@@ -42,13 +42,12 @@ function useCountUp(target: number, ms = 700): number {
 
 function StatCard({ label, value, sub, verdict }: { label: string; value: string; sub?: string; verdict?: Verdict }) {
   return (
-    <div className="card" style={{ padding: "1.1rem 1.25rem" }}>
+    <div className="card" style={{ padding: "1.25rem 1.4rem" }}>
       <div className="eyebrow">{label}</div>
-      <div style={{
-        fontSize: "1.5rem", fontWeight: 750, marginTop: "0.25rem",
-        letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums",
+      <div className="hero-num" style={{
+        fontSize: "1.6rem", marginTop: "0.4rem",
       }}>{value}</div>
-      {sub && <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.15rem" }}>{sub}</div>}
+      {sub && <div className="muted" style={{ fontSize: "0.82rem", marginTop: "0.2rem" }}>{sub}</div>}
       {verdict && (
         <div className={`verdict ${verdict.tone}`}>
           <span className="dot" />
@@ -150,7 +149,7 @@ export function Overview() {
       <div className="card card-pad-lg" style={{ textAlign: "center", padding: "3rem" }}>
         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>No data yet</div>
         <p className="muted" style={{ maxWidth: 420, margin: "0.5rem auto 0" }}>
-          Go to <strong>Add data</strong> to import a statement or enter accounts manually —
+          Go to <strong>Holdings</strong> to import a statement or enter accounts manually —
           or load the demo portfolio to explore.
         </p>
       </div>
@@ -158,48 +157,51 @@ export function Overview() {
   }
 
   return (
-    <div className="grid stagger" style={{ gap: "1.25rem" }}>
-      {/* The one number they open the app for — given a real moment. */}
-      <div className="card card-pad-lg hero-card">
-        <div className="eyebrow">Net worth</div>
-        <div className="hero-figure">{fmtMoney(Math.round(animatedNetWorth))}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", flexWrap: "wrap", marginTop: "0.55rem" }}>
-          {delta ? (
-            <span className={`delta-chip ${delta.abs > 0 ? "up" : delta.abs < 0 ? "down" : "flat"}`}>
-              {delta.abs > 0 ? "▲" : delta.abs < 0 ? "▼" : "•"}{" "}
-              {`${delta.abs >= 0 ? "+" : "−"}${fmtMoney(Math.abs(delta.abs))}`} since {delta.since}
+    <div className="grid stagger" style={{ gap: "1rem" }}>
+      {/* Metrics Row: Net Worth + (Optional) Health Score */}
+      <div className="grid" style={{ gridTemplateColumns: portfolio.settings.insights?.healthScore ? "repeat(auto-fit, minmax(min(380px, 100%), 1fr))" : "1fr", gap: "1rem" }}>
+        {/* The one number they open the app for — given a real moment. */}
+        <div className="card card-pad-lg hero-card" style={{ padding: "1.25rem 1.4rem" }}>
+          <div className="eyebrow">Net worth</div>
+          <div className="hero-figure" style={{ fontSize: "2.4rem" }}>{fmtMoney(Math.round(animatedNetWorth))}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+            {delta ? (
+              <span className={`delta-chip ${delta.abs > 0 ? "up" : delta.abs < 0 ? "down" : "flat"}`} style={{ padding: "0.2rem 0.6rem", fontSize: "0.78rem" }}>
+                {delta.abs > 0 ? "▲" : delta.abs < 0 ? "▼" : "•"}{" "}
+                {`${delta.abs >= 0 ? "+" : "−"}${fmtMoney(Math.abs(delta.abs))}`} since {delta.since}
+              </span>
+            ) : (
+              <span className="delta-chip flat" style={{ padding: "0.2rem 0.6rem", fontSize: "0.78rem" }}>Day one — history starts now</span>
+            )}
+            <span className="muted" style={{ fontSize: "0.78rem" }}>
+              {fmtMoney(brief.totalAssets)} owned · {fmtMoney(brief.totalLiabilities)} debt
             </span>
-          ) : (
-            <span className="delta-chip flat">Day one on record — your history starts now</span>
-          )}
-          <span className="muted" style={{ fontSize: "0.84rem" }}>
-            {fmtMoney(brief.totalAssets)} you own · {fmtMoney(brief.totalLiabilities)} in loans
-          </span>
-        </div>
-      </div>
-
-      {/* One-glance health read — OPTIONAL (Settings → Insights). Summarises the three cards below. */}
-      {portfolio.settings.insights?.healthScore && (
-        <div className="card" style={{ display: "flex", alignItems: "center", gap: "1.1rem", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "0.4rem" }}>
-            <span className="hero-figure" style={{ fontSize: "2rem" }}>{health.score}</span>
-            <span className="muted" style={{ fontSize: "0.95rem" }}>/ 100</span>
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div className="eyebrow">Portfolio health · {health.band.label}</div>
-            <div className={`verdict ${health.band.tone}`} style={{ marginTop: "0.1rem" }}>
-              <span className="dot" /> A one-glance read across your exposure, concentration and liquidity below.
+        </div>
+
+        {/* One-glance health read — OPTIONAL (Settings → Insights). Summarises the three cards below. */}
+        {portfolio.settings.insights?.healthScore && (
+          <div className="card" style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1.25rem 1.4rem" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "0.3rem" }}>
+              <span className="hero-figure" style={{ fontSize: "2.2rem" }}>{health.score}</span>
+              <span className="muted" style={{ fontSize: "0.85rem" }}>/ 100</span>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div className="eyebrow">Portfolio health · {health.band.label}</div>
+              <div className={`verdict ${health.band.tone}`} style={{ marginTop: "0.1rem", fontSize: "0.78rem" }}>
+                <span className="dot" /> Risk, concentration & liquidity.
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))" }}>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "1rem" }}>
         <StatCard label="In the stock market" value={`${equityPct}%`}
-          sub={`${fmtMoney(equityBase)} in shares & equity funds`} verdict={equityVerdict(equityPct)} />
+          sub={`${fmtMoney(equityBase)} in equity`} verdict={equityVerdict(equityPct)} />
         <StatCard label="Easy to reach (liquid)" value={fmtMoney(brief.liquidAssets)}
-          sub={`${brief.liquidPct}% of what you own`} verdict={liquidityVerdict(brief.liquidPct)} />
-        <StatCard label="Concentration" value={`${top10Pct}%`}
+          sub={`${brief.liquidPct}% liquid`} verdict={liquidityVerdict(brief.liquidPct)} />
+        <StatCard label="Eggs in one basket" value={`${top10Pct}%`}
           sub={`in your top ${top10Count} holding${top10Count === 1 ? "" : "s"}`} verdict={concentrationVerdict(top10Pct)} />
       </div>
 
@@ -263,7 +265,15 @@ export function Overview() {
                 const open = expanded.has(s.key);
                 return (
                   <Fragment key={s.key}>
-                    <tr onClick={() => toggleGroup(s.key)} style={{ cursor: "pointer", borderTop: "1px solid var(--line-2)" }}>
+                    <tr
+                      onClick={() => toggleGroup(s.key)}
+                      tabIndex={0}
+                      role="button"
+                      aria-expanded={open}
+                      aria-label={`${s.label}, ${s.percent}% — ${open ? "hide" : "show"} holdings`}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleGroup(s.key); } }}
+                      style={{ cursor: "pointer", borderTop: "1px solid var(--line-2)" }}
+                    >
                       <td style={{ fontWeight: 700 }}>
                         <span style={{ display: "inline-block", width: "1.1em", color: "var(--ink-2, #888)" }}>{open ? "▾" : "▸"}</span>
                         {s.label}

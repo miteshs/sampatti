@@ -129,9 +129,9 @@ export async function clearPortfolioRaw(): Promise<void> {
   localStorage.removeItem(WEB_KEY);
 }
 
-// Remove EVERY on-device cache/derived store keyed under "sampatti." — the portfolio mirror,
-// the net-worth price-history cache, and anything added later. Used by "Erase all data" so a
-// wipe leaves nothing behind. Does NOT touch the BYO API key (a credential with its own
+// Remove EVERY on-device cache/derived store keyed under "sampatti." — the portfolio mirror
+// and anything added later. Used by "Erase all data" so a wipe leaves nothing behind. Does NOT
+// touch the BYO API key (a credential with its own
 // "Remove key" control; on desktop it lives in the OS keychain, never in web storage).
 export function clearLocalCaches(): void {
   try {

@@ -47,12 +47,12 @@ describe("App integration (demo flow)", () => {
     fireEvent.click(await screen.findByText(/Load demo portfolio/i));
     fireEvent.click(screen.getAllByRole("button", { name: "Holdings" })[0]);
     // Account editing lives on the merged Holdings tab now (Manage + Add data).
-    const editBtn = await screen.findAllByTitle("Edit account & holdings");
+    const editBtn = await screen.findAllByRole("button", { name: "Edit" });
 
-    // Clicking ✎ used to mount AccountEditor with a selector that returned a fresh array each
+    // Clicking Edit used to mount AccountEditor with a selector that returned a fresh array each
     // render → useSyncExternalStore infinite loop → blank screen. This must just open.
     fireEvent.click(editBtn[0]);
-    expect(await screen.findByText("Edit account")).toBeTruthy();
+    expect(await screen.findByText("Account Details")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Done" })).toBeTruthy();
 
     // Editor writes go to the store (add a holding via the editor).

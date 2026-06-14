@@ -8,6 +8,7 @@ import { AnalysisChat } from "./components/AnalysisChat";
 import { Holdings } from "./components/Holdings";
 import { Settings } from "./components/Settings";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import appIconUrl from "../src-tauri/icons/128x128.png";
 
 type View = "overview" | "performance" | "holdings" | "analysis" | "settings";
 
@@ -20,13 +21,13 @@ const NAV: NavItem[] = [
   { key: "performance", label: "Performance", short: "Perf." },
   { key: "holdings", label: "Holdings" },
   { key: "analysis", label: "AI Analysis", short: "AI" },
-  { key: "settings", label: "Settings", short: "⚙" },
+  { key: "settings", label: "Settings" },
 ];
 
 export default function App() {
   const load = useStore((s) => s.load);
   const loaded = useStore((s) => s.loaded);
-  const hasData = useStore((s) => s.portfolio.holdings.length > 0);
+  const hasData = useStore((s) => s.portfolio.holdings.length > 0 || s.portfolio.accounts.length > 0);
   const [view, setView] = useState<View>("overview");
 
   useEffect(() => { void load(); }, [load]);
@@ -63,11 +64,30 @@ export default function App() {
     <div className="app">
       <div className="topbar">
         <div className="brand">
-          <div className="logo">सं</div>
+          <img className="logo" src={appIconUrl} alt="" aria-hidden="true" />
+          <svg className="vault-glyph" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="Local-only vault secured">
+            <title>Local-only vault secured</title>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
           <div>
             <div className="name">Sampatti</div>
             <div className="tag">Private portfolio analysis · {currentProfile().label}</div>
           </div>
+        </div>
+        <div className="top-tray">
+          <button
+            type="button"
+            className="theme-switch"
+            role="switch"
+            aria-checked={theme === "dark"}
+            aria-label="Dark mode"
+            onClick={() => useStore.getState().updateSettings({ theme: theme === "dark" ? "light" : "dark" })}
+          >
+            <span className={`switch-knob ${theme === "dark" ? "dark" : "light"}`} aria-hidden="true">
+              {theme === "dark" ? "☾" : "☀"}
+            </span>
+          </button>
         </div>
         <nav className="nav" aria-label="Primary">
           {NAV.map((n) => (

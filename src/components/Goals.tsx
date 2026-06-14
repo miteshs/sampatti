@@ -24,18 +24,18 @@ const D = {
 // blank field, not in front of a "0".
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
   return (
-    <label style={{ fontSize: "0.74rem" }}>
-      {label}
+    <>
+      <label>{label}</label>
       <input
         type="text" inputMode="decimal" aria-label={label}
-        value={value === 0 ? "" : String(value)} placeholder="0" style={{ marginTop: "0.2rem" }}
+        value={value === 0 ? "" : String(value)} placeholder="0"
         onChange={(e) => {
           const cleaned = e.target.value.replace(/[^0-9.]/g, "");
           const n = Number(cleaned);
           onChange(cleaned === "" || !Number.isFinite(n) ? 0 : n);
         }}
       />
-    </label>
+    </>
   );
 }
 
@@ -50,23 +50,27 @@ export function Goals({ currentCorpus }: { currentCorpus: number }) {
   return (
     <div className="card">
       <div className="eyebrow">Retirement outlook · optional</div>
-      <h3 style={{ fontSize: "1.05rem", margin: "0.15rem 0 0.3rem" }}>Are you on track?</h3>
-      <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.9rem", maxWidth: 640 }}>
+      <h3 style={{ fontSize: "1.1rem", margin: "0.2rem 0 0.35rem", fontFamily: "var(--font-display)" }}>Are you on track?</h3>
+      <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 1rem", maxWidth: 640 }}>
         A rough projection from your investable corpus of <strong>{fmtMoney(Math.round(currentCorpus))}</strong>{" "}
         (excludes property) plus what you keep investing. Estimates — not advice.
       </p>
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(130px, 100%), 1fr))", gap: "0.6rem", marginBottom: "1rem" }}>
-        <NumField label="Age now" value={v.currentAge} onChange={(n) => save({ currentAge: n })} />
-        <NumField label="Retire at" value={v.retireAge} onChange={(n) => save({ retireAge: n })} />
-        <NumField label="Invest / month" value={v.monthlyContribution} onChange={(n) => save({ monthlyContribution: n })} />
-        <NumField label="Want / month (today's money)" value={v.desiredMonthlyIncome} onChange={(n) => save({ desiredMonthlyIncome: n })} />
-        <NumField label="Return % / yr" value={v.expectedReturnPct} onChange={(n) => save({ expectedReturnPct: n })} />
-        <NumField label="Inflation % / yr" value={v.inflationPct} onChange={(n) => save({ inflationPct: n })} />
+
+      <div className="list-grouped" style={{ marginBottom: "1.25rem", border: "1px solid var(--line-2)" }}>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: 0 }}>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Age now" value={v.currentAge} onChange={(n) => save({ currentAge: n })} /></div>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Retire at" value={v.retireAge} onChange={(n) => save({ retireAge: n })} /></div>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Invest / month" value={v.monthlyContribution} onChange={(n) => save({ monthlyContribution: n })} /></div>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)", borderBottom: "1px solid var(--line-2)" }}><NumField label="Target income / mo." value={v.desiredMonthlyIncome} onChange={(n) => save({ desiredMonthlyIncome: n })} /></div>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem", borderRight: "1px solid var(--line-2)" }}><NumField label="Return % / yr" value={v.expectedReturnPct} onChange={(n) => save({ expectedReturnPct: n })} /></div>
+          <div className="form-col" style={{ padding: "0.55rem 0.8rem" }}><NumField label="Inflation % / yr" value={v.inflationPct} onChange={(n) => save({ inflationPct: n })} /></div>
+        </div>
       </div>
-      <div className={`verdict ${p.tone}`} style={{ fontSize: "0.95rem" }}>
+
+      <div className={`verdict ${p.tone}`} style={{ fontSize: "0.9rem" }}>
         <span className="dot" /> <strong>{p.headline}</strong>
       </div>
-      <p className="muted" style={{ fontSize: "0.82rem", marginTop: "0.55rem", lineHeight: 1.65 }}>
+      <p className="muted" style={{ fontSize: "0.84rem", marginTop: "0.6rem", lineHeight: 1.6 }}>
         In {p.years} {p.years === 1 ? "year" : "years"} your corpus could reach{" "}
         <strong>{fmtMoney(Math.round(p.projectedCorpus))}</strong>. To draw about{" "}
         {fmtMoney(Math.round(p.desiredAnnualIncomeAtRetirement / 12))}/month then (your{" "}

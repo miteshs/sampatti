@@ -8,8 +8,7 @@
 // The Privacy tab stays a pure explainer + data controls — the two are deliberately not mixed.
 import { useEffect, useRef, useState } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
-import { DEFAULT_RELAY_URL } from "../domain/types";
-import { clearByoKey, hasByoKey, keyStoreName, setByoKey, isTauri } from "../platform";
+import { clearByoKey, hasByoKey, setByoKey, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
 import { localModelDownload, localModelRemove, localModelStatus, type LocalModelStatus } from "../ai/engine";
 import type { AiEngine } from "../domain/types";
@@ -30,6 +29,16 @@ export function Settings() {
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [pendingImport, setPendingImport] = useState<{ text: string; name: string } | null>(null);
+  // Region is a once-at-the-start choice: switching reframes the whole app (display currency,
+  // tax buckets, manual-entry pickers, analyst persona). It never converts away data — values
+  // are stored in a neutral unit (see THE UNIT RULE in regions/profile) — so this is a confirm,
+  // not a hard lock. Freely switchable while empty; gated once there's a portfolio to reframe.
+  const hasData = portfolio.holdings.length > 0 || portfolio.accounts.length > 0;
+  const [pendingRegion, setPendingRegion] = useState<"India" | "US" | null>(null);
+  const applyRegion = (c: "India" | "US") => {
+    updateSettings({ country: c, baseCurrency: c === "US" ? "USD" : "INR" });
+    setPendingRegion(null);
+  };
 
   const doExport = async () => {
     try {
@@ -128,177 +137,163 @@ export function Settings() {
   };
 
   return (
-    <div className="grid" style={{ gap: "1.25rem", maxWidth: 760 }}>
-      {/* ── 1. AI analysis: how the review reaches Claude, and which model writes it ── */}
+    <div className="grid" style={{ gap: "1.1rem", maxWidth: 760 }}>
+      {/* ── 1. AI analysis: how the review reaches Claude + which model writes it ── */}
       <div className="card">
         <h3 style={H3}>AI analysis</h3>
-        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.9rem", maxWidth: 600 }}>
-          Where the review runs and which model writes it. Your portfolio stays on device — only the
-          compact brief (or a document you approve) is sent.
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
+          Configure how the analyst reviews your portfolio. Data stays on your device — only a
+          compact brief is sent for review.
         </p>
 
-        {/* The relay-vs-own-key choice is hidden for now (alpha): the app just uses the relay.
-            Revealed under Developer mode so it stays recoverable for advanced users / testing. */}
-        {s.developerMode ? (
-        <>
-        <label>How analysis reaches Claude</label>
-        <div style={{ display: "flex", gap: "0.5rem", margin: "0.3rem 0 1rem" }}>
-          <button className={`chip ${s.claudeMode === "relay" ? "active" : ""}`} onClick={() => updateSettings({ claudeMode: "relay" })}>
-            Relay (default, easiest)
-          </button>
-          <button className={`chip ${s.claudeMode === "byo" ? "active" : ""}`} onClick={() => updateSettings({ claudeMode: "byo" })}>
-            My own Anthropic key (max privacy)
-          </button>
-        </div>
-
-        {s.claudeMode === "relay" ? (
-          <div>
-            <label>Relay URL</label>
-            <input aria-label="Relay URL" placeholder="https://your-relay.workers.dev" value={s.relayUrl} onChange={(e) => updateSettings({ relayUrl: e.target.value })} />
-            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
-              The relay holds the Anthropic key server-side and forwards your brief without storing it.
-              {!s.relayUrl && <> <strong>No relay is set yet</strong> — deploy <code>relay/</code> (see its
-                README) and paste the URL here, or switch to <em>your own key</em> for the most private setup.</>}
-            </p>
-            {s.relayUrl && s.relayUrl !== DEFAULT_RELAY_URL && (
-              <p style={{ fontSize: "0.76rem", marginTop: "0.3rem", color: "var(--warn, #9a6a00)" }}>
-                ⚠ <strong>Custom relay</strong> — your portfolio brief and questions will be sent to this
-                address. Only use a relay you run or fully trust; https is required.
-              </p>
-            )}
-            <label style={{ display: "block", marginTop: "0.9rem" }}>
-              Relay access code <span className="muted" style={{ fontWeight: 400 }}>— optional</span>
-            </label>
-            <input
-              type="password"
-              aria-label="Relay access code"
-              placeholder="paste a code someone shared with you"
-              value={s.relayCode ?? ""}
-              onChange={(e) => updateSettings({ relayCode: e.target.value })}
-            />
-            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
-              Only needed if the relay above requires a code. If a friend shared their relay with you,
-              paste the code they gave you here; otherwise leave it blank.
-            </p>
+        {/* Access Code Section */}
+        {!s.developerMode && (
+          <div className="list-grouped" style={{ border: "1px solid var(--line-2)", marginBottom: "1.25rem" }}>
+            <div className="form-col" style={{ padding: "0.5rem 0.8rem" }}>
+              <label style={{ marginBottom: "0.15rem" }}>Access code</label>
+              <input
+                type="password" aria-label="Access code"
+                placeholder="paste your invite code"
+                value={s.relayCode ?? ""}
+                onChange={(e) => updateSettings({ relayCode: e.target.value })}
+                style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }}
+              />
+            </div>
           </div>
-        ) : (
-          <div>
-            <label>Anthropic API key</label>
-            {keySet ? (
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <span className="badge badge-green">key set · {isTauri() ? `stored in ${keyStoreName()}` : "kept in this tab only"}</span>
-                <button className="btn btn-ghost" onClick={removeKey}>Remove</button>
+        )}
+
+        {/* Developer Mode Routing Settings (if enabled) */}
+        {s.developerMode && (
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label>Routing</label>
+            <div style={{ display: "flex", gap: "0.4rem", margin: "0.3rem 0 0.8rem" }}>
+              <button className={`chip ${s.claudeMode === "relay" ? "active" : ""}`} onClick={() => updateSettings({ claudeMode: "relay" })}>Hosted</button>
+              <button className={`chip ${s.claudeMode === "byo" ? "active" : ""}`} onClick={() => updateSettings({ claudeMode: "byo" })}>My own key</button>
+            </div>
+            {s.claudeMode === "relay" ? (
+              <div className="list-grouped" style={{ border: "1px solid var(--line-2)" }}>
+                <div className="form-col" style={{ padding: "0.5rem 0.8rem", borderBottom: "1px solid var(--line-2)" }}>
+                  <label>Relay URL</label>
+                  <input placeholder="https://..." value={s.relayUrl} onChange={(e) => updateSettings({ relayUrl: e.target.value })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} />
+                </div>
+                <div className="form-col" style={{ padding: "0.5rem 0.8rem" }}>
+                  <label>Relay access code</label>
+                  <input type="password" value={s.relayCode ?? ""} onChange={(e) => updateSettings({ relayCode: e.target.value })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} />
+                </div>
               </div>
             ) : (
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <input type="password" aria-label="Anthropic API key" placeholder="sk-ant-…" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} />
-                <button className="btn btn-primary" onClick={saveKey}>Save key</button>
+              <div className="list-grouped" style={{ border: "1px solid var(--line-2)" }}>
+                <div className="form-col" style={{ padding: "0.5rem 0.8rem" }}>
+                  <label>API Key</label>
+                  {keySet ? (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span className="badge badge-green" style={{ fontSize: "0.65rem" }}>key stored safely</span>
+                      <button className="btn btn-ghost" style={{ padding: "0", fontSize: "0.75rem" }} onClick={removeKey}>Remove</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <input type="password" placeholder="sk-..." value={keyInput} onChange={(e) => setKeyInput(e.target.value)} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none", flex: 1 }} />
+                      <button className="btn btn-primary" style={{ padding: "0.2rem 0.6rem", fontSize: "0.75rem" }} onClick={saveKey}>Save</button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>
-              {isTauri()
-                ? `Stored in the ${keyStoreName()} and used from the app's native layer — it never enters the web view.`
-                : "In the web preview the key is kept in this tab's memory only (cleared when you close it); the desktop app uses the system keychain."}
-            </p>
           </div>
         )}
-        </>
-        ) : (
-          <>
-            <label>Access code <span className="muted" style={{ fontWeight: 400 }}>— from the developer</span></label>
-            <input
-              type="password"
-              aria-label="Relay access code"
-              placeholder="paste the code you were given"
-              value={s.relayCode ?? ""}
-              onChange={(e) => updateSettings({ relayCode: e.target.value })}
-            />
-            <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem", maxWidth: 600 }}>
-              Your analysis runs through Sampatti's relay, which is invite-only during alpha — paste
-              the access code you were given. (Prefer your own Anthropic key? Enable developer mode below.)
-            </p>
-          </>
-        )}
 
-        <label style={{ display: "block", marginTop: "1.3rem" }}>Analysis model</label>
-        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.6rem" }}>
-          Which Claude writes your analysis. More thorough models reason deeper on nuance;
-          lighter ones reply faster.
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+        <label style={{ display: "block", marginTop: "0.5rem" }}>Analysis depth</label>
+        {/* One source of truth: ANALYSIS_MODELS (claude/transport) also drives the relay
+            contract test, so every model the picker offers is guaranteed accepted by the relay. */}
+        <div className="list-grouped" style={{ marginTop: "0.4rem", border: "1px solid var(--line-2)" }}>
           {ANALYSIS_MODELS.map((m) => {
             const active = s.analysisModel === m.id;
             return (
-              <button
+              <div
                 key={m.id}
+                className="list-row"
                 onClick={() => updateSettings({ analysisModel: m.id })}
                 style={{
-                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem",
-                  textAlign: "left", padding: "0.6rem 0.8rem", borderRadius: 10, cursor: "pointer",
-                  border: active ? "1.5px solid var(--primary)" : "1px solid var(--line-2)",
-                  background: active ? "var(--primary-soft)" : "var(--card)",
+                  cursor: "pointer", justifyContent: "space-between",
+                  background: active ? "var(--surface-2)" : "transparent",
                 }}
               >
                 <span>
-                  <span style={{ fontWeight: 700, fontSize: "0.9rem" }}>{m.label}</span>
-                  <span className="muted" style={{ display: "block", fontSize: "0.74rem", marginTop: "0.1rem" }}>{m.hint}</span>
+                  <div style={{ fontWeight: 650, fontSize: "0.88rem", color: active ? "var(--primary)" : "var(--ink)" }}>{m.label}</div>
+                  <div className="muted" style={{ fontSize: "0.72rem", marginTop: "0.05rem" }}>{m.hint}</div>
                 </span>
                 {active && <span style={{ color: "var(--primary)", fontWeight: 700 }}>✓</span>}
-              </button>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* ── 2. Region & currency ── */}
+      {/* ── 2. Region & currency — the home-market choice + the cross-currency FX rate ── */}
       <div className="card">
         <h3 style={H3}>Region &amp; currency</h3>
-        <p className="muted" style={{ fontSize: "0.76rem", margin: "0 0 0.6rem", maxWidth: 600 }}>
-          Tax language, the analyst persona, examples and currency display follow your market.
-          Your data itself is never changed or converted in storage — figures display at the
-          ₹/$ rate below.
+        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.8rem", maxWidth: 600 }}>
+          Your home market — it sets the display currency, the tax buckets, the manual-entry
+          options, and which market the AI analyst speaks to. Pick this once when you start; it
+          isn't meant to be switched back and forth.
         </p>
-        <label>Region</label>
-        <div style={{ display: "flex", gap: "0.5rem", margin: "0.3rem 0 1.25rem" }}>
-          <button className={`chip ${s.country !== "US" ? "active" : ""}`} onClick={() => updateSettings({ country: "India", baseCurrency: "INR" })}>
-            India
-          </button>
-          <button className={`chip ${s.country === "US" ? "active" : ""}`} onClick={() => updateSettings({ country: "US", baseCurrency: "USD" })}>
-            United States
-          </button>
+        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+          {([
+            { c: "India", label: "India · ₹" },
+            { c: "US", label: "United States · $" },
+          ] as const).map(({ c, label }) => {
+            const active = s.country === c;
+            return (
+              <button
+                key={c}
+                className={`chip ${active ? "active" : ""}`}
+                aria-pressed={active}
+                onClick={() => {
+                  if (active) return;
+                  if (hasData) setPendingRegion(c);
+                  else applyRegion(c);
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
-        <div style={{ maxWidth: 320 }}>
-          <label>{profileFor(s).fxLabel}</label>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <input type="number" aria-label="Exchange rate, rupees per dollar" style={{ maxWidth: 130 }} value={s.usdInr}
-              onChange={(e) => updateSettings({ usdInr: Number(e.target.value) || s.usdInr })} />
-            <button className="btn btn-ghost" onClick={refreshRate} disabled={fxBusy}>
-              {fxBusy ? <span className="spinner" /> : "↻ Fetch live"}
-            </button>
+        {pendingRegion && (
+          <div style={{ marginTop: "0.8rem", padding: "0.8rem 0.9rem", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: "12px" }}>
+            <p style={{ fontSize: "0.82rem", margin: "0 0 0.6rem", lineHeight: 1.6, maxWidth: 620 }}>
+              Switch your home market to <strong>{pendingRegion === "US" ? "United States" : "India"}</strong>?
+              Your accounts and values are <strong>safe and stay exactly as entered</strong> — Sampatti
+              keeps everything in a neutral unit, so nothing is converted away or lost. What changes is the
+              framing: amounts now show in <strong>{pendingRegion === "US" ? "$" : "₹"}</strong>, the tax
+              buckets and manual-entry options switch to the {pendingRegion === "US" ? "US" : "Indian"}{" "}
+              market, and the AI review speaks as a {pendingRegion === "US" ? "US" : "India"} analyst. A
+              portfolio built for one market rarely reads well as the other, so only switch if you set
+              this wrong to begin with.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button className="btn btn-primary" onClick={() => applyRegion(pendingRegion)}>
+                Yes, switch to {pendingRegion === "US" ? "United States" : "India"}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setPendingRegion(null)}>Cancel</button>
+            </div>
           </div>
-          <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.35rem" }}>
-            {fxNote ?? "Refreshed automatically each time the app opens; fetch anytime — only the public rate is requested, no data about you is sent."}
-          </p>
-        </div>
-      </div>
+        )}
 
-      {/* ── 3. Appearance ── */}
-      <div className="card">
-        <h3 style={H3}>Appearance</h3>
-        <p className="muted" style={{ fontSize: "0.78rem", margin: "0 0 0.6rem", maxWidth: 600 }}>
-          Light by default. Dark mode is opt-in — it won't follow your device's setting unless you choose it here.
-        </p>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className={`chip ${(s.theme ?? "light") !== "dark" ? "active" : ""}`}
-            aria-pressed={(s.theme ?? "light") !== "dark"} onClick={() => updateSettings({ theme: "light" })}>
-            ☀ Light
-          </button>
-          <button className={`chip ${s.theme === "dark" ? "active" : ""}`}
-            aria-pressed={s.theme === "dark"} onClick={() => updateSettings({ theme: "dark" })}>
-            ☾ Dark
+        {/* The ₹-per-$ pair that values any cross-currency holdings (always stored ₹ per $1). */}
+        <div style={{ marginTop: "1rem", paddingTop: "0.8rem", borderTop: "1px solid var(--line-2)", display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: "0.84rem", fontWeight: 600 }}>{profileFor(s).fxLabel}</div>
+            <div className="muted" style={{ fontSize: "0.76rem", marginTop: "0.1rem" }}>
+              Currently <strong>₹{s.usdInr}/$</strong> — refreshed automatically each launch.
+            </div>
+          </div>
+          <button className="btn" disabled={fxBusy} onClick={() => void refreshRate()}>
+            {fxBusy ? <span className="spinner" /> : "↻ Refresh rate"}
           </button>
         </div>
+        {fxNote && <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.4rem" }}>{fxNote}</p>}
       </div>
 
       {/* ── 4. Insights (optional Overview extras) ── */}
@@ -474,8 +469,9 @@ export function Settings() {
       {showPrivacy && (
         <div className="modal-backdrop" onClick={() => setShowPrivacy(false)}>
           <div className="modal" role="dialog" aria-modal="true" aria-label="How Sampatti handles your data" onClick={(e) => e.stopPropagation()}>
-            <button className="btn btn-ghost" aria-label="Close" onClick={() => setShowPrivacy(false)}
-              style={{ position: "absolute", top: "0.5rem", right: "0.5rem" }}>✕</button>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "-0.5rem" }}>
+              <button className="btn btn-ghost" aria-label="Close" onClick={() => setShowPrivacy(false)}>✕</button>
+            </div>
             <PrivacyExplainer />
           </div>
         </div>
