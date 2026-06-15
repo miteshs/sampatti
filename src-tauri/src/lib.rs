@@ -314,6 +314,13 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init());
 
+    // Auto-update for the Developer-ID direct downloads — desktop only (mobile updates via the
+    // app stores). process::relaunch() restarts the app after an update is installed.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
+
     // The on-device LLM commands exist only on desktop (Cargo.toml excludes llama.cpp on
     // mobile). Register the full handler set on desktop; the network/keystore-only set on
     // mobile. The keystore + Claude + market paths are identical on every platform.

@@ -7,6 +7,8 @@
     "core:default",
     "dialog:default",
     "fs:default",
+    "updater:default",
+    "process:default",
     { "identifier": "fs:allow-mkdir", "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/**" }] },
     { "identifier": "fs:allow-exists", "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/**" }] },
     { "identifier": "fs:allow-remove", "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/**" }] },

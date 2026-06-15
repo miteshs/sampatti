@@ -1,6 +1,6 @@
 [package]
 name = "sampatti"
-version = "0.8.1"
+version = "0.8.2"
 description = "Private, India-first portfolio analysis"
 authors = ["you"]
 edition = "2021"
@@ -25,6 +25,8 @@ futures-util = "0.3"
 # silently falls back to the in-memory mock store and the saved key dies with the process.
 keyring = { version = "3", features = ["apple-native", "windows-native"] }
 sha2 = "0.10"
+tauri-plugin-updater = "2.10.1"
+tauri-plugin-process = "2.3.1"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
