@@ -79,7 +79,12 @@ export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME=/build"
 export CFLAGS="${CFLAGS:-} -ffile-prefix-map=$HOME=/build"
 export CXXFLAGS="${CXXFLAGS:-} -ffile-prefix-map=$HOME=/build"
 npm run tauri build >/dev/null
-[ -f "$DMG" ] || { echo "✗ dmg not found at $DMG"; exit 1; }
+[ -d "$APP" ] || { echo "✗ app not built at $APP"; exit 1; }
+
+# Build the dmg ourselves: app-only (no Applications drag alias) so a double-click on the app
+# triggers the self-install (relocate.rs). Tauri's dmg target is disabled in tauri.conf.json.
+scripts/make-dmg.sh "$APP" "$DMG" "${APPLE_SIGNING_IDENTITY:-}"
+[ -f "$DMG" ] || { echo "✗ dmg not produced at $DMG"; exit 1; }
 
 # Binary-level PII gate: the published executable must not contain the builder's home path.
 if strings "$APP/Contents/MacOS/sampatti" | grep -q "/Users/"; then
