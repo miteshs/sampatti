@@ -1,14 +1,15 @@
 # Releasing Sampatti for macOS
 
-Sampatti for macOS ships as a **signed + notarized `.dmg`** that users download directly from
-the public releases repo, open, and drag into *Applications* — no Homebrew, no Gatekeeper
-prompts, no install scripts.
+Sampatti for macOS ships as a **signed + notarized `.dmg`** that users download directly from the
+public releases repo. The dmg is **app-only** (no Applications drag alias): opening it shows just
+the Sampatti icon, and double-clicking it triggers a one-time self-install into *Applications* — no
+Homebrew, no Gatekeeper prompts, no install scripts, no drag.
 
 User flow:
 
 > Download `Sampatti_<version>_aarch64.dmg` from
-> [the releases page](https://github.com/miteshs/sampatti-releases/releases) → open it → drag
-> **Sampatti** into *Applications* → launch.
+> [the releases page](https://github.com/miteshs/sampatti-releases/releases) → open it →
+> **double-click Sampatti** → **Move to Applications** → it relaunches, installed.
 
 ## How distribution is laid out
 
@@ -73,16 +74,24 @@ re-authorize access to the saved Anthropic key in the Keychain. Notarization its
 the build and usually takes ~1–15 min (the *first* submission on a new key can be slower while
 Apple's service processes it).
 
+## Install UX (self-install)
+
+The dmg deliberately omits the usual `Applications` drag alias. Tauri's built-in dmg always injects
+it, so `tauri.conf.json` disables the dmg target (builds the `.app` only) and
+[`scripts/make-dmg.sh`](../scripts/make-dmg.sh) builds the dmg with `hdiutil` — just `Sampatti.app`,
+no alias, no background. With nothing to drag, the obvious action is to double-click the app.
+
+On first launch from a transient location (the mounted dmg, Downloads/Desktop, or a Gatekeeper
+App-Translocation path), [`src-tauri/src/relocate.rs`](../src-tauri/src/relocate.rs) prompts "Move
+to Applications?", copies the bundle into `/Applications`, relaunches from there, and quits — a
+per-user move, no admin password (unlike a `.pkg`). It's a no-op once the app already lives in
+`/Applications`.
+
 ## Notes / limits
 
 - Apple-Silicon only (`aarch64`). Intel/universal would add a second arch + sha.
 - The app stores its data under `~/Library/Application Support/app.sampatti.desktop`; deleting
   the app does not remove it — delete that folder to wipe the on-device portfolio.
 
-## Legacy: Homebrew
-
-Earlier releases were distributed via a Homebrew tap (`miteshs/homebrew-sampatti`). Direct
-download is now the only recommended path. The cask source still lives at
-`packaging/homebrew/sampatti.rb` and `scripts/release.sh` keeps its version/sha current, but
-the tap is no longer actively published. Existing `brew`-installed users can switch by deleting
-the old app and downloading the dmg.
+Distribution is direct-download only. (Earlier releases used a Homebrew tap; that path is
+retired — the dmg is the single supported install.)

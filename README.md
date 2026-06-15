@@ -55,21 +55,19 @@ be cross-built from Linux):
 
 ```
 npm run tauri icon ./brand-icon.png     # generate icons (one-time)
-npm run tauri build                     # → src-tauri/target/release/bundle/dmg/Sampatti_*.dmg
+npm run tauri build                     # → src-tauri/target/release/bundle/macos/Sampatti.app
 ```
 
-Sign + notarize so it opens without Gatekeeper warnings:
+Signing, notarization, and the dmg are handled by `scripts/release.sh`, which reads credentials
+from a gitignored `.env.signing` (a Developer ID identity + an App Store Connect API key — see
+[`.env.signing.example`](.env.signing.example)) and notarizes with `notarytool` directly:
 
 ```
-export APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-export APPLE_ID="you@example.com"
-export APPLE_PASSWORD="app-specific-password"
-export APPLE_TEAM_ID="TEAMID"
-npm run tauri build                     # Tauri signs, then submits to Apple notarization
+scripts/release.sh --gh-release         # build → sign → notarize → staple → verify → publish
 ```
 
-The user just downloads the `.dmg`, drags Sampatti to Applications, and opens it — no git, no
-build, no install scripts.
+The user just downloads the `.dmg`, opens it, and **double-clicks Sampatti** — the app installs
+itself into Applications (no drag) and opens. No git, no build, no install scripts.
 
 ## Build the Windows app (`.exe`)
 
@@ -84,15 +82,15 @@ Install/runbook details: [`docs/windows.md`](docs/windows.md).
 
 Download `Sampatti_<version>_aarch64.dmg` from the
 [latest release](https://github.com/miteshs/sampatti-releases/releases/latest), open it, and
-drag **Sampatti** into Applications. The app is signed with an Apple Developer ID and notarized
-by Apple, so it opens normally on first launch — no Gatekeeper warnings, no `brew`, no install
-scripts.
+**double-click Sampatti** — it offers to move itself into Applications, then relaunches from
+there. No drag, no `brew`. The app is signed with an Apple Developer ID and notarized by Apple,
+so it opens normally on first launch — no Gatekeeper warnings.
 
-`scripts/release.sh` builds the dmg, signs + notarizes it (credentials from a gitignored
-`.env.signing` — see [`.env.signing.example`](.env.signing.example)), staples the ticket, and
-publishes it to the public [releases repo](https://github.com/miteshs/sampatti-releases). The
-Homebrew cask at [`packaging/homebrew/sampatti.rb`](packaging/homebrew/sampatti.rb) is retained
-for legacy installs but is no longer the recommended path.
+`scripts/release.sh` builds the dmg (app-only — no Applications drag alias, so the self-install on
+first launch is the obvious action), signs + notarizes it via `notarytool` (credentials from a
+gitignored `.env.signing` — see [`.env.signing.example`](.env.signing.example)), staples the
+ticket, and publishes it to the public
+[releases repo](https://github.com/miteshs/sampatti-releases).
 
 ## How analysis reaches Claude
 

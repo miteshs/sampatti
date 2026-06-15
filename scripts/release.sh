@@ -3,7 +3,6 @@
 #
 #   scripts/release.sh                 # public build (no baked secrets), sign+notarize, sha256
 #   scripts/release.sh --gh-release    # also publish the GitHub Release on miteshs/sampatti-releases
-#   scripts/release.sh --tap ../homebrew-sampatti   # (legacy) also copy the cask into a tap checkout
 #
 # Notes:
 #   • Version comes from src-tauri/tauri.conf.json.
@@ -27,11 +26,9 @@ trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 
 RELEASES_REPO="miteshs/sampatti-releases"
 GH_RELEASE=0
-TAP_DIR=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --gh-release) GH_RELEASE=1 ;;
-    --tap) TAP_DIR="${2:-}"; shift ;;
     *) echo "unknown arg: $1"; exit 1 ;;
   esac
   shift
@@ -40,7 +37,6 @@ done
 VERSION=$(node -e "console.log(require('./src-tauri/tauri.conf.json').version)")
 DMG="src-tauri/target/release/bundle/dmg/Sampatti_${VERSION}_aarch64.dmg"
 APP="src-tauri/target/release/bundle/macos/Sampatti.app"
-CASK="packaging/homebrew/sampatti.rb"
 
 # A release must be reproducible from a commit: refuse a dirty tree and stamp the commit
 # into the release notes. (0.3.0 shipped a 14:08 dmg for an end-of-day tree — the Settings
@@ -117,17 +113,12 @@ SIZE=$(du -h "$DMG" | awk '{print $1}')
 echo "✓ Built $DMG ($SIZE)"
 echo "  sha256: $SHA"
 
-# Update the cask in place (version + sha256).
-/usr/bin/sed -i '' -E "s/^  version \".*\"/  version \"${VERSION}\"/" "$CASK"
-/usr/bin/sed -i '' -E "s/^  sha256 \".*\"/  sha256 \"${SHA}\"/" "$CASK"
-echo "✓ Updated $CASK"
-
 if [ "$GH_RELEASE" = "1" ]; then
   echo "▶ Publishing release v${VERSION} on ${RELEASES_REPO} (public, dmg-only repo)…"
-  # Direct download is the only install path: signed + notarized dmg opens on a plain
-  # double-click, no Gatekeeper dance.
+  # The app-only dmg opens on a plain double-click and self-installs to /Applications — no
+  # Gatekeeper dance, no drag.
   NOTES=$(cat <<NOTES_EOF
-**macOS (Apple Silicon)** — download \`Sampatti_${VERSION}_aarch64.dmg\` below, open it, and drag **Sampatti** into Applications. The app is signed with an Apple Developer ID and notarized by Apple, so it opens normally — no security warnings, no right-click dance.
+**macOS (Apple Silicon)** — download \`Sampatti_${VERSION}_aarch64.dmg\` below, open it, and **double-click Sampatti** — it offers to move itself into Applications and reopens from there. No drag. Signed with an Apple Developer ID and notarized by Apple, so it opens normally — no security warnings.
 
 **Windows (x64)**: \`Sampatti_${VERSION}_x64-setup.exe\` below — SmartScreen will warn: **More info → Run anyway**.
 
@@ -142,16 +133,9 @@ NOTES_EOF
   echo "✓ Release v${VERSION} ready on ${RELEASES_REPO}"
 fi
 
-if [ -n "$TAP_DIR" ]; then
-  mkdir -p "$TAP_DIR/Casks"
-  cp "$CASK" "$TAP_DIR/Casks/sampatti.rb"
-  echo "✓ Copied cask into $TAP_DIR/Casks/sampatti.rb (commit & push that tap repo)"
-fi
-
 echo
 echo "Next:"
 echo "  • Windows build:   git tag v${VERSION} && git push origin v${VERSION}"
 echo "                     (CI builds the NSIS exe and adds it to the same release — docs/windows.md)"
-echo "  • Users install:   download the dmg from the release, open it, drag to Applications"
-echo "                     (signed + notarized — opens with no Gatekeeper warning)"
-echo "  • Your own copy:   npm run tauri build   (same token-less build; paste your access code in Settings)"
+echo "  • Users install:   download the dmg, open it, double-click Sampatti (it self-installs to /Applications)"
+echo "  • Your own copy:   npm run tauri build   (builds the .app; copy it to /Applications)"
