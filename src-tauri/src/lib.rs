@@ -10,6 +10,10 @@
 #[cfg(desktop)]
 pub mod local_llm; // pub: examples/local_eval.rs drives the same inference path
 
+// Self-install (move-to-/Applications on first launch from a dmg/Downloads). macOS-only; the
+// module body and the call site in run() are both compiled out elsewhere.
+mod relocate;
+
 use futures_util::StreamExt;
 use serde_json::Value;
 use tauri::ipc::Channel;
@@ -301,6 +305,11 @@ mod tests {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Before anything else: if we were launched from a dmg/Downloads, offer to install into
+    // /Applications and relaunch from there (no-op once installed; macOS-only).
+    #[cfg(target_os = "macos")]
+    relocate::maybe_relocate_to_applications();
+
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init());
