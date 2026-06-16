@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sampatti — private portfolio analysis for India & the US</title>
+<meta name="description" content="See everything you own in one dashboard, with an AI portfolio analyst — all on your own computer. Your financial statements never leave your machine. Free for macOS and Windows." />
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+
+<!-- Share preview. Set the absolute URL once the domain is live. -->
+<link rel="canonical" href="https://sampatti.app" />
+<meta property="og:url" content="https://sampatti.app" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Sampatti — private portfolio analysis" />
+<meta property="og:description" content="Everything you own, in one dashboard, with an AI analyst — and it all stays on your machine." />
+<meta property="og:image" content="assets/shots/overview.png" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<style>
+  /* Sampatti landing — same "editorial calm" system as the app: warm paper, one indigo accent,
+     Fraunces for headlines, Inter for body + every number. Fonts self-hosted (no CDN — the
+     privacy story holds on the marketing page too). */
+  @font-face {
+    font-family: "Inter Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
+    src: url("assets/fonts/inter-latin.woff2") format("woff2-variations");
+  }
+  @font-face {
+    font-family: "Fraunces Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
+    src: url("assets/fonts/fraunces-latin.woff2") format("woff2-variations");
+  }
+
+  :root {
+    --bg: #f7f5f0;
+    --bg-grad: radial-gradient(1100px 480px at 85% -8%, rgba(72,69,229,0.08) 0%, rgba(72,69,229,0) 60%),
+      radial-gradient(900px 520px at -10% 8%, rgba(217,165,20,0.06) 0%, rgba(217,165,20,0) 55%),
+      radial-gradient(760px 420px at 50% 120%, rgba(14,159,110,0.03) 0%, rgba(14,159,110,0) 60%), #f7f5f0;
+    --card: #ffffff;
+    --surface-2: #faf9f6;
+    --surface-3: #efede5;
+    --ink: #23211b;
+    --ink-2: #514e45;
+    --ink-3: #6e6a5e;
+    --line: #e7e4da;
+    --line-2: #efede5;
+    --primary: #4845e5;
+    --primary-down: #3a38c8;
+    --primary-2: #7c6cf6;
+    --primary-soft: #edeefe;
+    --on-primary: #fff;
+    --emerald: #0e9f6e;
+    --emerald-soft: #e6f7f0;
+    --amber: #d98324;
+    --amber-ink: #9a5b09;
+    --amber-soft: #fbf1e2;
+    --shadow: 0 1px 2px rgba(26,31,23,0.05), 0 0 0 1px rgba(26,31,23,0.03);
+    --shadow-lg: 0 4px 12px rgba(26,31,23,0.04), 0 18px 48px rgba(26,31,23,0.10), 0 0 0 1px rgba(26,31,23,0.03);
+    --radius: 18px;
+    --radius-sm: 11px;
+    --font: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; font-family: var(--font); color: var(--ink);
+    background: var(--bg-grad); background-attachment: fixed;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    font-feature-settings: "tnum" 1, "cv01" 1, "ss01" 1; line-height: 1.55;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; display: block; }
+  ::selection { background: var(--primary-soft); color: var(--ink); }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.015em; line-height: 1.08; margin: 0; }
+  .eyebrow { font-size: 0.8rem; font-weight: 650; letter-spacing: 0.02em; color: var(--primary); text-transform: none; }
+  .muted { color: var(--ink-3); }
+
+  /* ---- top bar ---- */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar .wrap { display: flex; align-items: center; gap: 1rem; height: 62px; }
+  .brand { display: flex; align-items: center; gap: 0.6rem; }
+  .brand img { width: 30px; height: 30px; border-radius: 9px; box-shadow: var(--shadow); }
+  .brand b { font-family: var(--font-display); font-weight: 700; font-size: 1.18rem; letter-spacing: -0.02em; }
+  .topnav { margin-left: auto; display: flex; align-items: center; gap: 1.6rem; }
+  .topnav a:not(.btn) { color: var(--ink-2); font-size: 0.9rem; font-weight: 550; }
+  .topnav a:not(.btn):hover { color: var(--ink); text-decoration: none; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center;
+    font-family: var(--font); font-weight: 600; font-size: 0.95rem; line-height: 1;
+    padding: 0.72rem 1.15rem; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: 0 6px 18px rgba(72,69,229,0.28); }
+  .btn-primary:hover { background: var(--primary-down); }
+  .btn-ghost { background: var(--card); color: var(--ink); border-color: var(--line); box-shadow: var(--shadow); }
+  .btn-sm { padding: 0.55rem 0.95rem; font-size: 0.88rem; }
+  .topnav .btn { margin-left: 0.2rem; }
+
+  /* ---- hero ---- */
+  .hero { padding: 4.6rem 0 1rem; text-align: center; }
+  .hero .eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.8rem; border-radius: 999px; background: var(--primary-soft); margin-bottom: 1.3rem; }
+  .hero h1 { font-size: clamp(2.3rem, 5.6vw, 3.85rem); margin: 0 auto; max-width: 16ch; }
+  .hero h1 .accent { color: var(--primary); }
+  .hero p.sub { font-size: clamp(1.05rem, 2.2vw, 1.28rem); color: var(--ink-2); max-width: 40rem; margin: 1.4rem auto 0; line-height: 1.5; }
+  .cta-row { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+  .cta-row .btn { padding: 0.92rem 1.5rem; font-size: 1.02rem; }
+  .cta-note { margin-top: 1rem; font-size: 0.85rem; color: var(--ink-3); }
+  .cta-note b { color: var(--ink-2); font-weight: 600; }
+
+  /* ---- hero screenshot ---- */
+  .shot-frame {
+    margin: 3rem auto 0; max-width: 920px; border-radius: var(--radius);
+    background: var(--card); padding: 0.55rem; box-shadow: var(--shadow-lg);
+    border: 1px solid var(--line-2);
+  }
+  .shot-frame img { border-radius: 12px; border: 1px solid var(--line-2); }
+  .shot-fade { -webkit-mask-image: linear-gradient(#000 78%, transparent); mask-image: linear-gradient(#000 78%, transparent); }
+
+  /* ---- section scaffolding ---- */
+  section { padding: 4.2rem 0; }
+  .section-head { max-width: 38rem; margin: 0 auto 2.6rem; text-align: center; }
+  .section-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
+  .section-head p { color: var(--ink-2); font-size: 1.08rem; margin: 0.9rem 0 0; }
+
+  /* privacy pillars */
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
+  .pillar { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 1.5rem 1.4rem; box-shadow: var(--shadow); }
+  .pillar .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); margin-bottom: 0.9rem; }
+  .pillar .ic.green { background: var(--emerald-soft); color: var(--emerald); }
+  .pillar .ic.amber { background: var(--amber-soft); color: var(--amber-ink); }
+  .pillar h3 { font-family: var(--font); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
+  .pillar p { color: var(--ink-2); font-size: 0.95rem; margin: 0.45rem 0 0; }
+
+  /* alternating feature rows */
+  .feature { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+  .feature + .feature { margin-top: 4.5rem; }
+  .feature.flip .copy { order: 2; }
+  .feature .eyebrow { display: block; margin-bottom: 0.7rem; }
+  .feature h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); }
+  .feature p { color: var(--ink-2); font-size: 1.06rem; margin: 1rem 0 0; }
+  .feature ul { margin: 1.1rem 0 0; padding: 0; list-style: none; }
+  .feature li { position: relative; padding-left: 1.6rem; margin: 0.55rem 0; color: var(--ink-2); }
+  .feature li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 7px; height: 7px; border-radius: 2px; background: var(--primary); }
+  .feature .shot { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); border: 1px solid var(--line-2); background: var(--card); }
+  .feature .shot img { border-radius: inherit; }
+
+  /* trust grid */
+  .trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+  .trust-item { text-align: center; }
+  .trust-item .ic { width: 44px; height: 44px; margin: 0 auto 0.8rem; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink-2); }
+  .trust-item h3 { font-family: var(--font); font-size: 0.92rem; font-weight: 700; margin: 0; }
+  .trust-item p { font-size: 0.82rem; color: var(--ink-3); margin: 0.3rem 0 0; line-height: 1.4; }
+
+  /* dual market */
+  .markets { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  .market { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 0.7rem; box-shadow: var(--shadow); }
+  .market img { border-radius: 12px; border: 1px solid var(--line-2); }
+  .market .lbl { display: flex; align-items: center; gap: 0.5rem; padding: 0.7rem 0.6rem 0.4rem; font-weight: 650; font-size: 0.95rem; }
+  .market .lbl .flag { font-size: 1.1rem; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; counter-reset: step; }
+  .step { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 1.6rem 1.4rem; box-shadow: var(--shadow); }
+  .step .n { counter-increment: step; font-family: var(--font-display); font-size: 1.5rem; color: var(--primary); font-weight: 600; }
+  .step .n::before { content: counter(step); }
+  .step h3 { font-family: var(--font); font-size: 1.05rem; font-weight: 700; margin: 0.5rem 0 0; }
+  .step p { color: var(--ink-2); font-size: 0.95rem; margin: 0.4rem 0 0; }
+
+  /* faq */
+  .faq { max-width: 46rem; margin: 0 auto; }
+  details { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 0 1.2rem; box-shadow: var(--shadow); margin-bottom: 0.7rem; }
+  summary { cursor: pointer; list-style: none; padding: 1.05rem 0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--ink-3); font-size: 1.3rem; line-height: 1; }
+  details[open] summary::after { content: "–"; }
+  details p { color: var(--ink-2); margin: 0 0 1.1rem; }
+
+  /* closing CTA */
+  .close-cta { text-align: center; background: var(--card); border: 1px solid var(--line-2); border-radius: 24px; padding: 3.4rem 2rem; box-shadow: var(--shadow-lg); }
+  .close-cta h2 { font-size: clamp(1.8rem, 3.6vw, 2.5rem); }
+  .close-cta p { color: var(--ink-2); max-width: 34rem; margin: 0.9rem auto 0; font-size: 1.08rem; }
+
+  /* footer */
+  footer { border-top: 1px solid var(--line); padding: 2.4rem 0; margin-top: 2rem; color: var(--ink-3); font-size: 0.9rem; }
+  footer .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  footer .links { display: flex; gap: 1.3rem; }
+  footer a { color: var(--ink-2); }
+
+  @media (max-width: 760px) {
+    .topnav a:not(.btn) { display: none; }
+    .pillars, .steps, .feature, .markets { grid-template-columns: 1fr; }
+    .feature.flip .copy { order: 0; }
+    .feature .shot { order: -1; }
+    section { padding: 3rem 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Sampatti home">
+      <img src="assets/logo.svg" alt="" />
+      <b>Sampatti</b>
+    </a>
+    <nav class="topnav">
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary btn-sm" href="#download">Download</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+<main>
+  <!-- HERO — privacy-first -->
+  <section class="hero" id="download" style="padding-bottom: 2rem;">
+    <div class="wrap">
+      <span class="eyebrow">Private portfolio analysis · India &amp; the US</span>
+      <h1>Your money, in one place — <span class="accent">on your machine, not the cloud.</span></h1>
+      <p class="sub">Sampatti gathers every account you own into one clear dashboard and gives you an interactive AI portfolio review. Your statements never leave your computer.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" id="dl-mac" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Mac</a>
+        <a class="btn btn-ghost" id="dl-win" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Windows</a>
+      </div>
+      <p class="cta-note"><b>Free.</b> macOS &amp; Windows · No account, no sign-up.</p>
+
+      <div class="shot-frame">
+        <img class="shot-fade" src="assets/shots/overview.png" alt="The Sampatti dashboard showing net worth, allocation, health score and retirement outlook" width="1280" loading="eager" />
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="wrap">
+      <!-- aggregation -->
+      <div class="feature">
+        <div class="copy">
+          <span class="eyebrow">Total Visibility</span>
+          <h2>Everything you own, finally in one view</h2>
+          <p>Stocks, mutual funds, retirement accounts, bonds, FDs, gold, real estate — Sampatti pulls it all together. No more switching between five different apps to know your net worth.</p>
+          <ul>
+            <li>Drop in statements; they're read right on your device</li>
+            <li>Reconcile duplicates across multiple brokers</li>
+            <li>Get a 0–100 <strong>Health Score</strong> across your whole portfolio</li>
+          </ul>
+        </div>
+        <div class="shot"><img src="assets/shots/holdings.png" alt="Holdings grouped by type with health score metrics" loading="lazy" /></div>
+      </div>
+
+      <!-- AI analyst -->
+      <div class="feature flip">
+        <div class="copy">
+          <span class="eyebrow">Interactive Review</span>
+          <h2>An expert analyst, in the room with you</h2>
+          <p>Get a clear review of concentration, diversification, and tax treatment — then ask follow-up questions in plain words, like you would a trusted adviser.</p>
+          <ul>
+            <li>Region-aware: ₹ for India, $ for the US</li>
+            <li>Grounded only in your real numbers — no generic advice</li>
+            <li>Preview the exact text before it leaves for analysis</li>
+          </ul>
+        </div>
+        <div class="shot"><img src="assets/shots/analysis.png" alt="Interactive AI analysis of the portfolio" loading="lazy" /></div>
+      </div>
+
+      <!-- performance -->
+      <div class="feature">
+        <div class="copy">
+          <span class="eyebrow">Real Growth</span>
+          <h2>Separate your savings from your growth</h2>
+          <p>Sampatti records your net worth day by day and separates real growth from money you've added — so you can see how your investments are truly doing.</p>
+          <ul>
+            <li>Performance stacked account by account</li>
+            <li>Profit and loss strictly from real purchase costs</li>
+            <li>Drag to zoom into any stretch of time</li>
+          </ul>
+        </div>
+        <div class="shot"><img src="assets/shots/performance.png" alt="Net worth growth and performance chart" loading="lazy" /></div>
+      </div>
+
+      <!-- NEW: Planning -->
+      <div class="feature flip">
+        <div class="copy">
+          <span class="eyebrow">Future Proof</span>
+          <h2>Plan for the long run</h2>
+          <p>Will you have enough to retire? Sampatti projects your corpus using your real numbers and inflation-aware math to show if you're on track.</p>
+          <ul>
+            <li>Goal-based retirement projections</li>
+            <li>Adjust inflation, returns, and savings in real-time</li>
+            <li>Deterministic math that runs entirely on-device</li>
+          </ul>
+        </div>
+        <div class="shot"><img src="assets/shots/overview-us.png" alt="Retirement outlook and goal tracking" loading="lazy" /></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST Row -->
+  <section style="background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+    <div class="wrap">
+      <div class="trust-grid">
+        <div class="trust-item">
+          <div class="ic">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3>Local Storage</h3>
+          <p>Data stays in a single file on your computer. No cloud sync.</p>
+        </div>
+        <div class="trust-item">
+          <div class="ic">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Signed & Notarized</h3>
+          <p>Verified by Apple and Microsoft for your safety.</p>
+        </div>
+        <div class="trust-item">
+          <div class="ic">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <h3>No Trackers</h3>
+          <p>No cookies, no analytics, no third-party scripts. Zero.</p>
+        </div>
+        <div class="trust-item">
+          <div class="ic">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </div>
+          <h3>Dark Mode</h3>
+          <p>Native support for a calm, eye-friendly experience.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DUAL MARKET -->
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">India &amp; the US</span>
+        <h2>Currency and tax aware</h2>
+        <p>Choose your region and Sampatti adapts — ₹ with lakh/crore and Indian instruments, or $ with US accounts and tax treatment.</p>
+      </div>
+      <div class="markets">
+        <div class="market">
+          <div class="lbl"><span class="flag">🇮🇳</span> India — ₹, lakh/crore, SGB · NPS · PPF</div>
+          <img src="assets/shots/overview.png" alt="Sampatti in India mode" loading="lazy" />
+        </div>
+        <div class="market">
+          <div class="lbl"><span class="flag">🇺🇸</span> United States — $, 401(k) · IRA · RSUs</div>
+          <img src="assets/shots/overview-us.png" alt="Sampatti in US mode" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Good to know</span>
+        <h2>Questions, answered</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Is my financial data really private?</summary>
+          <p>Yes. Your statements and holdings are stored only on your computer, in a single file you control. Nothing is uploaded to a server, and there's no account or login.</p>
+        </details>
+        <details>
+          <summary>How much does it cost?</summary>
+          <p>The app is free to download and use. The optional AI analysis runs on Claude; you can use a shared access code or your own key in Settings.</p>
+        </details>
+        <details>
+          <summary>What can I import?</summary>
+          <p>Account statements (PDFs, CSVs, Excel) from common brokers and platforms. Indian CAS and US brokerage exports are both supported natively.</p>
+        </details>
+        <details>
+          <summary>Does it work for both India and the US?</summary>
+          <p>Yes. Pick your region and Sampatti adapts the currency, instruments and tax rules — rupees and Indian assets, or dollars and US accounts.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING CTA -->
+  <section style="margin-bottom: 4rem;">
+    <div class="wrap">
+      <div class="close-cta">
+        <h2>See your whole net worth — privately</h2>
+        <p>Free for Mac and Windows. No account, no upload, no catch.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Mac</a>
+          <a class="btn btn-ghost" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Windows</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><img src="assets/logo.svg" alt="" style="width:24px;height:24px;border-radius:7px" /> <span class="muted">Sampatti — private portfolio analysis</span></div>
+    <div class="links">
+      <a href="https://github.com/miteshs/sampatti-releases/releases/latest">Releases</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:1rem; font-size:0.8rem;">Educational use only — not a substitute for a registered investment adviser.</div>
+</footer>
+
+<script>
+  // Progressive enhancement: detect OS to highlight the right primary button, and (best-effort)
+  // resolve the latest release's actual installer so the buttons one-click download instead of
+  // landing on a file list. Falls back silently to the releases page if the API is unreachable.
+  (function () {
+    var ua = navigator.userAgent || "";
+    var isWin = /Windows/.test(ua);
+    var mac = document.getElementById("dl-mac");
+    var win = document.getElementById("dl-win");
+    if (isWin && mac && win) {
+      // Make Windows the prominent action for Windows visitors.
+      mac.className = "btn btn-ghost";
+      win.className = "btn btn-primary";
+      mac.parentNode.insertBefore(win, mac);
+    }
+    fetch("https://api.github.com/repos/miteshs/sampatti-releases/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rel) {
+        if (!rel || !rel.assets) return;
+        rel.assets.forEach(function (a) {
+          if (/\.dmg$/i.test(a.name) && mac) mac.href = a.browser_download_url;
+          if (/\.exe$/i.test(a.name) && win) win.href = a.browser_download_url;
+        });
+      })
+      .catch(function () { /* keep the releases-page fallback */ });
+  })();
+</script>
+</body>
+</html>
