@@ -183,90 +183,66 @@ function usSpecs(): AcctSpec[] {
       name: "Schwab Taxable", institution: "Charles Schwab", accountType: "demat",
       taxTreatment: "taxable", region: "US", currency: "USD", asOf: "2026-05-31",
       items: [
-        ["Apple Inc", "us_equity", 185_000, { symbol: "AAPL", units: 720, costBasis: 96_000, buyDate: "2020-03-20" }],
-        ["Microsoft Corp", "us_equity", 160_000, { symbol: "MSFT", units: 320, costBasis: 105_000, buyDate: "2021-05-10" }],
-        ["Vanguard S&P 500 ETF", "index_etf", 210_000, { symbol: "VOO", units: 360, costBasis: 150_000, buyDate: "2019-08-05" }],
-        ["NVIDIA Corp", "us_equity", 95_000, { symbol: "NVDA", units: 540, costBasis: 28_000, buyDate: "2022-10-12" }],
-        // Recent buy → short-term, and a loser — the Performance tab shows red too.
-        ["Tesla Inc", "us_equity", 38_000, { symbol: "TSLA", units: 110, costBasis: 45_000, buyDate: "2026-03-02" }],
-        ["Money market sweep", "cash", 22_000, { symbol: "SWVXX" }],
+        ["NVIDIA Corp", "us_equity", 285_000, { symbol: "NVDA", units: 240, costBasis: 45_000, buyDate: "2021-03-20" }],
+        ["Apple Inc", "us_equity", 145_000, { symbol: "AAPL", units: 710, costBasis: 96_000, buyDate: "2020-05-10" }],
+        ["Vanguard S&P 500 ETF", "index_etf", 225_000, { symbol: "VOO", units: 385, costBasis: 160_000, buyDate: "2019-08-05" }],
+        // A realistic loser/pullback.
+        ["Tesla Inc", "us_equity", 42_000, { symbol: "TSLA", units: 120, costBasis: 55_000, buyDate: "2023-11-12" }],
+        ["Money market sweep", "cash", 35_000, { symbol: "SWVXX" }],
       ],
     },
     {
       name: "Fidelity 401(k)", institution: "Fidelity", accountType: "mutual_fund",
       taxTreatment: "us_pretax", region: "US", currency: "USD", asOf: "2026-05-31",
       items: [
-        ["Fidelity 500 Index Fund", "equity_mf", 385_000, { symbol: "FXAIX", costBasis: 235_000, buyDate: "2018-06-01" }],
-        ["Target Date 2045", "equity_mf", 155_000, { costBasis: 120_000, buyDate: "2020-01-15" }],
+        ["Fidelity 500 Index Fund", "equity_mf", 415_000, { symbol: "FXAIX", costBasis: 245_000, buyDate: "2018-06-01" }],
+        ["Total Bond Market", "debt_mf", 85_000, { symbol: "FXNAX", costBasis: 82_000, buyDate: "2022-01-15" }],
       ],
     },
     {
       name: "Vanguard Roth IRA", institution: "Vanguard", accountType: "mutual_fund",
       taxTreatment: "us_roth", region: "US", currency: "USD", asOf: "2026-05-31",
       items: [
-        ["Vanguard Total Stock Market ETF", "index_etf", 150_000, { symbol: "VTI", units: 480, costBasis: 92_000, buyDate: "2019-04-01" }],
-        ["Vanguard Total International ETF", "index_etf", 45_000, { symbol: "VXUS", units: 640, costBasis: 41_000, buyDate: "2022-07-01" }],
+        ["Vanguard Total Stock Market", "index_etf", 165_000, { symbol: "VTI", units: 520, costBasis: 98_000, buyDate: "2019-04-01" }],
+        ["Vanguard International", "index_etf", 55_000, { symbol: "VXUS", units: 780, costBasis: 48_000, buyDate: "2022-07-01" }],
       ],
     },
     {
-      name: "HSA Bank", institution: "HSA Bank / Schwab", accountType: "bank",
+      name: "HSA Bank", institution: "HSA Bank", accountType: "bank",
       taxTreatment: "us_hsa", region: "US", currency: "USD", asOf: "2026-05-31",
       items: [
-        ["HSA index sweep (S&P 500)", "index_etf", 40_000, { costBasis: 29_000, buyDate: "2021-02-01" }],
-        ["HSA cash", "cash", 5_000],
+        ["HSA Index Fund", "index_etf", 42_000, { costBasis: 31_000, buyDate: "2021-02-01" }],
+        ["HSA cash", "cash", 4_500],
       ],
     },
     {
-      // Joined the record a month ago with NEW money — a `flow` step in the trend.
-      name: "Treasury & CDs", institution: "TreasuryDirect / Marcus", accountType: "bank",
+      name: "Treasury & CDs", institution: "TreasuryDirect", accountType: "bank",
       taxTreatment: "taxable", region: "US", currency: "USD", asOf: dayStr(0),
       items: [
-        ["US Treasury Bills 4.8% 2026", "fd_rd", 130_000, { costBasis: 128_000, buyDate: dayStr(30) }],
-        ["Marcus CD 5.0% 2026", "fd_rd", 50_000, { costBasis: 50_000, buyDate: dayStr(30) }],
+        ["US Treasury Bills 5.2% 2026", "fd_rd", 150_000, { costBasis: 148_500, buyDate: dayStr(30) }],
       ],
     },
     {
       name: "Coinbase", institution: "Coinbase", accountType: "other",
       taxTreatment: "taxable", region: "Other", currency: "USD", asOf: "2026-05-31",
       items: [
-        ["Bitcoin", "crypto", 62_000, { symbol: "BTC", units: 0.95, costBasis: 21_000, buyDate: "2020-11-15" }],
-        ["Ethereum", "crypto", 19_000, { symbol: "ETH", units: 6.2, costBasis: 16_000, buyDate: "2024-02-01" }],
+        ["Bitcoin", "crypto", 85_000, { symbol: "BTC", units: 1.25, costBasis: 32_000, buyDate: "2020-11-15" }],
       ],
     },
     {
-      // Private-company RSUs: a value with NO basis — the ≈ since-import fallback on a
-      // big holding, plus the "your employer is your biggest risk" conversation.
-      name: "RSU — Stripe (Carta)", institution: "Carta", accountType: "other",
+      name: "RSU — Microsoft", institution: "Fidelity", accountType: "other",
       taxTreatment: "taxable", region: "US", currency: "USD", asOf: "2026-03-31",
-      defaultAssetClass: "us_equity", note: "Vested private RSUs at last 409A — no cost basis reported",
-      items: [["Stripe Inc (vested RSUs)", "us_equity", 140_000]],
-    },
-    {
-      // Pre-excluded: the Manage-tab include/exclude feature, US flavor.
-      name: "Old Employer 401(k) — Empower", institution: "Empower", accountType: "mutual_fund",
-      taxTreatment: "us_pretax", region: "US", currency: "USD", asOf: "2026-04-30",
-      excluded: true, note: "Pending rollover — tracked, excluded from net worth",
-      items: [["Target Date 2045", "equity_mf", 95_000, { costBasis: 70_000, buyDate: "2016-09-01" }]],
-    },
-    {
-      // The NRI case: an Indian demat alongside the US accounts — mixed currencies.
-      name: "Zerodha (NRI demat)", institution: "Zerodha", accountType: "demat",
-      taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
-      items: [
-        ["Reliance Industries", "indian_equity", 1_400_000, { symbol: "RELIANCE", units: 1110, costBasis: 900_000, buyDate: "2019-07-12" }],
-        ["ITC", "indian_equity", 600_000, { symbol: "ITC", units: 2150, costBasis: 450_000, buyDate: "2020-12-01" }],
-      ],
+      items: [["Microsoft (vested RSUs)", "us_equity", 185_000, { symbol: "MSFT" }]],
     },
     {
       name: "Home — Austin", institution: "—", accountType: "real_estate",
       taxTreatment: "taxable", region: "US", currency: "USD", asOf: dayStr(DEMO_PLOT_DAYS_AGO),
-      defaultAssetClass: "real_estate", note: "Zillow-style indicative value — update yearly",
-      items: [["Primary residence — Austin, TX", "real_estate", 780_000]],
+      items: [["Residence — Austin, TX", "real_estate", 920_000]],
     },
     {
       name: "Mortgage", institution: "Rocket Mortgage", accountType: "liability",
       taxTreatment: "na", region: "US", currency: "USD", asOf: "2026-05-31",
-      items: [["30-yr fixed (outstanding)", "other", 410_000]],
+      items: [["30-yr fixed (outstanding)", "other", 485_000]],
     },
   ];
 }
@@ -288,133 +264,93 @@ export function demoPortfolio(country: "India" | "US" = "India"): Portfolio {
       name: "Zerodha Demat", institution: "Zerodha", accountType: "demat",
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
       items: [
-        ["Reliance Industries", "indian_equity", 3_500_000, { symbol: "RELIANCE", units: 2770, costBasis: 2_100_000, buyDate: "2019-07-12" }],
-        ["HDFC Bank", "indian_equity", 2_800_000, { symbol: "HDFCBANK", units: 3790, costBasis: 1_700_000, buyDate: "2020-03-20" }],
-        ["Infosys", "indian_equity", 2_200_000, { symbol: "INFY", units: 1850, costBasis: 900_000, buyDate: "2018-11-05" }],
-        ["TCS", "indian_equity", 1_800_000, { symbol: "TCS", units: 835, costBasis: 1_200_000, buyDate: "2021-01-18" }],
-        ["ICICI Bank", "indian_equity", 1_600_000, { symbol: "ICICIBANK", units: 1280, costBasis: 750_000, buyDate: "2020-09-10" }],
-        ["Bajaj Finance", "indian_equity", 1_500_000, { symbol: "BAJFINANCE", units: 1720, costBasis: 1_100_000, buyDate: "2022-06-01" }],
-        ["Embassy Office Parks REIT", "reit_invit", 1_400_000, { symbol: "EMBASSY", units: 3290, costBasis: 1_100_000, buyDate: "2021-10-05" }],
-        ["Larsen & Toubro", "indian_equity", 1_200_000, { symbol: "LT", units: 310, costBasis: 650_000, buyDate: "2021-08-22" }],
-        // A realistic loser: bought near the top.
-        ["Asian Paints", "indian_equity", 1_000_000, { symbol: "ASIANPAINT", units: 376, costBasis: 1_150_000, buyDate: "2023-01-09" }],
-        ["Titan Company", "indian_equity", 900_000, { symbol: "TITAN", units: 215, costBasis: 400_000, buyDate: "2020-05-15" }],
-        // Recent buy → STCG territory, small loss so the Performance tab shows red too.
-        ["Trent", "indian_equity", 600_000, { symbol: "TRENT", units: 220, costBasis: 660_000, buyDate: "2025-11-20" }],
+        ["Trent Ltd", "indian_equity", 4_500_000, { symbol: "TRENT", units: 820, costBasis: 1_200_000, buyDate: "2022-03-15" }],
+        ["Kaynes Technology", "indian_equity", 3_200_000, { symbol: "KAYNES", units: 740, costBasis: 950_000, buyDate: "2023-01-10" }],
+        ["Varun Beverages", "indian_equity", 2_800_000, { symbol: "VBL", units: 1850, costBasis: 800_000, buyDate: "2021-11-05" }],
+        ["HDFC Bank", "indian_equity", 2_200_000, { symbol: "HDFCBANK", units: 1380, costBasis: 1_400_000, buyDate: "2020-03-20" }],
+        ["Reliance Industries", "indian_equity", 1_800_000, { symbol: "RELIANCE", units: 635, costBasis: 1_200_000, buyDate: "2021-01-18" }],
+        ["Embassy Office Parks REIT", "reit_invit", 1_600_000, { symbol: "EMBASSY", units: 3720, costBasis: 1_200_000, buyDate: "2021-10-05" }],
+        ["Jio Financial Services", "indian_equity", 1_400_000, { symbol: "JIOFIN", units: 3820, costBasis: 650_000, buyDate: "2023-08-22" }],
+        // A realistic loser: high-quality name bought at a peak.
+        ["Asian Paints", "indian_equity", 1_100_000, { symbol: "ASIANPAINT", units: 376, costBasis: 1_350_000, buyDate: "2023-01-09" }],
+        ["Zomato Ltd", "indian_equity", 950_000, { symbol: "ZOMATO", units: 5200, costBasis: 400_000, buyDate: "2022-05-15" }],
       ],
     },
     {
       name: "Equity Mutual Funds", institution: "CAMS / KFintech", accountType: "mutual_fund",
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
-      // symbol = AMFI scheme code → mfapi.in NAV history powers the trend chart.
       items: [
-        ["Parag Parikh Flexi Cap Fund", "equity_mf", 5_500_000, { symbol: "122639", costBasis: 3_000_000, buyDate: "2019-04-01" }],
-        ["Mirae Asset Large Cap Fund", "equity_mf", 4_500_000, { symbol: "118825", costBasis: 2_400_000, buyDate: "2018-02-10" }],
-        ["Axis Midcap Fund", "equity_mf", 3_000_000, { symbol: "120505", costBasis: 1_900_000, buyDate: "2021-03-15" }],
-        // Re-entered recently → short-term; goes long-term in a month.
-        ["SBI Small Cap Fund", "equity_mf", 2_500_000, { symbol: "125497", costBasis: 2_350_000, buyDate: "2025-07-01" }],
-        ["HDFC Index Fund — Nifty 50", "index_etf", 3_500_000, { symbol: "119063", costBasis: 2_200_000, buyDate: "2020-01-08" }],
-        ["UTI Nifty Next 50 Index Fund", "index_etf", 1_500_000, { symbol: "143341", costBasis: 1_050_000, buyDate: "2021-11-11" }],
-        ["Axis Long Term Equity (ELSS)", "elss", 1_800_000, { symbol: "120503", costBasis: 1_100_000, buyDate: "2020-02-20" }],
+        ["Quant Small Cap Fund", "equity_mf", 6_500_000, { symbol: "120847", costBasis: 2_800_000, buyDate: "2020-04-01" }],
+        ["Parag Parikh Flexi Cap Fund", "equity_mf", 5_800_000, { symbol: "122639", costBasis: 3_200_000, buyDate: "2019-02-10" }],
+        ["ICICI Pru NASDAQ 100 Index", "index_etf", 3_500_000, { symbol: "148810", costBasis: 1_900_000, buyDate: "2021-03-15" }],
+        ["HDFC Index Fund — Nifty 50", "index_etf", 4_200_000, { symbol: "119063", costBasis: 2_600_000, buyDate: "2020-01-08" }],
+        ["Axis Long Term Equity (ELSS)", "elss", 2_400_000, { symbol: "120503", costBasis: 1_400_000, buyDate: "2020-02-20" }],
       ],
     },
     {
       name: "Debt Funds", institution: "ICICI / HDFC MF", accountType: "mutual_fund",
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
       items: [
-        ["HDFC Corporate Bond Fund", "debt_mf", 4_000_000, { symbol: "118987", costBasis: 3_500_000, buyDate: "2023-06-01" }],
-        ["ICICI Prudential Liquid Fund", "debt_mf", 2_500_000, { symbol: "120197", costBasis: 2_350_000, buyDate: "2024-01-10" }],
+        ["HDFC Corporate Bond Fund", "debt_mf", 4_500_000, { symbol: "118987", costBasis: 3_800_000, buyDate: "2023-06-01" }],
+        ["ICICI Prudential Liquid Fund", "debt_mf", 3_000_000, { symbol: "120197", costBasis: 2_950_000, buyDate: "2024-01-10" }],
       ],
     },
     {
-      // PMS statements show value but rarely contributed capital — so NO cost basis here:
-      // this is what the ≈ since-import fallback looks like on a big holding.
       name: "Marcellus PMS", institution: "Marcellus", accountType: "pms_aif",
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-03-31",
-      defaultAssetClass: "indian_equity", note: "Quarterly statement; cost basis not reported",
-      items: [["Consistent Compounders Portfolio", "indian_equity", 8_500_000, { buyDate: "2021-04-01" }]],
+      defaultAssetClass: "indian_equity", note: "Consistent Compounders Portfolio — quarterly reporting",
+      items: [["Marcellus CCP (Discretionary)", "indian_equity", 12_500_000, { buyDate: "2021-04-01" }]],
     },
     {
-      name: "Edelweiss AIF", institution: "Edelweiss", accountType: "pms_aif",
-      taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-03-31",
-      defaultAssetClass: "pms",
-      items: [["Edelweiss Alternative Yield Fund (Cat-II AIF)", "pms", 5_000_000, { costBasis: 4_500_000, buyDate: "2023-02-15" }]],
-    },
-    {
-      name: "Private Markets", institution: "Avendus", accountType: "pms_aif",
+      name: "Private Markets", institution: "Avendus / Kedaara", accountType: "pms_aif",
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-03-31",
       items: [
-        ["Avendus Future Leaders Fund II (PE)", "private_equity", 3_500_000, { costBasis: 2_500_000, buyDate: "2022-01-15" }],
-        ["Vivriti Samarth Bond Fund (private credit)", "private_credit", 2_500_000, { costBasis: 2_400_000, buyDate: "2024-03-01" }],
+        ["Kedaara Capital IV (PE)", "private_equity", 4_500_000, { costBasis: 3_000_000, buyDate: "2022-01-15" }],
+        ["Avendus Structured Credit", "private_credit", 3_500_000, { costBasis: 3_200_000, buyDate: "2024-03-01" }],
       ],
     },
     {
       name: "NPS Tier-1", institution: "HDFC Pension", accountType: "nps",
       taxTreatment: "nps", region: "India", currency: "INR", asOf: "2026-04-30",
-      items: [["NPS — 75% equity / 25% debt", "nps", 2_200_000]],
+      items: [["NPS — Aggressive LC-75", "nps", 2_800_000]],
     },
     {
       name: "Provident Fund", institution: "EPFO / SBI", accountType: "epf_ppf",
       taxTreatment: "eee_exempt", region: "India", currency: "INR", asOf: "2026-03-31",
       items: [
-        ["EPF + VPF balance", "epf_ppf", 4_500_000],
-        ["PPF account", "epf_ppf", 2_800_000],
+        ["EPF + VPF balance", "epf_ppf", 5_200_000],
+        ["PPF account", "epf_ppf", 3_400_000],
       ],
     },
     {
       name: "Bank & Deposits", institution: "HDFC Bank", accountType: "bank",
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
       items: [
-        ["HDFC Fixed Deposit", "fd_rd", 4_000_000],
-        ["Savings account", "cash", 1_500_000],
+        ["HDFC Fixed Deposit", "fd_rd", 4_500_000],
+        ["Savings account", "cash", 1_800_000],
       ],
     },
     {
       name: "Gold", institution: "RBI / Nippon", accountType: "demat",
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
       items: [
-        // SGB held by weight: units = grams (250g @ ~₹4,800 issue price) → live ₹/g revalues it.
-        ["Sovereign Gold Bonds (2021-22)", "gold_sgb", 2_000_000, { units: 250, costBasis: 1_200_000, buyDate: "2021-08-01" }],
-        ["Nippon Gold ETF", "gold_other", 1_200_000, { costBasis: 700_000, buyDate: "2022-09-01" }],
+        ["Sovereign Gold Bonds (2021-22)", "gold_sgb", 2_500_000, { units: 320, costBasis: 1_500_000, buyDate: "2021-08-01" }],
+        ["Nippon Gold ETF", "gold_other", 1_500_000, { costBasis: 900_000, buyDate: "2022-09-01" }],
       ],
     },
     {
-      name: "LIC Endowment Policy", institution: "LIC", accountType: "other",
-      taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-03-31",
-      defaultAssetClass: "insurance",
-      items: [["LIC Jeevan Anand (fund value)", "insurance", 1_800_000]],
-    },
-    {
-      name: "Morgan Stanley (RSU/ESPP)", institution: "Morgan Stanley", accountType: "foreign_broker",
+      name: "Morgan Stanley (RSU)", institution: "Morgan Stanley", accountType: "foreign_broker",
       taxTreatment: "taxable", region: "US", currency: "USD", asOf: "2026-05-31",
       items: [
-        ["Microsoft Corp (RSU)", "us_equity", 60_000, { symbol: "MSFT", units: 149, costBasis: 38_000, buyDate: "2022-02-15" }],
-        ["Microsoft Corp (ESPP)", "us_equity", 25_000, { symbol: "MSFT", units: 62, costBasis: 26_500, buyDate: "2025-09-01" }],
+        ["NVIDIA Corp (RSU)", "us_equity", 125_000, { symbol: "NVDA", units: 104, costBasis: 45_000, buyDate: "2022-02-15" }],
       ],
     },
     {
       name: "Schwab Brokerage", institution: "Charles Schwab", accountType: "foreign_broker",
       taxTreatment: "taxable", region: "US", currency: "USD", asOf: "2026-05-31",
       items: [
-        ["GOLDMAN SACHS FIN VAR 28 DUE 06/15/28 (autocallable)", "structured_notes", 40_000, { costBasis: 40_000, buyDate: "2024-06-15" }],
-        ["US Treasury Notes 4.25% 2027", "fd_rd", 25_000, { costBasis: 24_500, buyDate: "2024-08-01" }],
-        ["Schwab Value Advantage Money Fund", "cash", 8_000, { symbol: "SWVXX" }],
-      ],
-    },
-    {
-      name: "Crypto Wallet", institution: "Self-custody", accountType: "other",
-      taxTreatment: "taxable", region: "Other", currency: "USD", asOf: "2026-05-31",
-      items: [["Bitcoin", "crypto", 20_000, { symbol: "BTC", units: 0.32, costBasis: 9_000, buyDate: "2020-12-01" }]],
-    },
-    {
-      // Pre-excluded: shows the Manage-tab include/exclude feature (kept on file, out of
-      // net worth / allocations / AI brief until re-included).
-      name: "HUF Demat", institution: "Zerodha (HUF)", accountType: "demat",
-      taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-05-31",
-      excluded: true, note: "Family HUF folio — tracked here, excluded from personal net worth",
-      items: [
-        ["Coal India", "indian_equity", 600_000, { symbol: "COALINDIA", units: 1290, costBasis: 400_000, buyDate: "2021-06-10" }],
-        ["ITC", "indian_equity", 600_000, { symbol: "ITC", units: 2150, costBasis: 450_000, buyDate: "2020-12-01" }],
+        ["Berkshire Hathaway B", "us_equity", 45_000, { symbol: "BRK.B", units: 110, costBasis: 32_000, buyDate: "2021-05-10" }],
+        ["Vanguard S&P 500 ETF", "index_etf", 30_000, { symbol: "VOO", units: 62, costBasis: 22_500, buyDate: "2020-08-01" }],
       ],
     },
     {
@@ -422,31 +358,14 @@ export function demoPortfolio(country: "India" | "US" = "India"): Portfolio {
       taxTreatment: "taxable", region: "India", currency: "INR", asOf: "2026-01-01",
       defaultAssetClass: "real_estate", note: "Indicative market values — update yearly",
       items: [
-        ["Primary residence — Mumbai", "real_estate", 27_500_000],
-        ["Rented flat — Pune", "real_estate", 11_000_000],
+        ["Primary residence — Mumbai", "real_estate", 35_000_000],
+        ["Rented flat — Pune", "real_estate", 12_500_000],
       ],
     },
     {
-      // Added mid-month (15 days ago) as "started tracking an asset I already owned" —
-      // shows as a step in the recorded trend and a `tracking` line in the growth split.
-      name: "Plot — Alibaug", institution: "—", accountType: "real_estate",
-      taxTreatment: "taxable", region: "India", currency: "INR", asOf: dayStr(DEMO_PLOT_DAYS_AGO),
-      defaultAssetClass: "real_estate", note: "Added to tracking recently — indicative value",
-      items: [["Residential plot — Alibaug", "real_estate", 5_800_000]],
-    },
-    {
-      // Opened 20 days ago with NEW money (a `flow` event) — same fund family as the main
-      // folio, a recent STCG-territory buy with a real cost basis.
-      name: "Groww Mutual Funds", institution: "Groww", accountType: "mutual_fund",
-      taxTreatment: "taxable", region: "India", currency: "INR", asOf: dayStr(0),
-      items: [
-        ["Parag Parikh Flexi Cap (Direct)", "equity_mf", 625_000, { symbol: "122639", costBasis: 600_000, buyDate: dayStr(DEMO_MF_DAYS_AGO) }],
-      ],
-    },
-    {
-      name: "Home Loan", institution: "HDFC Ltd", accountType: "liability",
+      name: "Home Loan", institution: "HDFC Bank", accountType: "liability",
       taxTreatment: "na", region: "India", currency: "INR", asOf: "2026-05-31",
-      items: [["Mumbai home loan (outstanding)", "other", 6_500_000]],
+      items: [["Mumbai home loan (outstanding)", "other", 8_500_000]],
     },
   ]);
 
