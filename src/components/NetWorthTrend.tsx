@@ -90,7 +90,7 @@ export function NetWorthTrend() {
             <div className="hero-num" style={{ fontSize: "1.8rem", color: "var(--ink)" }}>{fmtMoney(points[points.length - 1].netWorth)}</div>
             <div style={{ fontWeight: 700, color: change.abs >= 0 ? "var(--up-ink)" : "var(--down-ink)", fontSize: "1rem" }}>
               {change.abs >= 0 ? "▲" : "▼"} {fmtMoney(Math.abs(change.abs))}{change.pct != null ? ` · ${change.pct >= 0 ? "+" : ""}${change.pct}%` : ""}
-              <span className="muted" style={{ fontWeight: 500, fontSize: "0.82rem", textTransform: "lowercase", opacity: 0.8 }}> over {zoom ? "selected range" : period}</span>
+              <span className="muted" style={{ fontWeight: 500, fontSize: "0.82rem", textTransform: "lowercase" }}> over {zoom ? "selected range" : period}</span>
             </div>
           </div>
           <TrendChart points={points} onBrush={(from, to) => setZoom({ from, to })} onResetZoom={() => setZoom(null)} />

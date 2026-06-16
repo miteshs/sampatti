@@ -201,7 +201,7 @@ export function Settings() {
                 </div>
                 <div className="form-col" style={{ padding: "0.5rem 0.8rem" }}>
                   <label>Relay access code</label>
-                  <input type="password" value={s.relayCode ?? ""} onChange={(e) => updateSettings({ relayCode: e.target.value })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} />
+                  <input type="password" aria-label="Relay access code" value={s.relayCode ?? ""} onChange={(e) => updateSettings({ relayCode: e.target.value })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} />
                 </div>
               </div>
             ) : (
@@ -215,7 +215,7 @@ export function Settings() {
                     </div>
                   ) : (
                     <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <input type="password" placeholder="sk-..." value={keyInput} onChange={(e) => setKeyInput(e.target.value)} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none", flex: 1 }} />
+                      <input type="password" aria-label="Anthropic API key" placeholder="sk-..." value={keyInput} onChange={(e) => setKeyInput(e.target.value)} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none", flex: 1 }} />
                       <button className="btn btn-primary" style={{ padding: "0.2rem 0.6rem", fontSize: "0.75rem" }} onClick={saveKey}>Save</button>
                     </div>
                   )}
