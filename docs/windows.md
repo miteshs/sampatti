@@ -15,8 +15,8 @@ privacy posture. Platform differences, all handled automatically:
 
 1. Download `Sampatti_<version>_x64-setup.exe` from the
    [releases page](https://github.com/miteshs/sampatti-releases/releases).
-2. Run it. The build is unsigned, so SmartScreen will object once:
-   **More info → Run anyway**.
+2. Run it. The build is unsigned, so SmartScreen shows a blue box once. Click
+   **More info**, then the **Run anyway** button that appears.
 3. It installs per-user (no administrator rights needed) and adds a Start-menu entry.
 4. First-run setup is the same as macOS — see [getting-started.md](getting-started.md):
    paste your **access code** in *Settings → Access code*, or enable Developer mode to add
@@ -24,6 +24,29 @@ privacy posture. Platform differences, all handled automatically:
 
 Uninstall: Settings → Apps, like any other program. Your data file (see table above) is
 left behind unless you use **Erase all data** in the app first.
+
+### Is this safe? (why SmartScreen warns, and how to verify)
+
+The warning means "unsigned," not "unsafe" — a code-signing certificate costs money and this
+project doesn't buy one. Instead, every release ships proof you can check yourself, all
+attached to the [release](https://github.com/miteshs/sampatti-releases/releases):
+
+- **Checksum** — confirm the download wasn't corrupted or swapped. In PowerShell:
+  ```powershell
+  certutil -hash Sampatti_<version>_x64-setup.exe SHA256
+  ```
+  Compare the result to the value in `SHA256SUMS-windows.txt` on the release.
+- **VirusTotal** — the release notes link a scan across ~70 antivirus engines.
+- **Build provenance** — the `.exe` was built by public GitHub Actions straight from source,
+  not uploaded by hand. With the [GitHub CLI](https://cli.github.com/) you can verify the
+  cryptographic attestation against the bundle on the release:
+  ```sh
+  gh attestation verify Sampatti_<version>_x64-setup.exe \
+    --bundle Sampatti_<version>_x64-setup.exe.sigstore.json --repo miteshs/sampatti
+  ```
+
+None of this removes the SmartScreen prompt — only a paid certificate does — but it lets a
+careful user confirm exactly what they're running.
 
 ## Cutting a Windows release (maintainer)
 
@@ -35,6 +58,14 @@ One-time setup:
 
 - Create a **fine-grained PAT** with *Contents: Read and write* on `miteshs/sampatti-releases`
   only, and save it as the `RELEASES_TOKEN` actions secret on `miteshs/sampatti`.
+- *(Optional)* Add a `VT_API_KEY` actions secret — a free [VirusTotal](https://www.virustotal.com/)
+  account's API key — so CI scans each build and links the report in the release notes. Absent
+  this secret the scan step just no-ops; the rest of the release is unaffected.
+- After the first public release, **submit the installer to Microsoft** as the developer at
+  the [Defender SmartScreen submission portal](https://www.microsoft.com/wdsi/filesubmission)
+  (choose "I'm a software developer" → "Incorrectly detected"). This asks Microsoft to vet the
+  file as clean and helps it accrue SmartScreen reputation faster. Re-submit when the hash
+  changes (i.e. each release) if you want the warning to ease over time.
 
 Release flow (after the usual macOS `scripts/release.sh --gh-release`):
 
@@ -58,7 +89,10 @@ regression (see below) fails the release, not the user.
 - **NSIS over MSI**: per-user install, no UAC, and Tauri's recommended Windows target.
   `src-tauri/tauri.windows.conf.json` pins the bundle targets to `nsis` on Windows, so a
   plain `npm run tauri build` does the right thing there (macOS keeps `dmg`/`app`).
-- **SmartScreen**: accepted friction — code-signing certificates cost money and the macOS
-  build is in the same (unsigned) boat today. Reputation also accrues to unsigned
-  installers over download volume.
+- **SmartScreen**: accepted friction — code-signing certificates cost money (the macOS build,
+  by contrast, *is* signed + notarized). Rather than pay, each release ships a transparency
+  bundle — SHA-256 checksum, VirusTotal link, and a GitHub build-provenance attestation — so
+  the warning is verifiable rather than scary (see the "Is this safe?" section above).
+  Reputation also accrues to unsigned installers over download volume, helped by the
+  SmartScreen developer submission.
 - **winget**: worth a manifest once downloads justify it; direct `.exe` first.
