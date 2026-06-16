@@ -1,0 +1,99 @@
+1
+00:00:00,600 --> 00:00:07,416
+If your money is scattered across brokerages, retirement accounts, and the bank—you're not alone.
+
+2
+00:00:07,966 --> 00:00:13,126
+Sampatti brings it all into one private picture, on your own computer.
+
+3
+00:00:13,676 --> 00:00:16,436
+No cloud, no sign-up.
+
+4
+00:00:16,986 --> 00:00:20,970
+Let's choose the United States and explore the demo.
+
+5
+00:00:22,570 --> 00:00:25,210
+This is your financial home.
+
+6
+00:00:25,760 --> 00:00:29,912
+You see your total net worth and allocation at a glance.
+
+7
+00:00:30,462 --> 00:00:39,318
+These verdicts on concentration and liquidity aren't generic advice—they're deterministic reads computed entirely on your device.
+
+8
+00:00:40,918 --> 00:00:46,174
+The Performance tab answers the big question: is your wealth actually growing?
+
+9
+00:00:46,724 --> 00:00:55,196
+Zoom into any period to see your net worth history stacked by account—built from your real cost basis, never estimates.
+
+10
+00:00:56,796 --> 00:01:00,132
+The Holdings tab gives you total control.
+
+11
+00:01:00,682 --> 00:01:07,186
+Edit positions, refresh prices, or exclude an account from your dashboard in seconds.
+
+12
+00:01:07,736 --> 00:01:12,848
+To add your own data, just drop in an export from Schwab or Fidelity.
+
+13
+00:01:13,398 --> 00:01:20,046
+It parses locally, and you review everything in a secure card before it touches your portfolio.
+
+14
+00:01:21,646 --> 00:01:25,414
+For a deeper look, use the AI Analyst.
+
+15
+00:01:25,964 --> 00:01:31,844
+It reviews your 401(k) placement, wash sales, and capital gains.
+
+16
+00:01:32,394 --> 00:01:38,706
+You can read the exact summary before it leaves for analysis—privacy is the through-line.
+
+17
+00:01:40,306 --> 00:01:44,410
+In Settings, you can configure the AI Analyst.
+
+18
+00:01:44,960 --> 00:01:49,760
+Just paste your secure access code to connect to the hosted relay.
+
+19
+00:01:50,310 --> 00:01:55,662
+Your data stays on your device—only the compact brief is sent for review.
+
+20
+00:01:57,262 --> 00:02:00,862
+The Privacy page is our absolute promise.
+
+21
+00:02:01,412 --> 00:02:06,692
+Export everything as a single file, or erase it all with one click.
+
+22
+00:02:07,242 --> 00:02:11,202
+In Sampatti, your financial life stays yours.
+
+23
+00:02:12,802 --> 00:02:14,890
+That's Sampatti.
+
+24
+00:02:15,440 --> 00:02:18,632
+The private way to see your whole net worth.
+
+25
+00:02:19,182 --> 00:02:22,470
+Download it free tonight and meet your money.

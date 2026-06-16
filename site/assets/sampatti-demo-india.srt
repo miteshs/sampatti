@@ -1,0 +1,107 @@
+1
+00:00:00,600 --> 00:00:09,528
+If your money lives in a dozen places—brokers, bank apps, EPF, and gold—you're not alone.
+
+2
+00:00:10,078 --> 00:00:16,030
+Sampatti brings it all into one private picture, on your own computer.
+
+3
+00:00:16,580 --> 00:00:19,700
+No cloud, no sign-up.
+
+4
+00:00:20,250 --> 00:00:25,362
+Choose India, and let's load a demo to see how it feels.
+
+5
+00:00:26,962 --> 00:00:30,562
+The dashboard is your financial home.
+
+6
+00:00:31,112 --> 00:00:36,248
+At a glance, you see your total net worth and where it sits.
+
+7
+00:00:36,798 --> 00:00:47,310
+But the real value is in these verdicts—simple, plain-word reads on your equity and liquidity, computed entirely on this device.
+
+8
+00:00:48,910 --> 00:00:56,998
+Open the Performance tab to see what actually matters: did your money grow, or did you just add more?
+
+9
+00:00:57,548 --> 00:01:07,292
+You can zoom into any period and see your history stacked account by account—built from real purchase costs, not guesses.
+
+10
+00:01:08,892 --> 00:01:12,492
+The Holdings tab puts you in control.
+
+11
+00:01:13,042 --> 00:01:21,226
+You can edit any holding, update prices, or exclude an account from your totals with a single click.
+
+12
+00:01:21,776 --> 00:01:27,776
+To add your own numbers, just drop in a CAS PDF or spreadsheet.
+
+13
+00:01:28,326 --> 00:01:34,446
+Everything parses right here, and you review every line before it's saved.
+
+14
+00:01:36,046 --> 00:01:40,750
+Now, the hero feature: AI Analysis.
+
+15
+00:01:41,300 --> 00:01:48,764
+A SEBI-aware analyst reviews your diversification, tax planning, and retirement.
+
+16
+00:01:49,314 --> 00:01:57,426
+Sampatti shows you the exact brief before it leaves—a private summary, never your raw statements.
+
+17
+00:01:59,026 --> 00:02:03,682
+In Settings, you can connect the AI Analyst.
+
+18
+00:02:04,232 --> 00:02:09,488
+Just paste your secure access code to use our hosted relay.
+
+19
+00:02:10,038 --> 00:02:16,350
+Your data stays on your device—only the compact brief is sent for review.
+
+20
+00:02:17,950 --> 00:02:22,342
+Finally, the Privacy page is our contract.
+
+21
+00:02:22,892 --> 00:02:25,268
+Gone means gone.
+
+22
+00:02:25,818 --> 00:02:29,010
+One click erases everything.
+
+23
+00:02:29,560 --> 00:02:32,680
+Export your data anytime.
+
+24
+00:02:33,230 --> 00:02:37,646
+It's your wealth, and finally, it's your privacy.
+
+25
+00:02:39,246 --> 00:02:41,550
+That's Sampatti.
+
+26
+00:02:42,100 --> 00:02:46,204
+Modern, private portfolio analysis.
+
+27
+00:02:46,754 --> 00:02:51,194
+Install it tonight and finally see the whole picture.

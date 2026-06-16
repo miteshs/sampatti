@@ -460,22 +460,21 @@ async function recordRegion(key, page, cdp) {
   writeSrt(srt, allCues);
 
   const final = join(OUT, `sampatti-demo-${region.label}.mp4`);
-  const safeSrt = srt.replace(/\\/g, '/').replace(/:/g, '\\\\:');
   execFileSync("ffmpeg", [
     "-y", "-loglevel", "error", "-i", master,
-    "-vf", `subtitles=filename='${safeSrt}':force_style='FontName=Helvetica,FontSize=12,PrimaryColour=&H00FFFFFF,BackColour=&H66000000,BorderStyle=4,Outline=0,Shadow=0,MarginV=30,Alignment=2'`,
     "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
     "-c:v", "libx264", "-crf", "20", "-preset", "medium",
     "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", final,
   ]);
   const dur = parseFloat(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).toString().trim());
-  console.log(`✓ ${final} — ${dur.toFixed(1)}s (captions burned + ${srt.split("/").pop()} sidecar)`);
+  console.log(`✓ ${final} — ${dur.toFixed(1)}s (audio mastered + ${srt.split("/").pop()} sidecar)`);
 
-  // Auto-copy to the website assets folder
+  // Auto-copy to the website assets folder (MP4 and SRT)
   const siteAssets = join(ROOT, "site", "assets");
   if (existsSync(siteAssets)) {
     execFileSync("cp", [final, join(siteAssets, `sampatti-demo-${region.label}.mp4`)]);
-    console.log(`  ✓ Copied to site/assets/sampatti-demo-${region.label}.mp4 for web hosting`);
+    execFileSync("cp", [srt, join(siteAssets, `sampatti-demo-${region.label}.srt`)]);
+    console.log(`  ✓ Copied MP4 and SRT to site/assets/ for web hosting`);
   }
 
   return final;
