@@ -12,7 +12,14 @@
 # stranger could extract. Users paste their access code (or add their own Anthropic key under
 # Developer mode, stored in the Credential Manager).
 #
-# The build is unsigned: first launch shows SmartScreen — "More info → Run anyway".
+# The build is UNSIGNED (no paid certificate), so SmartScreen still warns once —
+# "More info → Run anyway". To make that warning trustworthy instead of scary, every tagged
+# build ships a transparency bundle attached to the release:
+#   • SHA-256 checksum (SHA256SUMS-windows.txt) so users can verify the download is intact.
+#   • A GitHub build-provenance attestation (.sigstore bundle) proving the .exe was built by
+#     this workflow from this source — verifiable with `gh attestation verify`.
+#   • A VirusTotal scan link (needs the optional VT_API_KEY secret; skipped if absent).
+# See docs/windows.md for the user-facing "is this safe?" walkthrough.
 
 name: windows-release
 
@@ -23,6 +30,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write       # OIDC token for build-provenance attestation
+  attestations: write   # write the attestation to this (source) repo
 
 jobs:
   windows:
@@ -68,13 +77,38 @@ jobs:
       - name: Build NSIS installer (token-less public build)
         run: npx tauri build
 
-      - name: Locate installer
+      - name: Locate installer + checksum
         id: exe
         run: |
           EXE=$(ls src-tauri/target/release/bundle/nsis/*-setup.exe)
           echo "path=$EXE" >> "$GITHUB_OUTPUT"
-          echo "sha256:"
-          sha256sum "$EXE"
+          echo "name=$(basename "$EXE")" >> "$GITHUB_OUTPUT"
+          SHA=$(sha256sum "$EXE" | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          # Checksums file carries just the basename so `sha256sum -c` works after download.
+          ( cd "$(dirname "$EXE")" && sha256sum "$(basename "$EXE")" ) > "$GITHUB_WORKSPACE/SHA256SUMS-windows.txt"
+          echo "sha256: $SHA"
+
+      # Build provenance: cryptographically ties the .exe to THIS workflow run + source commit.
+      # Writes a .sigstore bundle (also logged to the public Sigstore transparency log) that we
+      # attach to the release, so anyone can run `gh attestation verify <exe> --bundle <bundle>`.
+      - name: Attest build provenance
+        if: github.ref_type == 'tag'
+        id: attest
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-path: ${{ steps.exe.outputs.path }}
+
+      # VirusTotal scan — needs the optional VT_API_KEY secret (free account at virustotal.com).
+      # continue-on-error so a missing key or VT hiccup never blocks a release.
+      - name: VirusTotal scan
+        if: github.ref_type == 'tag'
+        id: vt
+        continue-on-error: true
+        uses: crazy-max/ghaction-virustotal@936d8c5c00afe97d3d9a1af26d017cfdf26800a2 # v5.0.0
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+          files: ${{ steps.exe.outputs.path }}
 
       - name: Attach to this run (manual build for click-testing)
         if: github.event_name == 'workflow_dispatch'
@@ -92,11 +126,43 @@ jobs:
           # Step outputs reach the script as env vars, never inlined into the script text —
           # inlining ${{ }} into run: is the GH Actions script-injection antipattern.
           EXE_PATH: ${{ steps.exe.outputs.path }}
+          EXE_NAME: ${{ steps.exe.outputs.name }}
+          SHA256: ${{ steps.exe.outputs.sha256 }}
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+          # crazy-max/ghaction-virustotal emits "filepath=url[,filepath=url]"; "" if VT skipped.
+          VT_ANALYSIS: ${{ steps.vt.outputs.analysis }}
         run: |
           TAG="${GITHUB_REF_NAME}"
           REPO="miteshs/sampatti-releases"
+
           if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$REPO" --title "Sampatti ${TAG#v}" \
-              --notes "Windows x64 installer. macOS: download the signed, notarized \`.dmg\` below and drag Sampatti into Applications. AI analysis needs your own Anthropic API key (Settings screen). All portfolio data stays on your device."
+              --notes "Windows x64 installer below. macOS: download the signed, notarized \`.dmg\` and double-click it — it self-installs into Applications. AI analysis is optional (access code or your own Anthropic key, in Settings). All portfolio data stays on your device."
           fi
+
+          # Build the Windows verification block (idempotent: a marked region we replace on re-run).
+          VT_URL="${VT_ANALYSIS#*=}"   # strip "filepath=" prefix; empty if VT was skipped
+          BLOCK=$'<!-- win-verify -->\n### Verify the Windows download\n'
+          BLOCK+="The \`.exe\` is unsigned, so SmartScreen warns once — **More info → Run anyway**. "$'It is safe to verify before running:\n\n'
+          BLOCK+="- **SHA-256** (\`$EXE_NAME\`): \`$SHA256\`"$'\n'
+          BLOCK+="  Check it: \`sha256sum -c SHA256SUMS-windows.txt\` (or \`certutil -hash <file> SHA256\` on Windows)."$'\n'
+          if [ -n "$VT_URL" ]; then
+            BLOCK+="- **VirusTotal scan:** $VT_URL"$'\n'
+          fi
+          BLOCK+="- **Build provenance:** built by GitHub Actions from source \`miteshs/sampatti@$TAG\`."$'\n'
+          BLOCK+="  Verify: \`gh attestation verify $EXE_NAME --bundle $EXE_NAME.sigstore.json --repo miteshs/sampatti\`"$'\n'
+          BLOCK+=$'<!-- /win-verify -->'
+
+          # Re-fetch current body, drop any previous block, append the fresh one.
+          BODY=$(gh release view "$TAG" --repo "$REPO" --json body --jq '.body')
+          CLEAN=$(printf '%s\n' "$BODY" | sed '/<!-- win-verify -->/,/<!-- \/win-verify -->/d')
+          gh release edit "$TAG" --repo "$REPO" --notes "$(printf '%s\n\n%s\n' "$CLEAN" "$BLOCK")"
+
+          # Upload the installer + transparency artifacts. The attestation bundle is renamed to
+          # "<exe>.sigstore.json" so the verify command above is copy-paste correct.
           gh release upload "$TAG" "$EXE_PATH" --repo "$REPO" --clobber
+          gh release upload "$TAG" "$GITHUB_WORKSPACE/SHA256SUMS-windows.txt" --repo "$REPO" --clobber
+          if [ -n "$BUNDLE_PATH" ] && [ -f "$BUNDLE_PATH" ]; then
+            cp "$BUNDLE_PATH" "$GITHUB_WORKSPACE/$EXE_NAME.sigstore.json"
+            gh release upload "$TAG" "$GITHUB_WORKSPACE/$EXE_NAME.sigstore.json" --repo "$REPO" --clobber
+          fi
