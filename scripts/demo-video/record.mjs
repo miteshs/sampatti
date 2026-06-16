@@ -51,42 +51,37 @@ const SCRIPTS = {
   IN: {
     edgeVoice: "en-IN-NeerjaNeural",
     voice: "Aman", // `say` fallback
-    rate: null, // Siri-quality voice: -r is ignored; its native pace is already conversational
-    pronounce: "Sampatti", // Indian-English phonology reads the 'a's as schwas — correct as written
+    rate: null, 
+    pronounce: "Sampatti",
     label: "india",
     regionChip: "India",
     scenes: {
-      welcome: "If you're like most of us, your money lives in a dozen places — brokers, mutual-fund apps, EPF, the bank. Sampatti brings all of it into one private picture, on your own computer. No account, no cloud, nothing to sign up for. Let's set it up together. Choose your market — India — and load the demo portfolio, so you can explore before adding anything of your own.",
-      overview: "The demo loads a realistic fourteen-crore portfolio, and you land on the Overview. At the top, your net worth. Below it, what you own and what you owe. And these plain-word verdicts — equity, liquidity, concentration — are computed entirely on this device. This is the picture you'll see every time you open the app.",
-      performance: "Next, open the Performance tab. It answers the question that actually matters: did your money grow, or did you just add more? Pick any period — one year, or everything. Then break it down account by account, built from genuine purchase costs, never guesses.",
-      manage: "The Manage tab keeps you in control. Edit any account or holding, pause one out of the totals, or remove it completely. You can also see how fresh every price is, and refresh them whenever you like.",
-      adddata: "When you're ready for your own numbers, open Add data. Drag in a broker spreadsheet — or your CAS PDF, password and all. Everything parses right here on your computer. Each import lands in a review card, and nothing is saved until you approve it.",
-      ai: "Now, the part everyone asks about: AI analysis. A SEBI-aware analyst reviews your concentration, diversification, tax planning and retirement. And before anything is sent, Sampatti shows you the exact brief that will leave your machine — a compact summary, never your raw data. You can read every line of it first.",
-      settings: "To switch the AI on, open Settings. There are two ways. The relay is the easiest — ask us for access on GitHub, and your analysis flows through it without you handling any keys. Or, for maximum privacy, choose your own Anthropic key: paste a key from console.anthropic.com, and it's stored in your system keychain — it never even enters the app's web view.",
-      privacy: "Finally, the Privacy page is the whole contract in plain words: what stays on your machine, what can leave, and when. Export everything as a single file whenever you like — or erase it all with one click. Gone means gone.",
-      close: "That's Sampatti — your whole financial picture, private by design. Install it with Homebrew tonight, load the demo, and meet your money.",
+      welcome: "If your money lives in a dozen places—brokers, bank apps, EPF, and gold—you're not alone. Sampatti brings it all into one private picture, on your own computer. No cloud, no sign-up. Choose India, and let's load a demo to see how it feels.",
+      overview: "The dashboard is your financial home. At a glance, you see your total net worth and where it sits. But the real value is in these verdicts—simple, plain-word reads on your equity and liquidity, computed entirely on this device.",
+      performance: "Open the Performance tab to see what actually matters: did your money grow, or did you just add more? You can zoom into any period and see your history stacked account by account—built from real purchase costs, not guesses.",
+      holdings: "The Holdings tab puts you in control. You can edit any holding, update prices, or exclude an account from your totals with a single click. To add your own numbers, just drop in a CAS PDF or spreadsheet. Everything parses right here, and you review every line before it's saved.",
+      ai: "Now, the hero feature: AI Analysis. A SEBI-aware analyst reviews your diversification, tax planning, and retirement. Sampatti shows you the exact brief before it leaves—a private summary, never your raw statements.",
+      settings: "In Settings, you can connect the AI Analyst. Just paste your secure access code to use our hosted relay. Your data stays on your device—only the compact brief is sent for review.",
+      privacy: "Finally, the Privacy page is our contract. Gone means gone. One click erases everything. Export your data anytime. It's your wealth, and finally, it's your privacy.",
+      close: "That's Sampatti. Modern, private portfolio analysis. Install it tonight and finally see the whole picture.",
     },
   },
   US: {
     edgeVoice: "en-US-JennyNeural",
     voice: "Samantha", // `say` fallback
-    rate: 150, // narration pace, not announcer pace
-    // en-US reads "Sampatti" as "sam-PAT-ee" (cat-vowels). सम्पत्ति is "sum-PUTT-ee";
-    // "Sumputty" gets both Jenny and Samantha there. Spoken text only — on-screen
-    // spelling is untouched, and captions show the real name.
+    rate: 150,
     pronounce: "Sumputty",
     label: "us",
     regionChip: "United States",
     scenes: {
-      welcome: "If you're like most of us, your money lives in a dozen places — brokerages, retirement accounts, the bank. Sampatti brings all of it into one private picture, on your own computer. No account, no cloud, nothing to sign up for. Let's set it up together. Choose your market — the United States — and load the demo portfolio, so you can explore before adding anything of your own.",
-      overview: "The demo loads a realistic two-point-three-million-dollar portfolio, and you land on the Overview. At the top, your net worth. Below it, what you own and what you owe. And these plain-word verdicts — equity, liquidity, concentration — are computed entirely on this device. This is the picture you'll see every time you open the app.",
-      performance: "Next, open the Performance tab. It answers the question that actually matters: did your money grow, or did you just add more? Pick any period — one year, or everything. Then break it down account by account, built from genuine purchase costs, never guesses.",
-      manage: "The Manage tab keeps you in control. Edit any account or holding, pause one out of the totals, or remove it completely. You can also see how fresh every price is, and refresh them whenever you like.",
-      adddata: "When you're ready for your own numbers, open Add data. Download the positions file from Schwab, Fidelity or Vanguard, and drop it in. Everything parses right here on your computer. Each import lands in a review card, and nothing is saved until you approve it.",
-      ai: "Now, the part everyone asks about: AI analysis. A fiduciary-style analyst reviews concentration, diversification, capital-gains planning, wash sales, and four-oh-one-k versus Roth placement. And before anything is sent, Sampatti shows you the exact brief that will leave your machine — a compact summary, never your raw data. You can read every line of it first.",
-      settings: "To switch the AI on, open Settings. There are two ways. The relay is the easiest — ask us for access on GitHub, and your analysis flows through it without you handling any keys. Or, for maximum privacy, choose your own Anthropic key: paste a key from console.anthropic.com, and it's stored in your system's credential manager — it never even enters the app's web view.",
-      privacy: "Finally, the Privacy page is the whole contract in plain words: what stays on your machine, what can leave, and when. Export everything as a single file whenever you like — or erase it all with one click. Gone means gone.",
-      close: "That's Sampatti — your whole financial picture, private by design. Download it free tonight, load the demo, and meet your money.",
+      welcome: "If your money is scattered across brokerages, retirement accounts, and the bank—you're not alone. Sampatti brings it all into one private picture, on your own computer. No cloud, no sign-up. Let's choose the United States and explore the demo.",
+      overview: "This is your financial home. You see your total net worth and allocation at a glance. These verdicts on concentration and liquidity aren't generic advice—they're deterministic reads computed entirely on your device.",
+      performance: "The Performance tab answers the big question: is your wealth actually growing? Zoom into any period to see your net worth history stacked by account—built from your real cost basis, never estimates.",
+      holdings: "The Holdings tab gives you total control. Edit positions, refresh prices, or exclude an account from your dashboard in seconds. To add your own data, just drop in an export from Schwab or Fidelity. It parses locally, and you review everything in a secure card before it touches your portfolio.",
+      ai: "For a deeper look, use the AI Analyst. It reviews your 401(k) placement, wash sales, and capital gains. You can read the exact summary before it leaves for analysis—privacy is the through-line.",
+      settings: "In Settings, you can configure the AI Analyst. Just paste your secure access code to connect to the hosted relay. Your data stays on your device—only the compact brief is sent for review.",
+      privacy: "The Privacy page is our absolute promise. Export everything as a single file, or erase it all with one click. In Sampatti, your financial life stays yours.",
+      close: "That's Sampatti. The private way to see your whole net worth. Download it free tonight and meet your money.",
     },
   },
 };
@@ -402,20 +397,11 @@ async function recordRegion(key, page, cdp) {
     await scroll(page, 560, 1100);
   });
 
-  await scene("manage", async () => {
+  await scene("holdings", async () => {
     await scroll(page, 0, 400);
-    await click(page, "Manage");
+    await click(page, "Holdings");
     await park(page);
-    await sleep(2200);
-    await scrollToEl(page, "Data freshness");
-    await sleep(1400);
-  });
-
-  await scene("adddata", async () => {
-    await scroll(page, 0, 400);
-    await click(page, "Add data");
-    await park(page);
-    await sleep(1050);
+    await sleep(1500);
     await scroll(page, 420, 1100);
     await sleep(1500);
     await scroll(page, 860, 1100);
@@ -436,27 +422,22 @@ async function recordRegion(key, page, cdp) {
     await click(page, "Settings");
     await park(page);
     await sleep(1300);
-    await scrollToEl(page, "How analysis reaches Claude");
+    await scrollToEl(page, "AI analysis");
     await sleep(600);
-    await cursorTo(page, "Relay (default, easiest)");
+    await cursorTo(page, "Access code", { tags: "label" });
     await sleep(1500);
-    await click(page, "My own Anthropic key");
-    await sleep(1300);
-    await cursorTo(page, "Save key");
-    await sleep(900);
-    await park(page);
+    await scroll(page, 200, 1100);
+    await sleep(1000);
   });
 
   await scene("privacy", async () => {
-    await scroll(page, 0, 400);
-    await click(page, "Privacy");
-    await park(page);
-    await sleep(1150);
-    await scroll(page, 430, 1200);
+    await scrollToEl(page, "Privacy & data");
     await sleep(900);
     await cursorTo(page, "Export everything");
-    await sleep(700);
+    await sleep(1000);
     await cursorTo(page, "Erase all data");
+    await sleep(1000);
+    await park(page);
   });
 
   await scene("close", async () => {
@@ -479,9 +460,9 @@ async function recordRegion(key, page, cdp) {
   writeSrt(srt, allCues);
 
   const final = join(OUT, `sampatti-demo-${region.label}.mp4`);
+  const safeSrt = srt.replace(/\\/g, '/').replace(/:/g, '\\\\:');
   execFileSync("ffmpeg", [
     "-y", "-loglevel", "error", "-i", master,
-    "-vf", `subtitles=${srt}:force_style='FontName=Helvetica,FontSize=12,PrimaryColour=&H00FFFFFF,BackColour=&H66000000,BorderStyle=4,Outline=0,Shadow=0,MarginV=30,Alignment=2'`,
     "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
     "-c:v", "libx264", "-crf", "20", "-preset", "medium",
     "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", final,
