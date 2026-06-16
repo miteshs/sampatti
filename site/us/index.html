@@ -375,6 +375,18 @@
           <p>Account statements (PDFs, CSVs, Excel) from common brokers and platforms. US brokerage exports are supported natively.</p>
         </details>
         <details>
+          <summary>What happens when I import a PDF or screenshot?</summary>
+          <p>For standard exports (CSV/Excel), everything is parsed locally on your device. For PDFs or screenshots, we use AI (Claude) just to read the text and identify your holdings. Only a text summary is sent for parsing; your raw image or file stays on your computer.</p>
+        </details>
+        <details>
+          <summary>Does Claude store my data during analysis?</summary>
+          <p>No. We use Anthropic's API with zero-retention settings. If you want maximum privacy, you can even crop out your name and account numbers before importing — the AI only needs to see the holdings and values to work.</p>
+        </details>
+        <details>
+          <summary>Can the developer see my portfolio?</summary>
+          <p>Absolutely not. Sampatti has no central server or database. Your data exists only in a single file on your own machine. We have no way to access, read, or track what you own.</p>
+        </details>
+        <details>
           <summary>Does it work for both India and the US?</summary>
           <p>Yes. Pick your region and Sampatti adapts the currency, instruments and tax rules — rupees and Indian assets, or dollars and US accounts.</p>
         </details>
