@@ -436,24 +436,47 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
         );
       })()}
 
-      {/* Draft review — keyed by a STABLE id (p.key), never the array index */}
-      {drafts.map((p, i) => (
-        <DraftReview
-          key={p.key} draft={p.draft}
-          accounts={portfolio.accounts}
-          existingHoldings={portfolio.holdings}
-          onCurrency={(c) => setDraftCurrency(i, c)}
-          onAccount={(patch) => updateDraftAccount(i, patch)}
-          onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
-          onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
-          onApply={(target, money) => {
-            if (target === "new") addDraft(p.draft, "new", money);
-            else mergeDraftInto(target, p.draft);
-            setDrafts((all) => all.filter((x) => x.key !== p.key));
-          }}
-          onDiscard={() => setDrafts((all) => all.filter((x) => x.key !== p.key))}
-        />
-      ))}
+      {/* Draft review — popup modal for clear action/reaction feedback */}
+      {drafts.length > 0 && (
+        <div className="modal-backdrop">
+          <div className="modal modal-lg" role="dialog" aria-modal="true" aria-label="Review imported statements"
+            style={{ maxHeight: "90vh", display: "flex", flexDirection: "column", padding: "1.25rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
+              <div>
+                <h3 style={{ fontSize: "1.15rem", margin: 0 }}>Review imports</h3>
+                <p className="muted" style={{ fontSize: "0.78rem", margin: "0.15rem 0 0" }}>
+                  Review and fix anything the parser got wrong before saving to your portfolio.
+                </p>
+              </div>
+              <button className="btn btn-ghost" aria-label="Discard all" onClick={() => setDrafts([])}>Discard all</button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {drafts.map((p, i) => (
+                <DraftReview
+                  key={p.key} draft={p.draft}
+                  accounts={portfolio.accounts}
+                  existingHoldings={portfolio.holdings}
+                  onCurrency={(c) => setDraftCurrency(i, c)}
+                  onAccount={(patch) => updateDraftAccount(i, patch)}
+                  onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
+                  onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
+                  onApply={(target, money) => {
+                    if (target === "new") addDraft(p.draft, "new", money);
+                    else mergeDraftInto(target, p.draft);
+                    setDrafts((all) => all.filter((x) => x.key !== p.key));
+                  }}
+                  onDiscard={() => setDrafts((all) => all.filter((x) => x.key !== p.key))}
+                />
+              ))}
+            </div>
+
+            <div style={{ marginTop: "1rem", paddingTop: "0.8rem", borderTop: "1px solid var(--line-2)", textAlign: "right" }}>
+              <button className="btn" onClick={() => setDrafts([])}>Finish</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings, money, loanAmount) => {
         const id = addAccount(acct);
