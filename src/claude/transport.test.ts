@@ -9,36 +9,15 @@ const tauriWindow = () => vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("relayHint", () => {
-  it("decorates a relay 401 with the access-code hint", () => {
+  it("decorates a relay 401 with the friendly access-code prompt", () => {
     const e = relayHint("relay", "Claude request failed (401). ");
-    expect(e.message).toContain("needs the access code");
-    expect(e.message).toContain("Settings tab");
+    expect(e.message).toContain("AI access code is missing");
+    expect(e.message).toContain("ask the developer");
   });
 
-  it("decorates a relay 403, including Rust-style status text", () => {
-    // The desktop error path formats the status as e.g. "(403 Forbidden)".
+  it("decorates a relay 403 with the friendly access-code prompt", () => {
     const e = relayHint("relay", "Claude request failed (403 Forbidden). nope");
-    expect(e.message).toContain("needs the access code");
-  });
-
-  it("names the Windows Credential Manager on a Windows desktop build", () => {
-    tauriWindow();
-    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130" });
-    const e = relayHint("relay", "Claude request failed (401). ");
-    expect(e.message).toContain("Windows Credential Manager");
-    expect(e.message).not.toContain("Keychain");
-  });
-
-  it("names the macOS Keychain on a Mac desktop build", () => {
-    tauriWindow();
-    vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)" });
-    const e = relayHint("relay", "Claude request failed (401). ");
-    expect(e.message).toContain("macOS Keychain");
-  });
-
-  it("on the web preview, points at this device without naming a store", () => {
-    const e = relayHint("relay", "Claude request failed (401). ");
-    expect(e.message).toContain("it stays on this device");
+    expect(e.message).toContain("AI access code is missing");
   });
 
   it("leaves non-auth relay errors alone", () => {

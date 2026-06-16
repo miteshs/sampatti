@@ -51,9 +51,8 @@ export function effectiveAppToken(relayCode: string | undefined): string {
 // Exported for tests.
 export function relayHint(mode: string, message: string): Error {
   if (mode === "relay" && /\(40[13][^)]*\)/.test(message)) {
-    const where = isTauri() ? `it stays in the ${keyStoreName()}` : "it stays on this device";
     return new Error(
-      `${message} — the hosted relay needs the access code you were given. Add it on the Settings tab (⚙), or use your own Anthropic API key (${where}).`,
+      "AI access code is missing or no longer working. Please ask the developer for a new code to enable analysis and smart imports.",
     );
   }
   return new Error(message);

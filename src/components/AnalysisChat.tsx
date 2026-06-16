@@ -7,6 +7,8 @@ import { type Msg } from "../claude/transport";
 import { engineFor, streamAnalysis } from "../ai/engine";
 import { chatMessages, initialMessages, systemPrompt } from "../claude/prompts";
 import { Markdown } from "./Markdown";
+import { AuthErrorModal } from "./AddData";
+
 
 interface Turn { role: "assistant" | "user"; text: string }
 
@@ -35,6 +37,7 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
   const started = !!active;
   const [question, setQuestion] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState(false);
   const [showBrief, setShowBrief] = useState(false);
   // Client tailoring: free-text goals/context (#1, persisted) + focus areas (#2, per-run).
   const [context, setContext] = useState(portfolio.settings.analysisContext ?? "");
@@ -73,7 +76,12 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
         ctrl.signal,
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("AI access code")) {
+        setAuthError(true);
+      } else {
+        setError(msg);
+      }
     } finally {
       setAnalysisStreaming(false);
     }
@@ -280,6 +288,8 @@ export function AnalysisChat({ onConfigure }: { onConfigure?: () => void }) {
           </div>
         )}
       </div>
+
+      {authError && <AuthErrorModal onClose={() => setAuthError(false)} onConfigure={onConfigure} />}
 
       {/* Deterministic facts panel — computed on-device, mirrors what Claude sees. */}
       <div className="card" style={{ position: "sticky", top: "1rem" }}>
