@@ -124,19 +124,32 @@ jobs:
 
           if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$REPO" --title "Sampatti ${TAG#v}" \
-              --notes "Windows x64 installer below. macOS: download the signed, notarized \`.dmg\` and double-click it — it self-installs into Applications. AI analysis is optional (access code or your own Anthropic key, in Settings). All portfolio data stays on your device."
+              --notes "$(printf '%s\n' \
+                'Sampatti brings everything you own — across India and the US — into one private dashboard, with an AI analyst that reviews your portfolio whenever you ask. Your financial information stays on your own computer.' \
+                '' \
+                '### Download' \
+                '' \
+                '**Windows** (64-bit): get the installer below and run it. For brand-new apps Windows may show a "Windows protected your PC" screen — choose **More info → Run anyway** to continue.' \
+                '' \
+                '**Mac** (Apple Silicon — M1 and newer): get the `.dmg` below, open it, and double-click Sampatti.' \
+                '' \
+                '### Your data stays private' \
+                '' \
+                'Everything lives on your device — nothing is uploaded or kept on a server. The AI portfolio review is optional; you turn it on in Settings.')"
           fi
 
           # Build the Windows verification block (idempotent: a marked region we replace on re-run).
+          # Kept behind a fold so the default page stays clean; it is the trust path for the
+          # unsigned installer (VirusTotal scan + checksum) for anyone who wants to confirm it.
           VT_URL="${VT_ANALYSIS#*=}"   # strip "filepath=" prefix; empty if VT was skipped
-          BLOCK=$'<!-- win-verify -->\n### Verify the Windows download\n'
-          BLOCK+="The \`.exe\` is unsigned, so SmartScreen warns once — **More info → Run anyway**. "$'It is safe to verify before running:\n\n'
-          BLOCK+="- **SHA-256** (\`$EXE_NAME\`): \`$SHA256\`"$'\n'
-          BLOCK+="  Check it: \`sha256sum -c SHA256SUMS-windows.txt\` (or \`certutil -hash <file> SHA256\` on Windows)."$'\n'
+          BLOCK=$'<!-- win-verify -->\n<details>\n<summary>Want to double-check the download is safe? (optional)</summary>\n\n'
+          BLOCK+=$'The Windows installer is brand-new, so Microsoft has not yet built up a reputation for it — that is the only reason for the "Run anyway" prompt. You can confirm the file is genuine before running it:\n\n'
           if [ -n "$VT_URL" ]; then
-            BLOCK+="- **VirusTotal scan:** $VT_URL"$'\n'
+            BLOCK+="- **Independent antivirus scan (VirusTotal):** $VT_URL"$'\n'
           fi
-          BLOCK+=$'<!-- /win-verify -->'
+          BLOCK+="- **File fingerprint:** \`$SHA256\`"$'\n'
+          BLOCK+=$'  Comfortable with a terminal? Match it against the attached `SHA256SUMS-windows.txt` to confirm the file was not altered in transit.\n\n'
+          BLOCK+=$'</details>\n<!-- /win-verify -->'
 
           # Re-fetch current body, drop any previous block, append the fresh one.
           BODY=$(gh release view "$TAG" --repo "$REPO" --json body --jq '.body')

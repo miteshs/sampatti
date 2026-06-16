@@ -1,9 +1,11 @@
-# Sampatti — private, India-first portfolio analysis
+# Sampatti — private portfolio analysis
 
-A desktop app that aggregates everything you own — Indian stocks, mutual funds, ELSS, PMS/
-AIF, debt funds, EPF/PPF, NPS, FDs, gold/SGB, insurance, US RSUs, real estate — into one
-allocation view, and gives you an **interactive AI portfolio review** acting as a top Indian
-financial analyst. Your data lives on your machine; only a compact summary goes to Claude.
+A desktop app that aggregates everything you own — stocks, mutual funds, ELSS, PMS/AIF,
+debt funds, EPF/PPF, NPS, FDs, gold/SGB, 401(k)/IRA, RSUs, insurance, real estate — into one
+allocation view, and gives you an **interactive AI portfolio review** acting as a top
+financial analyst. It works for **India and US** portfolios today (region-aware currency,
+instruments, and tax), with more countries to come. Your data lives on your machine; only a
+compact summary goes to Claude.
 
 Built on a **Tauri + React** core: the desktop app ships for **macOS** (signed + notarized
 `.dmg`, direct download) and **Windows** (`.exe`, NSIS installer built by CI), and the same
@@ -24,8 +26,9 @@ code runs as a plain web app for development.
 - **Performance** — the portfolio stacked account by account over time (back to your oldest
   purchase via cost bases), drag-to-zoom, and P&L strictly from real purchase costs.
 - **AI Analysis (interactive)** — a streamed review covering concentration, diversification,
-  India tax (equity LTCG/STCG, debt slab taxation, ELSS/80C, NPS/80CCD(1B), SGB, harvesting),
-  liquidity, and a retirement/income read — then a chat box to ask follow-ups.
+  region-aware tax (India: equity LTCG/STCG, debt slab taxation, ELSS/80C, NPS/80CCD(1B), SGB,
+  harvesting; US: LTCG/NIIT, wash sales, 401(k)/IRA/Roth, RSU vesting), liquidity, and a
+  retirement/income read — then a chat box to ask follow-ups.
 - **Privacy by construction** — see [PRIVACY.md](./PRIVACY.md). Optional **on-device AI**
   (per-task: extraction and/or analysis) that provably makes zero network calls.
 

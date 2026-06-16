@@ -165,13 +165,19 @@ if [ "$GH_RELEASE" = "1" ]; then
   # The app-only dmg opens on a plain double-click and self-installs to /Applications — no
   # Gatekeeper dance, no drag.
   NOTES=$(cat <<NOTES_EOF
-**macOS (Apple Silicon)** — download \`Sampatti_${VERSION}_aarch64.dmg\` below, open it, and **double-click Sampatti** — it offers to move itself into Applications and reopens from there. No drag. Signed with an Apple Developer ID and notarized by Apple, so it opens normally — no security warnings.
+Sampatti brings everything you own — across India and the US — into one private dashboard, with an AI analyst that reviews your portfolio whenever you ask. Your financial information stays on your own computer.
 
-**Windows (x64)**: \`Sampatti_${VERSION}_x64-setup.exe\` below — SmartScreen will warn: **More info → Run anyway**.
+### Download
 
-macOS builds **auto-update**: the app checks for a newer signed release and installs it in place (Settings → Check for updates, or automatically on launch).
+**Mac** (Apple Silicon — M1 and newer): get **\`Sampatti_${VERSION}_aarch64.dmg\`** below. Open it, double-click Sampatti, and you're ready. New versions install themselves automatically.
 
-AI analysis is optional. Nothing secret is baked into the app: to use the hosted relay, paste the **access code** you were given into **Settings → Access code**; or enable **Developer mode** to use your own Anthropic API key (stored in the macOS Keychain / Windows Credential Manager). All portfolio data stays on your device. Built from \`${BUILT_FROM}\`.
+**Windows** (64-bit): get **\`Sampatti_${VERSION}_x64-setup.exe\`** below and run it. For brand-new apps Windows may show a "Windows protected your PC" screen — choose **More info → Run anyway** to continue.
+
+### Your data stays private
+
+Everything lives on your device — nothing is uploaded or kept on a server. The AI portfolio review is optional; you turn it on in Settings.
+
+<sub>Build \`${BUILT_FROM}\`</sub>
 NOTES_EOF
 )
   gh release create "v${VERSION}" "$DMG" ${UPD_ASSETS[@]+"${UPD_ASSETS[@]}"} \

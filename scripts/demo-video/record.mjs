@@ -463,6 +463,7 @@ async function recordRegion(key, page, cdp) {
   const safeSrt = srt.replace(/\\/g, '/').replace(/:/g, '\\\\:');
   execFileSync("ffmpeg", [
     "-y", "-loglevel", "error", "-i", master,
+    "-vf", `subtitles=${safeSrt}:force_style=FontName=Helvetica,FontSize=12,PrimaryColour=&H00FFFFFF,BackColour=&H66000000,BorderStyle=4,Outline=0,Shadow=0,MarginV=30,Alignment=2`,
     "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
     "-c:v", "libx264", "-crf", "20", "-preset", "medium",
     "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", final,
