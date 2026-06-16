@@ -40,11 +40,14 @@ async function waitFor(page, fn, what, timeout = 10_000) {
   }
 }
 
+// Case-insensitive on purpose: innerText reflects CSS text-transform (an uppercase .eyebrow
+// would otherwise defeat a sentence-case needle), so presentational casing can't break a match.
 const bodyHas = (page, text) =>
   page.evaluate((t) => {
-    if (document.body.innerText.includes(t)) return true;
+    const needle = t.toLowerCase();
+    if (document.body.innerText.toLowerCase().includes(needle)) return true;
     // Editable fields (draft review rows) render text as input VALUES, not innerText.
-    return [...document.querySelectorAll("input")].some((i) => i.value.includes(t));
+    return [...document.querySelectorAll("input")].some((i) => i.value.toLowerCase().includes(needle));
   }, text);
 const clickText = (page, text) =>
   page.evaluate((t) => {
@@ -178,7 +181,11 @@ try {
   });
 
   await step("demo loads over data (confirm accepted) and Overview renders the hero", async () => {
+    // With data already present, "Load demo portfolio" arms an INLINE confirm ("Yes, replace"),
+    // not a native dialog — so accept it explicitly rather than relying on the dialog handler.
     await clickText(page, "Load demo portfolio");
+    await waitFor(page, () => bodyHas(page, "Yes, replace"), "overwrite confirm");
+    await clickText(page, "Yes, replace");
     await sleep(700);
     await clickText(page, "Overview");
     await waitFor(page, () => bodyHas(page, "Net worth"), "hero");
@@ -203,7 +210,7 @@ try {
 
   await step("Holdings (Manage + Add) and AI Analysis render their key affordances", async () => {
     await clickText(page, "Holdings");
-    await waitFor(page, () => bodyHas(page, "Edit, include"), "manage header");
+    await waitFor(page, () => bodyHas(page, "Manage your ledger"), "manage header");
     await clickText(page, "AI Analysis");
     await waitFor(page, () => bodyHas(page, "Analyze my portfolio"), "analyze CTA");
     if (!(await bodyHas(page, "Am I too dependent on one stock?"))) throw new Error("example questions missing");
@@ -292,8 +299,8 @@ try {
     // The authored US-demo figures through the single display conversion. "$24K" here
     // would mean the double-divide returned; "$216" would mean no conversion at all.
     await waitFor(page, () => bodyHas(page, "$2.28M"), "US hero net worth");
-    if (!(await bodyHas(page, "$2.69M you own"))) throw new Error("assets line disagrees with the hero");
-    if (!(await bodyHas(page, "$410.0K in loans"))) throw new Error("loans line disagrees (the mangled-mortgage regression)");
+    if (!(await bodyHas(page, "$2.69M owned"))) throw new Error("assets line disagrees with the hero");
+    if (!(await bodyHas(page, "$410.0K debt"))) throw new Error("loans line disagrees (the mangled-mortgage regression)");
     if (await bodyHas(page, "₹")) throw new Error("rupee symbol leaked into US mode's Overview");
     await auditA11y(page, "Overview-US");
     if (!(await bodyHas(page, "Private portfolio analysis · United States"))) throw new Error("header tag still says India");
@@ -323,10 +330,9 @@ try {
     if (!(await bodyHas(page, "your corpus could reach"))) throw new Error("retirement projection text missing");
     await auditA11y(page, "Overview-insights");
 
-    // Opt-in dark mode — enable it and re-audit (axe otherwise only ever sees the light theme).
-    await clickText(page, "Settings");
-    await waitFor(page, () => bodyHas(page, "Appearance"), "appearance control");
-    await clickText(page, "Dark");
+    // Opt-in dark mode — toggled by the topbar switch (aria-label "Dark mode"), present on
+    // every screen — so re-audit in dark (axe otherwise only ever sees the light theme).
+    if (!(await clickAria(page, "Dark mode"))) throw new Error("dark-mode switch not found");
     await sleep(250);
     if (!(await page.evaluate(() => document.documentElement.dataset.theme === "dark"))) {
       throw new Error("dark theme not applied to <html data-theme>");

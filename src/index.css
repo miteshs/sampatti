@@ -22,6 +22,7 @@
   --emerald: #0e9f6e;
   --emerald-soft: #e6f7f0;
   --amber: #d98324;
+  --amber-ink: #9a5b09; /* TEXT-grade amber (≥4.5:1 on paper/white) — #d98324 is graphic-only */
   --amber-soft: #fbf1e2;
   --rose: #e5485f;
   --rose-soft: #fdecef;
@@ -318,7 +319,7 @@ tr:last-child td { border-bottom: none; }
    were hard on older eyes. The JSX already writes sentence case; CSS no longer shouts it. */
 .eyebrow {
   font-size: 0.75rem; font-weight: 650; letter-spacing: 0.01em;
-  color: var(--ink-3); text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 /* ---- verdict sublines: a number, then what it MEANS, in plain words ---- */
@@ -326,7 +327,7 @@ tr:last-child td { border-bottom: none; }
 .verdict .dot { width: 6px; height: 6px; border-radius: 99px; flex-shrink: 0; }
 .verdict.good { color: var(--up-ink); } .verdict.good .dot { background: var(--up); }
 .verdict.ok { color: var(--ink-2); } .verdict.ok .dot { background: #b3ae9f; }
-.verdict.watch { color: #d98324; } .verdict.watch .dot { background: var(--amber); }
+.verdict.watch { color: var(--amber-ink); } .verdict.watch .dot { background: var(--amber); }
 
 /* ---- the Overview hero: the one number they open the app for ----
    The one card that gets a signature: a paper-grain wash and a hairline indigo→gold rule,
