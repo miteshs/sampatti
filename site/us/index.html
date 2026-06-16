@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sampatti — private portfolio analysis for India</title>
+<title>Sampatti — private portfolio analysis for the US</title>
 <meta name="description" content="See everything you own in one dashboard, with an AI portfolio analyst — all on your own computer. Your financial statements never leave your machine. Free for macOS and Windows." />
-<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml" />
 
-<!-- Share preview. Set the absolute URL once the domain is live. -->
-<link rel="canonical" href="https://sampatti.app" />
-<meta property="og:url" content="https://sampatti.app" />
+<!-- Share preview. -->
+<link rel="canonical" href="https://sampatti.app/us" />
+<meta property="og:url" content="https://sampatti.app/us" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Sampatti — private portfolio analysis for India" />
+<meta property="og:title" content="Sampatti — private portfolio analysis for the US" />
 <meta property="og:description" content="Everything you own, in one dashboard, with an AI analyst — and it all stays on your machine." />
-<meta property="og:image" content="assets/shots/overview.png" />
+<meta property="og:image" content="../assets/shots/overview-us.png" />
 <meta name="twitter:card" content="summary_large_image" />
 
 <style>
@@ -22,11 +22,11 @@
      privacy story holds on the marketing page too). */
   @font-face {
     font-family: "Inter Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
-    src: url("assets/fonts/inter-latin.woff2") format("woff2-variations");
+    src: url("../assets/fonts/inter-latin.woff2") format("woff2-variations");
   }
   @font-face {
     font-family: "Fraunces Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
-    src: url("assets/fonts/fraunces-latin.woff2") format("woff2-variations");
+    src: url("../assets/fonts/fraunces-latin.woff2") format("woff2-variations");
   }
 
   :root {
@@ -161,21 +161,6 @@
   .trust-item h3 { font-family: var(--font); font-size: 0.92rem; font-weight: 700; margin: 0; }
   .trust-item p { font-size: 0.82rem; color: var(--ink-3); margin: 0.3rem 0 0; line-height: 1.4; }
 
-  /* dual market */
-  .markets { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
-  .market { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 0.7rem; box-shadow: var(--shadow); }
-  .market img { border-radius: 12px; border: 1px solid var(--line-2); }
-  .market .lbl { display: flex; align-items: center; gap: 0.5rem; padding: 0.7rem 0.6rem 0.4rem; font-weight: 650; font-size: 0.95rem; }
-  .market .lbl .flag { font-size: 1.1rem; }
-
-  /* steps */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; counter-reset: step; }
-  .step { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 1.6rem 1.4rem; box-shadow: var(--shadow); }
-  .step .n { counter-increment: step; font-family: var(--font-display); font-size: 1.5rem; color: var(--primary); font-weight: 600; }
-  .step .n::before { content: counter(step); }
-  .step h3 { font-family: var(--font); font-size: 1.05rem; font-weight: 700; margin: 0.5rem 0 0; }
-  .step p { color: var(--ink-2); font-size: 0.95rem; margin: 0.4rem 0 0; }
-
   /* faq */
   .faq { max-width: 46rem; margin: 0 auto; }
   details { background: var(--card); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 0 1.2rem; box-shadow: var(--shadow); margin-bottom: 0.7rem; }
@@ -210,7 +195,7 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="Sampatti home">
-      <img src="assets/logo.svg" alt="" />
+      <img src="../assets/logo.svg" alt="" />
       <b>Sampatti</b>
     </a>
     <nav class="topnav">
@@ -227,9 +212,9 @@
   <!-- HERO — privacy-first -->
   <section class="hero" id="download" style="padding-bottom: 2rem;">
     <div class="wrap">
-      <span class="eyebrow">Private portfolio analysis for India</span>
+      <span class="eyebrow">Private portfolio analysis for the US</span>
       <h1>Your money, in one place — <span class="accent">on your machine, not the cloud.</span></h1>
-      <p class="sub">Sampatti gathers your stocks, mutual funds, EPF, NPS and gold into one clear dashboard with an interactive AI portfolio review. Your statements never leave your computer.</p>
+      <p class="sub">Sampatti gathers your 401(k), IRA, brokerage accounts, RSUs and real estate into one clear dashboard with an interactive AI portfolio review. Your statements never leave your computer.</p>
       <div class="cta-row">
         <a class="btn btn-primary" id="dl-mac" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Mac</a>
         <a class="btn btn-ghost" id="dl-win" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Windows</a>
@@ -237,9 +222,9 @@
       <p class="cta-note"><b>Free.</b> macOS &amp; Windows · No account, no sign-up.</p>
 
       <div class="shot-frame" style="padding: 0; background: transparent; border: none; box-shadow: var(--shadow-lg);">
-        <video src="assets/sampatti-demo-india.mp4" controls preload="none" poster="assets/shots/overview.png" style="width: 100%; border-radius: var(--radius); border: 1px solid var(--line-2); display: block;" aria-label="Sampatti India Demo Video"></video>
+        <video src="../assets/sampatti-demo-us.mp4" controls preload="none" poster="../assets/shots/overview-us.png" style="width: 100%; border-radius: var(--radius); border: 1px solid var(--line-2); display: block;" aria-label="Sampatti US Demo Video"></video>
       </div>
-      <p style="margin-top: 0.8rem; font-size: 0.85rem; color: var(--ink-3);">Watch the 2-minute tour, or <a href="assets/sampatti-demo-india.mp4" download>download the MP4</a>.</p>
+      <p style="margin-top: 0.8rem; font-size: 0.85rem; color: var(--ink-3);">Watch the 2-minute tour, or <a href="../assets/sampatti-demo-us.mp4" download>download the MP4</a>.</p>
     </div>
   </section>
 
@@ -251,14 +236,14 @@
         <div class="copy">
           <span class="eyebrow">Total Visibility</span>
           <h2>Everything you own, finally in one view</h2>
-          <p>Stocks, mutual funds, EPF/PPF, NPS, bonds, FDs, gold, real estate — Sampatti pulls it all together. No more switching between five different apps to know your net worth.</p>
+          <p>Stocks, mutual funds, 401(k), IRA, RSUs, bonds, real estate — Sampatti pulls it all together. No more switching between five different apps to know your net worth.</p>
           <ul>
-            <li>Drop in CAS PDFs; they're read right on your device</li>
-            <li>Reconcile duplicates across multiple brokers</li>
+            <li>Drop in brokerage exports; they're read right on your device</li>
+            <li>Reconcile duplicates across multiple accounts</li>
             <li>Get a 0–100 <strong>Health Score</strong> across your whole portfolio</li>
           </ul>
         </div>
-        <div class="shot"><img src="assets/shots/holdings.png" alt="Holdings grouped by type with health score metrics" loading="lazy" /></div>
+        <div class="shot"><img src="../assets/shots/holdings.png" alt="Holdings grouped by type with health score metrics" loading="lazy" /></div>
       </div>
 
       <!-- AI analyst -->
@@ -266,14 +251,14 @@
         <div class="copy">
           <span class="eyebrow">Interactive Review</span>
           <h2>An expert analyst, in the room with you</h2>
-          <p>Get a clear review of concentration, diversification, and Indian tax treatment (LTCG/STCG) — then ask follow-up questions in plain words.</p>
+          <p>Get a clear review of concentration, diversification, and US tax treatment (Long/Short term gains, 401(k) limits) — then ask follow-up questions in plain words.</p>
           <ul>
-            <li>Region-aware: ₹ with Lakh and Crore formatting</li>
+            <li>Region-aware: $ with US fiduciary persona</li>
             <li>Grounded only in your real numbers — no generic advice</li>
             <li>Preview the exact text before it leaves for analysis</li>
           </ul>
         </div>
-        <div class="shot"><img src="assets/shots/analysis.png" alt="Interactive AI analysis of the portfolio" loading="lazy" /></div>
+        <div class="shot"><img src="../assets/shots/analysis.png" alt="Interactive AI analysis of the portfolio" loading="lazy" /></div>
       </div>
 
       <!-- performance -->
@@ -288,7 +273,7 @@
             <li>Drag to zoom into any stretch of time</li>
           </ul>
         </div>
-        <div class="shot"><img src="assets/shots/performance.png" alt="Net worth growth and performance chart" loading="lazy" /></div>
+        <div class="shot"><img src="../assets/shots/performance.png" alt="Net worth growth and performance chart" loading="lazy" /></div>
       </div>
 
       <!-- NEW: Planning -->
@@ -298,12 +283,12 @@
           <h2>Plan for the long run</h2>
           <p>Will you have enough to retire? Sampatti projects your corpus using your real numbers and inflation-aware math to show if you're on track.</p>
           <ul>
-            <li>Goal-based retirement projections for India</li>
+            <li>Goal-based retirement projections for the US</li>
             <li>Adjust inflation, returns, and savings in real-time</li>
             <li>Deterministic math that runs entirely on-device</li>
           </ul>
         </div>
-        <div class="shot"><img src="assets/shots/overview.png" alt="Retirement outlook and goal tracking" loading="lazy" /></div>
+        <div class="shot"><img src="../assets/shots/overview-us.png" alt="Retirement outlook and goal tracking" loading="lazy" /></div>
       </div>
     </div>
   </section>
@@ -349,10 +334,10 @@
     <div class="wrap">
       <div class="section-head">
         <span class="eyebrow">Global Reach</span>
-        <h2>Also available for the United States</h2>
-        <p>Managing money in the US? Sampatti has a dedicated version for the US market with native support for 401(k), IRA, and US tax rules.</p>
+        <h2>Also available for India</h2>
+        <p>Managing money in India? Sampatti has a dedicated version for the Indian market with native support for ₹ Lakh/Crore, CAS imports, and Indian tax rules.</p>
         <div style="margin-top: 1.5rem;">
-          <a href="/us" class="btn btn-ghost">View US Landing Page</a>
+          <a href="/" class="btn btn-ghost">View India Landing Page</a>
         </div>
       </div>
     </div>
@@ -376,7 +361,7 @@
         </details>
         <details>
           <summary>What can I import?</summary>
-          <p>Account statements (PDFs, CSVs, Excel) from common brokers and platforms. Indian CAS and US brokerage exports are both supported natively.</p>
+          <p>Account statements (PDFs, CSVs, Excel) from common brokers and platforms. US brokerage exports are supported natively.</p>
         </details>
         <details>
           <summary>Does it work for both India and the US?</summary>
@@ -403,7 +388,7 @@
 
 <footer>
   <div class="wrap">
-    <div class="brand"><img src="assets/logo.svg" alt="" style="width:24px;height:24px;border-radius:7px" /> <span class="muted">Sampatti — private portfolio analysis</span></div>
+    <div class="brand"><img src="../assets/logo.svg" alt="" style="width:24px;height:24px;border-radius:7px" /> <span class="muted">Sampatti — private portfolio analysis</span></div>
     <div class="links">
       <a href="https://github.com/miteshs/sampatti-releases/releases/latest">Releases</a>
       <a href="#privacy">Privacy</a>
@@ -414,16 +399,13 @@
 </footer>
 
 <script>
-  // Progressive enhancement: detect OS to highlight the right primary button, and (best-effort)
-  // resolve the latest release's actual installer so the buttons one-click download instead of
-  // landing on a file list. Falls back silently to the releases page if the API is unreachable.
+  // Progressive enhancement: detect OS to highlight the right primary button.
   (function () {
     var ua = navigator.userAgent || "";
     var isWin = /Windows/.test(ua);
     var mac = document.getElementById("dl-mac");
     var win = document.getElementById("dl-win");
     if (isWin && mac && win) {
-      // Make Windows the prominent action for Windows visitors.
       mac.className = "btn btn-ghost";
       win.className = "btn btn-primary";
       mac.parentNode.insertBefore(win, mac);

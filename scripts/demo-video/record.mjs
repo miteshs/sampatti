@@ -463,15 +463,23 @@ async function recordRegion(key, page, cdp) {
   const safeSrt = srt.replace(/\\/g, '/').replace(/:/g, '\\\\:');
   execFileSync("ffmpeg", [
     "-y", "-loglevel", "error", "-i", master,
-    "-vf", `subtitles=${safeSrt}:force_style=FontName=Helvetica,FontSize=12,PrimaryColour=&H00FFFFFF,BackColour=&H66000000,BorderStyle=4,Outline=0,Shadow=0,MarginV=30,Alignment=2`,
+    "-vf", `subtitles=filename='${safeSrt}':force_style='FontName=Helvetica,FontSize=12,PrimaryColour=&H00FFFFFF,BackColour=&H66000000,BorderStyle=4,Outline=0,Shadow=0,MarginV=30,Alignment=2'`,
     "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
     "-c:v", "libx264", "-crf", "20", "-preset", "medium",
     "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", final,
   ]);
   const dur = parseFloat(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).toString().trim());
   console.log(`✓ ${final} — ${dur.toFixed(1)}s (captions burned + ${srt.split("/").pop()} sidecar)`);
+
+  // Auto-copy to the website assets folder
+  const siteAssets = join(ROOT, "site", "assets");
+  if (existsSync(siteAssets)) {
+    execFileSync("cp", [final, join(siteAssets, `sampatti-demo-${region.label}.mp4`)]);
+    console.log(`  ✓ Copied to site/assets/sampatti-demo-${region.label}.mp4 for web hosting`);
+  }
+
   return final;
-}
+  }
 
 // ---------- main -----------------------------------------------------------------------------
 // Pronunciation can only be judged by ear: render the candidates and exit. Target is the
