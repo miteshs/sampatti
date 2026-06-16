@@ -16,9 +16,9 @@
 # "More info → Run anyway". To make that warning trustworthy instead of scary, every tagged
 # build ships a transparency bundle attached to the release:
 #   • SHA-256 checksum (SHA256SUMS-windows.txt) so users can verify the download is intact.
-#   • A GitHub build-provenance attestation (.sigstore bundle) proving the .exe was built by
-#     this workflow from this source — verifiable with `gh attestation verify`.
 #   • A VirusTotal scan link (needs the optional VT_API_KEY secret; skipped if absent).
+# (Build-provenance attestation was dropped: GitHub won't persist attestations for a
+# user-owned PRIVATE repo — re-add actions/attest-build-provenance if this repo goes public.)
 # See docs/windows.md for the user-facing "is this safe?" walkthrough.
 
 name: windows-release
@@ -30,8 +30,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write       # OIDC token for build-provenance attestation
-  attestations: write   # write the attestation to this (source) repo
 
 jobs:
   windows:
@@ -89,16 +87,6 @@ jobs:
           ( cd "$(dirname "$EXE")" && sha256sum "$(basename "$EXE")" ) > "$GITHUB_WORKSPACE/SHA256SUMS-windows.txt"
           echo "sha256: $SHA"
 
-      # Build provenance: cryptographically ties the .exe to THIS workflow run + source commit.
-      # Writes a .sigstore bundle (also logged to the public Sigstore transparency log) that we
-      # attach to the release, so anyone can run `gh attestation verify <exe> --bundle <bundle>`.
-      - name: Attest build provenance
-        if: github.ref_type == 'tag'
-        id: attest
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
-        with:
-          subject-path: ${{ steps.exe.outputs.path }}
-
       # VirusTotal scan — needs the optional VT_API_KEY secret (free account at virustotal.com).
       # continue-on-error so a missing key or VT hiccup never blocks a release.
       - name: VirusTotal scan
@@ -128,7 +116,6 @@ jobs:
           EXE_PATH: ${{ steps.exe.outputs.path }}
           EXE_NAME: ${{ steps.exe.outputs.name }}
           SHA256: ${{ steps.exe.outputs.sha256 }}
-          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
           # crazy-max/ghaction-virustotal emits "filepath=url[,filepath=url]"; "" if VT skipped.
           VT_ANALYSIS: ${{ steps.vt.outputs.analysis }}
         run: |
@@ -149,8 +136,6 @@ jobs:
           if [ -n "$VT_URL" ]; then
             BLOCK+="- **VirusTotal scan:** $VT_URL"$'\n'
           fi
-          BLOCK+="- **Build provenance:** built by GitHub Actions from source \`miteshs/sampatti@$TAG\`."$'\n'
-          BLOCK+="  Verify: \`gh attestation verify $EXE_NAME --bundle $EXE_NAME.sigstore.json --repo miteshs/sampatti\`"$'\n'
           BLOCK+=$'<!-- /win-verify -->'
 
           # Re-fetch current body, drop any previous block, append the fresh one.
@@ -158,11 +143,6 @@ jobs:
           CLEAN=$(printf '%s\n' "$BODY" | sed '/<!-- win-verify -->/,/<!-- \/win-verify -->/d')
           gh release edit "$TAG" --repo "$REPO" --notes "$(printf '%s\n\n%s\n' "$CLEAN" "$BLOCK")"
 
-          # Upload the installer + transparency artifacts. The attestation bundle is renamed to
-          # "<exe>.sigstore.json" so the verify command above is copy-paste correct.
+          # Upload the installer + checksum.
           gh release upload "$TAG" "$EXE_PATH" --repo "$REPO" --clobber
           gh release upload "$TAG" "$GITHUB_WORKSPACE/SHA256SUMS-windows.txt" --repo "$REPO" --clobber
-          if [ -n "$BUNDLE_PATH" ] && [ -f "$BUNDLE_PATH" ]; then
-            cp "$BUNDLE_PATH" "$GITHUB_WORKSPACE/$EXE_NAME.sigstore.json"
-            gh release upload "$TAG" "$GITHUB_WORKSPACE/$EXE_NAME.sigstore.json" --repo "$REPO" --clobber
-          fi

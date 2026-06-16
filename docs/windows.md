@@ -37,16 +37,14 @@ attached to the [release](https://github.com/miteshs/sampatti-releases/releases)
   ```
   Compare the result to the value in `SHA256SUMS-windows.txt` on the release.
 - **VirusTotal** — the release notes link a scan across ~70 antivirus engines.
-- **Build provenance** — the `.exe` was built by public GitHub Actions straight from source,
-  not uploaded by hand. With the [GitHub CLI](https://cli.github.com/) you can verify the
-  cryptographic attestation against the bundle on the release:
-  ```sh
-  gh attestation verify Sampatti_<version>_x64-setup.exe \
-    --bundle Sampatti_<version>_x64-setup.exe.sigstore.json --repo miteshs/sampatti
-  ```
 
 None of this removes the SmartScreen prompt — only a paid certificate does — but it lets a
 careful user confirm exactly what they're running.
+
+> Build-provenance attestation (`gh attestation verify`) is intentionally **not** shipped:
+> GitHub won't persist attestations for a user-owned *private* repo. Re-add the
+> `actions/attest-build-provenance` step (and upload the `.sigstore.json` bundle) if this
+> repo ever becomes public or moves under an org.
 
 ## Cutting a Windows release (maintainer)
 
@@ -91,7 +89,7 @@ regression (see below) fails the release, not the user.
   plain `npm run tauri build` does the right thing there (macOS keeps `dmg`/`app`).
 - **SmartScreen**: accepted friction — code-signing certificates cost money (the macOS build,
   by contrast, *is* signed + notarized). Rather than pay, each release ships a transparency
-  bundle — SHA-256 checksum, VirusTotal link, and a GitHub build-provenance attestation — so
+  bundle — SHA-256 checksum and a VirusTotal link — so
   the warning is verifiable rather than scary (see the "Is this safe?" section above).
   Reputation also accrues to unsigned installers over download volume, helped by the
   SmartScreen developer submission.
