@@ -51,8 +51,8 @@ describe("unit-rule triangle — hero, chart and outbound brief agree", () => {
     useStore.setState({ portfolio: p, loaded: true });
     const visP = visiblePortfolio(p);
     const brief = buildBrief(visP);
-    expect(fmtMoney(brief.netWorth)).toBe("$2.28M");
-    expect(fmtMoney(brief.totalAssets)).toBe("$2.69M");
-    expect(fmtMoney(brief.totalLiabilities)).toBe("$410.0K");
+    expect(fmtMoney(brief.netWorth)).toBe("$2.35M");
+    expect(fmtMoney(brief.totalAssets)).toBe("$2.84M");
+    expect(fmtMoney(brief.totalLiabilities)).toBe("$485.0K");
   });
 });

@@ -43,17 +43,16 @@ export const DEMO_PLOT_DAYS_AGO = 15; // Alibaug plot — started tracking (`tra
 
 // When each late-joining account enters the record (everything else is there from day one).
 export const DEMO_ENTERS: Record<string, { daysAgo: number; kind: FlowEvent["kind"]; label: string }> = {
-  "Morgan Stanley (RSU/ESPP)": { daysAgo: 420, kind: "tracking", label: "Started tracking RSU/ESPP account" },
+  "Morgan Stanley (RSU)": { daysAgo: 420, kind: "tracking", label: "Started tracking RSU account" },
   "Marcellus PMS": { daysAgo: 365, kind: "flow", label: "Funded the PMS mandate" },
   "Schwab Brokerage": { daysAgo: 300, kind: "tracking", label: "Started tracking Schwab brokerage" },
   "NPS Tier-1": { daysAgo: 270, kind: "tracking", label: "Started tracking NPS" },
-  "Edelweiss AIF": { daysAgo: 240, kind: "flow", label: "AIF capital call" },
   "Private Markets": { daysAgo: 200, kind: "flow", label: "PE & private-credit commitments" },
   "Crypto Wallet": { daysAgo: 150, kind: "tracking", label: "Started tracking the crypto wallet" },
   "Groww Mutual Funds": { daysAgo: DEMO_MF_DAYS_AGO, kind: "flow", label: "Opened Groww folio with new savings" },
   "Plot — Alibaug": { daysAgo: DEMO_PLOT_DAYS_AGO, kind: "tracking", label: "Started tracking — plot, Alibaug" },
   // US-demo joiners (names are distinct from the India set; the maps are name-keyed).
-  "RSU — Stripe (Carta)": { daysAgo: 400, kind: "tracking", label: "Started tracking vested Stripe RSUs" },
+  "RSU — Microsoft": { daysAgo: 400, kind: "tracking", label: "Started tracking vested Microsoft RSUs" },
   "HSA Bank": { daysAgo: 270, kind: "tracking", label: "Started tracking the HSA" },
   "Coinbase": { daysAgo: 160, kind: "tracking", label: "Started tracking the Coinbase wallet" },
   "Treasury & CDs": { daysAgo: 30, kind: "flow", label: "Moved idle cash into T-bills" },
@@ -82,7 +81,7 @@ const MOVERS: Record<string, { vol: number; drift: number; weekends?: boolean }>
   "Debt Funds": { vol: 0.0006, drift: 0.067 },
   "NPS Tier-1": { vol: 0.004, drift: 0.095 },
   "Gold": { vol: 0.005, drift: 0.1, weekends: true },
-  "Morgan Stanley (RSU/ESPP)": { vol: 0.011, drift: 0.11 },
+  "Morgan Stanley (RSU)": { vol: 0.011, drift: 0.11 },
   "Schwab Brokerage": { vol: 0.002, drift: 0.05 },
   "Crypto Wallet": { vol: 0.025, drift: 0.35, weekends: true },
   "HUF Demat": { vol: 0.009, drift: 0.12 },
@@ -90,7 +89,7 @@ const MOVERS: Record<string, { vol: number; drift: number; weekends?: boolean }>
   "Fidelity 401(k)": { vol: 0.007, drift: 0.1 },
   "Vanguard Roth IRA": { vol: 0.007, drift: 0.1 },
   "Coinbase": { vol: 0.025, drift: 0.35, weekends: true },
-  "Zerodha (NRI demat)": { vol: 0.009, drift: 0.12 },
+  "RSU — Microsoft": { vol: 0.011, drift: 0.11 },
 };
 
 const isWeekend = (date: string): boolean => {
@@ -273,7 +272,7 @@ export function demoPortfolio(country: "India" | "US" = "India"): Portfolio {
         ["Jio Financial Services", "indian_equity", 1_400_000, { symbol: "JIOFIN", units: 3820, costBasis: 650_000, buyDate: "2023-08-22" }],
         // A realistic loser: high-quality name bought at a peak.
         ["Asian Paints", "indian_equity", 1_100_000, { symbol: "ASIANPAINT", units: 376, costBasis: 1_350_000, buyDate: "2023-01-09" }],
-        ["Zomato Ltd", "indian_equity", 950_000, { symbol: "ZOMATO", units: 5200, costBasis: 400_000, buyDate: "2022-05-15" }],
+        ["Zomato Ltd", "indian_equity", 950_000, { symbol: "ZOMATO", units: 5200, costBasis: 400_000, buyDate: dayStr(100) }],
       ],
     },
     {

@@ -5,14 +5,14 @@ import { buildBrief, briefForModel } from "./brief";
 describe("buildBrief on the demo HNI portfolio", () => {
   const b = buildBrief(demoPortfolio());
 
-  it("computes a net worth in the expected HNI range (~₹12.5–14.5 Cr)", () => {
-    expect(b.netWorth).toBeGreaterThan(12_50_00_000);
-    expect(b.netWorth).toBeLessThan(14_50_00_000);
+  it("computes a net worth in the expected HNI range (~₹14.0–16.0 Cr)", () => {
+    expect(b.netWorth).toBeGreaterThan(14_00_00_000);
+    expect(b.netWorth).toBeLessThan(16_00_00_000);
   });
 
   it("net worth = assets − liabilities", () => {
     expect(b.netWorth).toBe(b.totalAssets - b.totalLiabilities);
-    expect(b.totalLiabilities).toBe(65_00_000); // the home loan
+    expect(b.totalLiabilities).toBe(85_00_000); // the home loan
   });
 
   it("asset-class allocation percentages sum to ~100", () => {
@@ -22,10 +22,10 @@ describe("buildBrief on the demo HNI portfolio", () => {
   });
 
   it("converts USD RSUs into the INR base at the manual rate", () => {
-    // 85,000 USD * 95 should land in liquid + us_equity allocation.
+    // 170,000 USD * 95 should land in liquid + us_equity allocation.
     const us = b.allocationByClass.find((a) => a.label === "US Equity");
     expect(us).toBeDefined();
-    expect(us!.value).toBeCloseTo(85_000 * 95, -3);
+    expect(us!.value).toBeCloseTo(170_000 * 95, -3);
   });
 
   it("surfaces single-stock concentration metrics", () => {
@@ -35,19 +35,20 @@ describe("buildBrief on the demo HNI portfolio", () => {
   });
 
   it("splits taxable equity into STCG/LTCG buckets using buy dates", () => {
-    // Trent + the SBI Small Cap re-entry + ESPP were bought recently → short-term; rest long-term.
+    // Recent purchases should generate STCG; rest long-term.
     expect(b.holdingPeriods.equityShortTerm).toBeGreaterThan(0);
     expect(b.holdingPeriods.equityLongTerm).toBeGreaterThan(b.holdingPeriods.equityShortTerm);
   });
 
   it("tracks EEE (PPF/EPF) and NPS wrapper coverage", () => {
-    expect(b.taxWrappers.exemptEEE).toBe(45_00_000 + 28_00_000);
-    expect(b.taxWrappers.nps).toBe(22_00_000);
+    expect(b.taxWrappers.exemptEEE).toBe(52_00_000 + 34_00_000);
+    expect(b.taxWrappers.nps).toBe(28_00_000);
   });
 
   it("summarizes annual income", () => {
     expect(b.income.annualTotal).toBe(600_000 * 12 + 45_000 * 12 + 300_000 + 300_000 + 120_000);
   });
+
 });
 
 describe("brief privacy contract — only aggregates + top names leave the device", () => {
@@ -93,10 +94,10 @@ describe("brief gains block (cost basis)", () => {
   });
 
   it("adds gainPct to top holdings that have a real basis", () => {
-    const mf = b.concentration.topHoldings.find((h) => h.name === "Mirae Asset Large Cap Fund");
-    expect(mf?.gainPct).toBeCloseTo(87.5, 1); // (45L − 24L) / 24L
+    const mf = b.concentration.topHoldings.find((h) => h.name === "Quant Small Cap Fund");
+    expect(mf?.gainPct).toBeCloseTo(132.1, 1); // (65L − 28L) / 28L
     // The PMS deliberately has NO reported cost (estimated anchor) → no gainPct for the AI.
-    const pms = b.concentration.topHoldings.find((h) => h.name === "Consistent Compounders Portfolio");
+    const pms = b.concentration.topHoldings.find((h) => h.name === "Marcellus CCP (Discretionary)");
     expect(pms?.gainPct).toBeUndefined();
     const flat = b.concentration.topHoldings.find((h) => h.name === "Primary residence — Mumbai");
     expect(flat?.gainPct).toBeUndefined(); // no basis on file

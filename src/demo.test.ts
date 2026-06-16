@@ -19,7 +19,7 @@ const REGION_CASES = [
   {
     label: "US",
     p: demoPortfolio("US"),
-    flatDayOne: ["Old Employer 401(k) — Empower", "Mortgage"],
+    flatDayOne: ["Mortgage"],
     movers: ["Schwab Taxable", "Fidelity 401(k)", "Vanguard Roth IRA"],
   },
 ];

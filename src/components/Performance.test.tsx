@@ -22,7 +22,7 @@ const renderWithDemo = () => {
 describe("Performance — real purchase costs only", () => {
   it("lists holdings with a real basis and omits estimated/no-basis ones", () => {
     renderWithDemo();
-    expect(screen.getByText("Infosys")).toBeTruthy(); // real basis
+    expect(screen.getByText("Varun Beverages")).toBeTruthy(); // real basis
     // No purchase cost on file → must NOT appear in the P&L table at all.
     expect(screen.queryByText("EPF + VPF balance")).toBeNull();
     expect(screen.queryByText("Consistent Compounders Portfolio")).toBeNull();
@@ -55,7 +55,7 @@ describe("Performance — real purchase costs only", () => {
     fireEvent.click(screen.getByRole("button", { name: "By account" }));
     // Group headers carry a holding count; rows lose their account suffix (it's the header now).
     expect(screen.getAllByText(/· \d+ holdings?$/).length).toBeGreaterThan(1);
-    expect(screen.getByText("Infosys")).toBeTruthy(); // still listed, under Zerodha Demat
+    expect(screen.getByText("Varun Beverages")).toBeTruthy(); // still listed, under Zerodha Demat
     // Accounts with no real-basis holdings (e.g. Provident Fund) get no group header.
     const headers = screen.getAllByText(/· \d+ holdings?$/).map((el) => el.parentElement?.textContent ?? "");
     expect(headers.some((t) => t.includes("Provident Fund"))).toBe(false);
