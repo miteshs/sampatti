@@ -173,6 +173,17 @@ function writeSrt(file, cues) {
     `${i + 1}\n${srtTime(c.start)} --> ${srtTime(c.end)}\n${c.text}\n`).join("\n"));
 }
 
+const vttTime = (t) => {
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = Math.floor(t % 60);
+  const ms = Math.round((t % 1) * 1000);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
+};
+
+function writeVtt(file, cues) {
+  writeFileSync(file, "WEBVTT\n\n" + cues.map((c, i) =>
+    `${i + 1}\n${vttTime(c.start)} --> ${vttTime(c.end)}\n${c.text}\n`).join("\n"));
+}
+
 // ---------- cursor + page helpers --------------------------------------------------------
 async function installCursor(page) {
   await page.evaluate(() => {
@@ -458,6 +469,8 @@ async function recordRegion(key, page, cdp) {
 
   const srt = join(OUT, `sampatti-demo-${region.label}.srt`);
   writeSrt(srt, allCues);
+  const vtt = join(OUT, `sampatti-demo-${region.label}.vtt`);
+  writeVtt(vtt, allCues);
 
   const final = join(OUT, `sampatti-demo-${region.label}.mp4`);
   execFileSync("ffmpeg", [
@@ -467,14 +480,14 @@ async function recordRegion(key, page, cdp) {
     "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", final,
   ]);
   const dur = parseFloat(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).toString().trim());
-  console.log(`✓ ${final} — ${dur.toFixed(1)}s (audio mastered + ${srt.split("/").pop()} sidecar)`);
+  console.log(`✓ ${final} — ${dur.toFixed(1)}s (audio mastered + ${vtt.split("/").pop()} sidecar)`);
 
-  // Auto-copy to the website assets folder (MP4 and SRT)
+  // Auto-copy to the website assets folder (MP4 and VTT)
   const siteAssets = join(ROOT, "site", "assets");
   if (existsSync(siteAssets)) {
     execFileSync("cp", [final, join(siteAssets, `sampatti-demo-${region.label}.mp4`)]);
-    execFileSync("cp", [srt, join(siteAssets, `sampatti-demo-${region.label}.srt`)]);
-    console.log(`  ✓ Copied MP4 and SRT to site/assets/ for web hosting`);
+    execFileSync("cp", [vtt, join(siteAssets, `sampatti-demo-${region.label}.vtt`)]);
+    console.log(`  ✓ Copied MP4 and VTT to site/assets/ for web hosting`);
   }
 
   return final;
