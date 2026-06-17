@@ -309,187 +309,161 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
             {errors.map((er, i) => <div key={i} style={{ padding: "0.1rem 0" }}>{er}</div>)}
           </div>
         )}
-        {hasData && (
-          <div style={{ marginTop: "0.9rem", paddingTop: "0.8rem", borderTop: "1px solid var(--line-2)", display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-            {confirmClear ? (
-              <>
-                <span className="muted" style={{ fontSize: "0.8rem" }}>Erase all accounts, holdings &amp; income and start fresh?</span>
-                <button className="btn btn-danger" onClick={clearAll}>Yes, clear everything</button>
-                <button className="btn btn-ghost" onClick={() => setConfirmClear(false)}>Cancel</button>
-              </>
-            ) : (
-              <button className="btn btn-ghost" onClick={() => setConfirmClear(true)}>🗑 Clear all data &amp; start fresh</button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Password-protected PDFs (usually a CAS) — unlock & parse on this device */}
-      {lockedPdfs.map(({ file, engine, error }, i) => (
-        <div key={`lock-${i}`} className="card" style={{ borderLeft: "3px solid var(--primary)", background: "var(--primary-soft)" }}>
-          <h3 style={{ fontSize: "0.98rem" }}>🔒 {file.name} is password-protected</h3>
-          <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem", maxWidth: 560 }}>
-            For a CAS this is usually <strong>your PAN in capital letters</strong> or the password
-            you chose when requesting it. The file is decrypted and read <strong>on this device
-            only</strong> — a CAS never goes to Claude, and the password is never stored.
-          </p>
-          <div style={{ display: "flex", gap: "0.5rem", maxWidth: 420 }}>
-            <input
-              type="password" placeholder="PDF password" value={pdfPassword}
-              onChange={(e) => setPdfPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && void unlockPdf(file, engine)}
-            />
-            <button className="btn btn-primary" disabled={unlockBusy || !pdfPassword.trim()} onClick={() => void unlockPdf(file, engine)}>
-              {unlockBusy ? <span className="spinner" /> : "Unlock & import"}
-            </button>
-            <button className="btn btn-ghost" onClick={() => setLockedPdfs((l) => l.filter((x) => x.file !== file))}>Skip</button>
-          </div>
-          {error && <div className="badge badge-rose" style={{ marginTop: "0.55rem", padding: "0.3rem 0.6rem" }}>{error}</div>}
-        </div>
-      ))}
-
-      {/* Files local parsing couldn't read — offer the AI fallback, per file */}
-      {needsClaude.map(({ file, reason }, i) => {
-        const localBlocked = extractionEngine === "local" && !localReady;
-        return (
-          <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "var(--amber-soft)" }}>
-            <h3 style={{ fontSize: "0.98rem" }}>Couldn't auto-read {file.name}</h3>
-            <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
-              {reason}{" "}
-              {extractionEngine === "local"
-                ? (localBlocked
-                  ? "Your import engine is set to on-device AI, but the model isn't downloaded yet (Settings → AI engines). Send just this file to Claude instead, or skip it."
-                  : "Parse it with the on-device model — nothing leaves this device — or skip it. You'll review the result before saving.")
-                : `Send it to Claude ${portfolio.settings.claudeMode === "byo" ? "with your own key" : "via the relay"} to extract the holdings — you'll review the result before saving — or skip it.`}
-            </p>
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-              <button className="btn btn-primary" disabled={aiBusy === file.name} onClick={() => void parseWithAi(file, localBlocked ? "claude" : undefined)}>
-                {aiBusy === file.name
-                  ? <span className="spinner" />
-                  : localBlocked ? "✨ Parse with Claude instead" : extractionEngine === "local" ? "🔒 Parse on this device" : "✨ Parse with Claude"}
-              </button>
-              <button className="btn btn-ghost" onClick={() => setNeedsClaude((n) => n.filter((x) => x.file !== file))}>Skip</button>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Confirm the batch before any document is sent to Claude. Only files that actually
-          LEAVE the device are listed as going to Claude — under the local engine that is
-          just the images; text files stay here and never gate. */}
-      {pendingBatch && (() => {
-        const { files, engine } = pendingBatch;
-        const claudeFiles = filesForClaude(files, classifyFile, engine);
-        const localCount = files.length - claudeFiles.length;
-        const n = files.length;
-        return (
-          <div className="card" style={{ borderColor: "var(--line)", background: "var(--primary-soft)" }}>
-            <h3 style={{ fontSize: "1rem" }}>Import {n} file{n > 1 ? "s" : ""}?</h3>
-            <ul className="muted" style={{ fontSize: "0.84rem", margin: "0.4rem 0 0.8rem", paddingLeft: "1.1rem", lineHeight: 1.7 }}>
-              {localCount > 0 && (
-                <li>
-                  <strong>{localCount}</strong> parsed on this device{engine === "local" ? " (spreadsheets, CAS & text PDFs)" : " (CSV/Excel)"} — never sent anywhere.
-                </li>
-              )}
-              {claudeFiles.length > 0 && (
-                <li>
-                  <strong>{claudeFiles.length}</strong>{" "}
-                  {engine === "local" ? "images/scans " : ""}sent to Claude{" "}
-                  {portfolio.settings.claudeMode === "byo" ? "with your own API key" : "via the relay"}
-                  {engine === "local" ? " — the on-device model reads text only —" : ""}{" "}
-                  to extract holdings — not stored. You'll review each before saving.
-                </li>
-              )}
-              {skipped > 0 && <li>{skipped} unsupported file{skipped > 1 ? "s" : ""} skipped.</li>}
-            </ul>
-            {claudeFiles.length > 0 && (
-              <details style={{ marginBottom: "0.7rem" }}>
-                <summary className="muted" style={{ fontSize: "0.78rem", cursor: "pointer" }}>
-                  Show the {claudeFiles.length} file{claudeFiles.length > 1 ? "s" : ""} going to Claude
-                </summary>
-                <div className="muted" style={{ fontSize: "0.76rem", marginTop: "0.3rem", maxHeight: 140, overflow: "auto" }}>
-                  {claudeFiles.map((f, i) => <div key={i}>• {f.name}</div>)}
-                </div>
-              </details>
-            )}
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="btn btn-primary" onClick={() => void runBatch(files, engine)}>Import {n} file{n > 1 ? "s" : ""}</button>
-              <button className="btn btn-ghost" onClick={() => { setPendingBatch(null); setSkipped(0); }}>Cancel</button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Local engine selected but the model isn't on disk — choose: download it (Privacy)
-          or send this batch to Claude just this once. Nothing runs until they choose. */}
-      {modelGate && (() => {
-        const aiCount = modelGate.filter((f) => classifyFile(f) !== "local").length;
-        return (
-          <div className="card" style={{ borderLeft: "3px solid var(--primary)", background: "var(--primary-soft)" }}>
-            <h3 style={{ fontSize: "1rem" }}>🔒 On-device AI is selected — but the model isn't downloaded</h3>
-            <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.8rem", maxWidth: 600 }}>
-              {aiCount} of these {modelGate.length} file{modelGate.length > 1 ? "s" : ""} need{aiCount === 1 ? "s" : ""} AI
-              to read, and your import engine is set to the on-device model (Settings → AI engines) —
-              but the model isn't on this computer yet. Download it once and imports stay fully
-              private, or send {aiCount === 1 ? "this file" : "these files"} to Claude just this time.
-              Your saved setting doesn't change either way.
-            </p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              {onConfigure && (
-                <button className="btn btn-primary" onClick={() => onConfigure()}>⬇ Download the model (Privacy)</button>
-              )}
-              <button className="btn" onClick={() => { const files = modelGate; setModelGate(null); setPendingBatch({ files, engine: "claude" }); }}>
-                ✨ Use Claude this time
-              </button>
-              <button className="btn btn-ghost" onClick={() => { setModelGate(null); setSkipped(0); }}>Cancel</button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Draft review — popup modal for clear action/reaction feedback */}
-      {drafts.length > 0 && (
-        <div className="modal-backdrop">
-          <div className="modal modal-lg" role="dialog" aria-modal="true" aria-label="Review imported statements"
-            style={{ maxHeight: "90vh", display: "flex", flexDirection: "column", padding: "1.25rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
-              <div>
-                <h3 style={{ fontSize: "1.15rem", margin: 0 }}>Review imports</h3>
-                <p className="muted" style={{ fontSize: "0.78rem", margin: "0.15rem 0 0" }}>
-                  Review and fix anything the parser got wrong before saving to your portfolio.
-                </p>
-              </div>
-              <button className="btn btn-ghost" aria-label="Discard all" onClick={() => setDrafts([])}>Discard all</button>
-            </div>
-
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              {drafts.map((p, i) => (
-                <DraftReview
-                  key={p.key} draft={p.draft}
-                  accounts={portfolio.accounts}
-                  existingHoldings={portfolio.holdings}
-                  onCurrency={(c) => setDraftCurrency(i, c)}
-                  onAccount={(patch) => updateDraftAccount(i, patch)}
-                  onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
-                  onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
-                  onApply={(target, money) => {
-                    if (target === "new") addDraft(p.draft, "new", money);
-                    else mergeDraftInto(target, p.draft);
-                    setDrafts((all) => all.filter((x) => x.key !== p.key));
-                  }}
-                  onDiscard={() => setDrafts((all) => all.filter((x) => x.key !== p.key))}
-                />
-              ))}
-            </div>
-
-            <div style={{ marginTop: "1rem", paddingTop: "0.8rem", borderTop: "1px solid var(--line-2)", textAlign: "right" }}>
-              <button className="btn" onClick={() => setDrafts([])}>Finish</button>
-            </div>
-          </div>
+      {hasData && (
+        <div style={{ marginTop: "0.9rem", paddingTop: "0.8rem", borderTop: "1px solid var(--line-2)", display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          {confirmClear ? (
+            <>
+              <span className="muted" style={{ fontSize: "0.8rem" }}>Erase all accounts, holdings &amp; income and start fresh?</span>
+              <button className="btn btn-danger" onClick={clearAll}>Yes, clear everything</button>
+              <button className="btn btn-ghost" onClick={() => setConfirmClear(false)}>Cancel</button>
+            </>
+          ) : (
+            <button className="btn btn-ghost" onClick={() => setConfirmClear(true)}>🗑 Clear all data &amp; start fresh</button>
+          )}
         </div>
       )}
+    </div>
 
-      <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings, money, loanAmount) => {
+    {/* The Import Workflow Modal — handles consent, passwords, AI fallback, and draft review in one place */}
+    {(drafts.length > 0 || lockedPdfs.length > 0 || needsClaude.length > 0 || pendingBatch || modelGate) && (
+      <div className="modal-backdrop">
+        <div className="modal modal-lg" role="dialog" aria-modal="true" aria-label="Import workflow"
+          style={{ maxHeight: "90vh", display: "flex", flexDirection: "column", padding: "1.25rem" }}>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
+            <h3 style={{ fontSize: "1.15rem", margin: 0 }}>
+              {drafts.length > 0 ? "Review imports" : "Importing statements"}
+            </h3>
+            <button className="btn btn-ghost" aria-label="Close" onClick={() => {
+              setDrafts([]); setLockedPdfs([]); setNeedsClaude([]); setPendingBatch(null); setModelGate(null);
+            }}>✕</button>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            {/* 1. Batch Consent */}
+            {pendingBatch && (() => {
+              const { files, engine } = pendingBatch;
+              const claudeFiles = filesForClaude(files, classifyFile, engine);
+              const localCount = files.length - claudeFiles.length;
+              const n = files.length;
+              return (
+                <div className="card" style={{ borderColor: "var(--line)", background: "var(--primary-soft)", margin: 0 }}>
+                  <h3 style={{ fontSize: "1rem" }}>Import {n} file{n > 1 ? "s" : ""}?</h3>
+                  <ul className="muted" style={{ fontSize: "0.84rem", margin: "0.4rem 0 0.8rem", paddingLeft: "1.1rem", lineHeight: 1.7 }}>
+                    {localCount > 0 && (
+                      <li>
+                        <strong>{localCount}</strong> parsed on this device{engine === "local" ? " (spreadsheets, CAS & text PDFs)" : " (CSV/Excel)"} — never sent anywhere.
+                      </li>
+                    )}
+                    {claudeFiles.length > 0 && (
+                      <li>
+                        <strong>{claudeFiles.length}</strong>{" "}
+                        {engine === "local" ? "images/scans " : ""}sent to Claude{" "}
+                        {portfolio.settings.claudeMode === "byo" ? "with your own API key" : "via the relay"}
+                        {engine === "local" ? " — the on-device model reads text only —" : ""}{" "}
+                        to extract holdings — not stored.
+                      </li>
+                    )}
+                    {skipped > 0 && <li>{skipped} unsupported file{skipped > 1 ? "s" : ""} skipped.</li>}
+                  </ul>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button className="btn btn-primary" onClick={() => void runBatch(files, engine)}>Import {n} file{n > 1 ? "s" : ""}</button>
+                    <button className="btn btn-ghost" onClick={() => { setPendingBatch(null); setSkipped(0); }}>Cancel</button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 2. Model Download Gate */}
+            {modelGate && (() => {
+              const aiCount = modelGate.filter((f) => classifyFile(f) !== "local").length;
+              return (
+                <div className="card" style={{ borderLeft: "3px solid var(--primary)", background: "var(--primary-soft)", margin: 0 }}>
+                  <h3 style={{ fontSize: "1rem" }}>🔒 On-device AI model needed</h3>
+                  <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.8rem" }}>
+                    {aiCount} file{aiCount === 1 ? "" : "s"} need AI to read, and your engine is set to on-device —
+                    but the model isn't downloaded yet.
+                  </p>
+                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                    {onConfigure && <button className="btn btn-primary" onClick={() => onConfigure()}>Download the model</button>}
+                    <button className="btn" onClick={() => { const files = modelGate; setModelGate(null); setPendingBatch({ files, engine: "claude" }); }}>✨ Use Claude this time</button>
+                    <button className="btn btn-ghost" onClick={() => { setModelGate(null); setSkipped(0); }}>Cancel</button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 3. Password Protected PDFs */}
+            {lockedPdfs.map(({ file, engine, error }, i) => (
+              <div key={`lock-${i}`} className="card" style={{ borderLeft: "3px solid var(--primary)", background: "var(--primary-soft)", margin: 0 }}>
+                <h3 style={{ fontSize: "0.98rem" }}>🔒 {file.name} is password-protected</h3>
+                <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
+                  Enter the password (usually your PAN in capitals for a CAS). Decrypted entirely on this device.
+                </p>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <input
+                    type="password" placeholder="PDF password" value={pdfPassword}
+                    onChange={(e) => setPdfPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && void unlockPdf(file, engine)}
+                  />
+                  <button className="btn btn-primary" disabled={unlockBusy || !pdfPassword.trim()} onClick={() => void unlockPdf(file, engine)}>
+                    {unlockBusy ? <span className="spinner" /> : "Unlock"}
+                  </button>
+                  <button className="btn btn-ghost" onClick={() => setLockedPdfs((l) => l.filter((x) => x.file !== file))}>Skip</button>
+                </div>
+                {error && <div className="badge badge-rose" style={{ marginTop: "0.55rem" }}>{error}</div>}
+              </div>
+            ))}
+
+            {/* 4. AI Fallback Offers */}
+            {needsClaude.map(({ file, reason }, i) => {
+              const localBlocked = extractionEngine === "local" && !localReady;
+              return (
+                <div key={i} className="card" style={{ borderLeft: "3px solid var(--amber, #d98324)", background: "var(--amber-soft)", margin: 0 }}>
+                  <h3 style={{ fontSize: "0.98rem" }}>Couldn't auto-read {file.name}</h3>
+                  <p className="muted" style={{ fontSize: "0.82rem", margin: "0.3rem 0 0.7rem" }}>
+                    {reason} Send it to Claude to extract holdings?
+                  </p>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <button className="btn btn-primary" disabled={aiBusy === file.name} onClick={() => void parseWithAi(file, localBlocked ? "claude" : undefined)}>
+                      {aiBusy === file.name ? <span className="spinner" /> : "✨ Parse with Claude"}
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => setNeedsClaude((n) => n.filter((x) => x.file !== file))}>Skip</button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* 5. Draft Review Cards */}
+            {drafts.map((p, i) => (
+              <DraftReview
+                key={p.key} draft={p.draft}
+                accounts={portfolio.accounts}
+                existingHoldings={portfolio.holdings}
+                onCurrency={(c) => setDraftCurrency(i, c)}
+                onAccount={(patch) => updateDraftAccount(i, patch)}
+                onHolding={(hi, patch) => updateDraftHolding(i, hi, patch)}
+                onRemoveHolding={(hi) => removeDraftHolding(i, hi)}
+                onApply={(target, money) => {
+                  if (target === "new") addDraft(p.draft, "new", money);
+                  else mergeDraftInto(target, p.draft);
+                  setDrafts((all) => all.filter((x) => x.key !== p.key));
+                }}
+                onDiscard={() => setDrafts((all) => all.filter((x) => x.key !== p.key))}
+              />
+            ))}
+          </div>
+
+          <div style={{ marginTop: "1rem", paddingTop: "0.8rem", borderTop: "1px solid var(--line-2)", textAlign: "right" }}>
+            <button className="btn" onClick={() => {
+              setDrafts([]); setLockedPdfs([]); setNeedsClaude([]); setPendingBatch(null); setModelGate(null);
+            }}>{drafts.length > 0 ? "Finish" : "Close"}</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <ManualAccount usdInr={portfolio.settings.usdInr} onAdd={(acct, holdings, money, loanAmount) => {
         const id = addAccount(acct);
         for (const h of holdings) addHolding({ ...h, accountId: id }, money);
         // A remaining loan becomes a paired liability account so net worth nets it out.

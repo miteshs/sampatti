@@ -3,7 +3,7 @@
 // user's own key (BYO / "max privacy"). On desktop the call is made from Rust so the key
 // never enters the webview; on web it streams over fetch.
 
-import { isTauri, keyStoreName, webByoKey } from "../platform";
+import { isTauri, webByoKey } from "../platform";
 import { useStore } from "../storage/store";
 
 // Statement extraction runs cheapest-first: try Haiku, escalate to Sonnet only when the

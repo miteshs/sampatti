@@ -4,8 +4,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { effectiveAppToken, relayHint } from "./transport";
 
-const tauriWindow = () => vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
-
 afterEach(() => vi.unstubAllGlobals());
 
 describe("relayHint", () => {
