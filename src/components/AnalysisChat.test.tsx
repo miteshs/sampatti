@@ -82,4 +82,13 @@ describe("AnalysisChat — goals & focus tailoring", () => {
     expect(trailer).not.toMatch(/CLIENT CONTEXT/);
     expect(trailer).not.toMatch(/focus on/i);
   });
+
+  it("shows the friendly AI access code modal when analysis fails with an auth error", async () => {
+    streamMock.mockRejectedValueOnce(new Error("AI access code is missing or no longer working."));
+    render(<AnalysisChat />);
+    fireEvent.click(screen.getByRole("button", { name: /Analyze my portfolio/i }));
+    
+    expect(await screen.findByText(/AI access code issue/i)).toBeTruthy();
+    expect(screen.getByText(/ask the developer for a new code/i)).toBeTruthy();
+  });
 });

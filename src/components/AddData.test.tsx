@@ -140,6 +140,19 @@ describe("engine-aware consent gate", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Import 1 file/i }));
     await waitFor(() => expect(ingestFileMock).toHaveBeenCalledTimes(1));
   });
+
+  it("shows the friendly AI access code modal when extraction fails with an auth error", async () => {
+    classifyMock.mockImplementation(() => "ai-text");
+    aiMock.engine = "claude";
+    ingestFileMock.mockRejectedValueOnce(new Error("AI access code is missing or no longer working."));
+    render(<AddData />);
+    pickFiles("stmt.pdf");
+    // Accept the batch
+    fireEvent.click(await screen.findByRole("button", { name: /^Import 1 file/i }));
+    // The friendly modal should appear instead of a generic red error
+    expect(await screen.findByText(/AI access code issue/i)).toBeTruthy();
+    expect(screen.getByText(/ask the developer for a new code/i)).toBeTruthy();
+  });
 });
 
 describe("cross-account duplicate reconciliation (the CAS-overlap problem)", () => {

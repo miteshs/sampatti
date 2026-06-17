@@ -1,6 +1,6 @@
 [package]
 name = "sampatti"
-version = "0.8.2"
+version = "0.8.3"
 description = "Private portfolio analysis (India & US)"
 authors = ["you"]
 edition = "2021"

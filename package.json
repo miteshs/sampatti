@@ -1,7 +1,7 @@
 {
   "name": "sampatti",
   "private": true,
-  "version": "0.8.2",
+  "version": "0.8.3",
   "type": "module",
   "description": "Private portfolio analysis (India & US) — your data stays on your machine.",
   "scripts": {
