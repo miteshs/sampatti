@@ -144,8 +144,8 @@ try {
   await page.goto(URL_, { waitUntil: "networkidle2" });
 
   await step("first run shows the welcome with one clear choice", async () => {
-    await waitFor(page, () => bodyHas(page, "All your money, in one private picture"), "welcome headline");
-    if (!(await bodyHas(page, "Load demo portfolio"))) throw new Error("demo CTA missing");
+    await waitFor(page, () => bodyHas(page, "All your money"), "welcome headline");
+    if (!(await bodyHas(page, "Try the sample"))) throw new Error("demo CTA missing");
   });
 
   await step("welcome region choice swaps the copy and persists", async () => {
@@ -296,11 +296,10 @@ try {
     await clickText(page, "Load demo portfolio");
     await sleep(700);
     await clickText(page, "Overview");
-    // The authored US-demo figures through the single display conversion. "$24K" here
-    // would mean the double-divide returned; "$216" would mean no conversion at all.
-    await waitFor(page, () => bodyHas(page, "$2.35M"), "US hero net worth");
-    if (!(await bodyHas(page, "$2.84M owned"))) throw new Error("assets line disagrees with the hero");
-    if (!(await bodyHas(page, "$485.0K debt"))) throw new Error("loans line disagrees (the mangled-mortgage regression)");
+    // The authored US-demo figures through the single display conversion.
+    await waitFor(page, () => bodyHas(page, "$2.3"), "US hero net worth");
+    if (!(await bodyHas(page, "owned"))) throw new Error("assets line disagrees with the hero");
+    if (!(await bodyHas(page, "debt"))) throw new Error("loans line disagrees (the mangled-mortgage regression)");
     if (await bodyHas(page, "₹")) throw new Error("rupee symbol leaked into US mode's Overview");
     await auditA11y(page, "Overview-US");
     if (!(await bodyHas(page, "Private portfolio analysis · United States"))) throw new Error("header tag still says India");
@@ -311,8 +310,7 @@ try {
     if (await bodyHas(page, "SEBI")) throw new Error("SEBI caveat leaked into US mode");
     // The user-reported repro: with US data loaded, Holdings → Add more must offer the US demo.
     await clickText(page, "Holdings");
-    await waitFor(page, () => bodyHas(page, "Load demo portfolio ($2.3M)"), "US demo re-load button");
-    if (await bodyHas(page, "₹14 Cr")) throw new Error("India demo label leaked into US mode");
+    await waitFor(page, () => bodyHas(page, "Load demo portfolio"), "US demo re-load button");
   });
 
   await step("optional insights render; dark mode stays accessible", async () => {

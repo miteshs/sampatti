@@ -23,7 +23,7 @@ describe("App integration (demo flow)", () => {
     render(<App />);
 
     // First run with no data lands on Add data; load the demo.
-    const demoBtn = await screen.findByText(/Load demo portfolio/i);
+    const demoBtn = await screen.findByText(/Try the sample portfolio/i);
     fireEvent.click(demoBtn);
 
     // Navigate to the Overview tab. The desktop pill nav and the mobile bottom tab bar both
@@ -52,7 +52,7 @@ describe("App integration (demo flow)", () => {
 
   it("opens the per-account editor (Manage tab) without looping/blanking, and edits write through", async () => {
     render(<App />);
-    fireEvent.click(await screen.findByText(/Load demo portfolio/i));
+    fireEvent.click(await screen.findByText(/Try the sample portfolio/i));
     fireEvent.click(screen.getAllByRole("button", { name: "Holdings" })[0]);
     // Account editing lives on the merged Holdings tab now (Manage + Add data).
     const editBtn = await screen.findAllByRole("button", { name: "Edit" });

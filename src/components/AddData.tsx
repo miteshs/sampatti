@@ -269,7 +269,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
                 <button className="btn btn-ghost" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} onClick={() => setConfirmDemo(false)}>Cancel</button>
               </span>
             ) : (
-              <button className="btn" onClick={() => setConfirmDemo(true)}>▶ Load demo portfolio ({currentProfile().region === "US" ? "$2.3M" : "₹14 Cr"})</button>
+              <button className="btn" onClick={() => setConfirmDemo(true)}>▶ Load demo portfolio</button>
             )
           )}
           <button className="btn" onClick={() => fileRef.current?.click()}>⬆ Import files (CSV / Excel / PDF / image)</button>
@@ -554,7 +554,7 @@ function Welcome({ onDemo, onImport }: { onDemo: () => void; onImport: () => voi
           </span>
         ) : (
           <button className="btn btn-primary" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onDemoClick}>
-            ▶ Load demo portfolio — see it working first
+            ▶ Try the sample portfolio
           </button>
         )}
         <button className="btn" style={{ fontSize: "0.95rem", padding: "0.7rem 1.4rem" }} onClick={onImport}>
