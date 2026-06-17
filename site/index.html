@@ -391,11 +391,11 @@
         </details>
         <details>
           <summary>What happens when I import a PDF or screenshot?</summary>
-          <p>For standard formats like a CAS, everything is parsed locally on your device. For messy PDFs or screenshots, we use AI (Claude) just to read the text and identify your holdings. Only a text summary is sent for parsing; your raw image or file stays on your computer.</p>
+          <p>For standard formats like a CAS, everything is parsed locally on your device. For messy PDFs or screenshots, the file is sent to Claude just to identify your holdings using zero-retention settings. You can crop out your name and account numbers before importing if you want extra privacy.</p>
         </details>
         <details>
           <summary>Does Claude store my data during analysis?</summary>
-          <p>No. We use Anthropic's API with zero-retention settings. If you want maximum privacy, you can even crop out your name and account numbers before importing — the AI only needs to see the holdings and values to work.</p>
+          <p>No. For the AI Portfolio Review, we send only a compact text summary of your totals and top holdings — never your raw files. We use Anthropic's API with zero-retention settings, so your data is processed and then immediately deleted.</p>
         </details>
         <details>
           <summary>Can the developer see my portfolio?</summary>
