@@ -26,6 +26,12 @@ t = open("project.yml").read()
 # Externals → buildPhase: none (skip if already set)
 t = re.sub(r'(\n      - path: Externals)(?!\n        buildPhase)',
            r'\1\n        buildPhase: none', t)
+# Export compliance: HTTPS-only app is exempt — declare it so App Store Connect never prompts
+# per build (skip if already present).
+if 'ITSAppUsesNonExemptEncryption' not in t:
+    t = t.replace('        LSRequiresIPhoneOS: true\n',
+                  '        LSRequiresIPhoneOS: true\n'
+                  '        ITSAppUsesNonExemptEncryption: false\n')
 # signing in settings.base, right after ENABLE_BITCODE (skip if already present)
 if 'DEVELOPMENT_TEAM' not in t:
     t = t.replace('        ENABLE_BITCODE: false\n',
