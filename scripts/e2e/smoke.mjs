@@ -290,10 +290,10 @@ try {
   await step("US mode: demo figures agree across hero, loans line and brief (unit rule)", async () => {
     // Post-erase: open Holdings — with no data it shows the welcome (run the US first-run for real).
     await clickText(page, "Holdings");
-    await waitFor(page, () => bodyHas(page, "Where do you manage your money?"), "welcome after erase");
+    await waitFor(page, () => bodyHas(page, "Where do you manage"), "welcome after erase");
     await clickText(page, "United States");
     await sleep(300);
-    await clickText(page, "Load demo portfolio");
+    await clickText(page, "sample portfolio");
     await sleep(700);
     await clickText(page, "Overview");
     // The authored US-demo figures through the single display conversion.
