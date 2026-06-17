@@ -46,6 +46,10 @@
     "macOS": {
       "minimumSystemVersion": "10.15"
     },
+    "iOS": {
+      "developmentTeam": "7LC9LFH33N",
+      "minimumSystemVersion": "14.0"
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
