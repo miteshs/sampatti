@@ -164,7 +164,12 @@ if [ "$GH_RELEASE" = "1" ]; then
   echo "▶ Publishing release v${VERSION} on ${RELEASES_REPO} (public, dmg-only repo)…"
   # The app-only dmg opens on a plain double-click and self-installs to /Applications — no
   # Gatekeeper dance, no drag.
-  NOTES=$(cat <<NOTES_EOF
+  # Build the notes via a top-level heredoc into a temp file (NOT $(cat <<EOF …) — an apostrophe
+  # in the body, e.g. "you're ready", makes bash mis-read the heredoc inside command substitution
+  # as an opening single quote and die with "unexpected EOF". 0.8.3 hit exactly this.) Then pass
+  # the file to gh with --notes-file.
+  NOTES_FILE=$(mktemp)
+  cat > "$NOTES_FILE" <<NOTES_EOF
 Sampatti brings everything you own — across India and the US — into one private dashboard, with an AI analyst that reviews your portfolio whenever you ask. Your financial information stays on your own computer.
 
 ### Download
@@ -179,12 +184,12 @@ Everything lives on your device — nothing is uploaded or kept on a server. The
 
 <sub>Build \`${BUILT_FROM}\`</sub>
 NOTES_EOF
-)
   gh release create "v${VERSION}" "$DMG" ${UPD_ASSETS[@]+"${UPD_ASSETS[@]}"} \
     --repo "$RELEASES_REPO" \
     --title "Sampatti ${VERSION}" \
-    --notes "$NOTES" \
+    --notes-file "$NOTES_FILE" \
     || gh release upload "v${VERSION}" "$DMG" ${UPD_ASSETS[@]+"${UPD_ASSETS[@]}"} --repo "$RELEASES_REPO" --clobber
+  rm -f "$NOTES_FILE"
   echo "✓ Release v${VERSION} ready on ${RELEASES_REPO}"
   [ "$UPDATER" = "1" ] && echo "  → auto-update manifest live at …/releases/latest/download/latest.json"
 fi
