@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sampatti — private portfolio analysis for India</title>
-<meta name="description" content="See everything you own in one dashboard, with an AI portfolio analyst — all on your own computer. Your financial statements never leave your machine. Free for macOS and Windows." />
+<meta name="description" content="See everything you own in one dashboard, with an AI portfolio analyst — all on your own computer. Your financial statements never leave your machine. Free for macOS, Windows, iPhone and iPad." />
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
 
 <!-- Share preview. Set the absolute URL once the domain is live. -->
@@ -242,8 +242,9 @@
       <div class="cta-row">
         <a class="btn btn-primary" id="dl-mac" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Mac</a>
         <a class="btn btn-ghost" id="dl-win" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Windows</a>
+        <a class="btn btn-ghost" id="dl-ios" href="https://testflight.apple.com/join/EGF9916j">iPhone &amp; iPad — beta</a>
       </div>
-      <p class="cta-note"><b>Free.</b> macOS &amp; Windows · No account, no sign-up.</p>
+      <p class="cta-note"><b>Free.</b> macOS &amp; Windows · iPhone &amp; iPad via TestFlight · No account, no sign-up.</p>
 
       <div class="shot-frame" style="padding: 0; background: transparent; border: none; box-shadow: var(--shadow-lg);">
         <video src="assets/sampatti-demo-india.mp4" controls preload="none" poster="assets/shots/overview.png" style="width: 100%; border-radius: var(--radius); border: 1px solid var(--line-2); display: block;" aria-label="Sampatti India Demo Video">
@@ -414,10 +415,11 @@
     <div class="wrap">
       <div class="close-cta">
         <h2>See your whole net worth — privately</h2>
-        <p>Free for Mac and Windows. No account, no upload, no catch.</p>
+        <p>Free for Mac, Windows, iPhone and iPad. No account, no upload, no catch.</p>
         <div class="cta-row">
           <a class="btn btn-primary" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Mac</a>
           <a class="btn btn-ghost" href="https://github.com/miteshs/sampatti-releases/releases/latest">Download for Windows</a>
+          <a class="btn btn-ghost" href="https://testflight.apple.com/join/EGF9916j">iPhone &amp; iPad — beta</a>
         </div>
       </div>
     </div>
@@ -443,9 +445,17 @@
   (function () {
     var ua = navigator.userAgent || "";
     var isWin = /Windows/.test(ua);
+    // iPadOS sends a desktop "Macintosh" UA, so fall back to touch-point sniffing for iPad.
+    var isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
     var mac = document.getElementById("dl-mac");
     var win = document.getElementById("dl-win");
-    if (isWin && mac && win) {
+    var ios = document.getElementById("dl-ios");
+    if (isIOS && ios) {
+      // iPhone/iPad visitors can't run the desktop app — lead with the TestFlight beta.
+      ios.className = "btn btn-primary";
+      if (mac) mac.className = "btn btn-ghost";
+      ios.parentNode.insertBefore(ios, ios.parentNode.firstChild);
+    } else if (isWin && mac && win) {
       // Make Windows the prominent action for Windows visitors.
       mac.className = "btn btn-ghost";
       win.className = "btn btn-primary";
