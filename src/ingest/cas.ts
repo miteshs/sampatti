@@ -53,6 +53,23 @@ interface Scheme {
   market?: number;
 }
 
+// Account holder name(s) off a CAMS/KFintech CAS, if the statement spells them out. Only the
+// explicit positional form ("First / Sole Holder : NAME", "Joint Holder Name: NAME") — anything
+// looser risks catching "Unit Holding Pattern" etc. Returns undefined when none are stated, so a
+// CAS without holder lines is unchanged.
+function statementHolders(all: string[]): string[] | undefined {
+  const holders: string[] = [];
+  for (const l of all) {
+    const m = l.match(/\b(?:first|sole|second|third|joint)\s*(?:\/\s*\w+\s*)?holder(?:'s)?\s*(?:name)?\s*[:\-]\s*(.+)$/i);
+    if (!m) continue;
+    for (const nm of m[1].split(/\s*(?:,|&|\/|\band\b)\s*/i).map((s) => s.trim())) {
+      if (nm.length > 1 && /[A-Za-z]/.test(nm) && !/\d/.test(nm) && !holders.includes(nm)) holders.push(nm);
+    }
+    if (holders.length >= 3) break;
+  }
+  return holders.length ? holders : undefined;
+}
+
 // Strip the decorations CAS appends to scheme names.
 function cleanSchemeName(raw: string): string {
   return raw
@@ -84,6 +101,7 @@ export function parseCamsCas(lines: string[], source: string): ImportDraft[] {
   };
   const asOf =
     dateOf(/Market Value on (\d{2}-\w{3}-\d{4})/i) ?? dateOf(/\bTo\s+(\d{2}-\w{3}-\d{4})/);
+  const holders = statementHolders(all);
 
   // ---- detailed variant: walk scheme blocks --------------------------------
   const schemes: Scheme[] = [];
@@ -152,6 +170,7 @@ export function parseCamsCas(lines: string[], source: string): ImportDraft[] {
         region: "India",
         currency: "INR",
         asOf,
+        ...(holders ? { holders } : {}),
       },
       holdings,
       warnings,

@@ -80,6 +80,10 @@ export interface Account {
   region: Region;
   currency: string;
   asOf?: string; // statement date — drives staleness
+  // Account holder name(s), in statement order — first = sole/primary holder. Read off a CAS
+  // (demat + MF folios) so an imported account shows whose it is. More than one ⇒ joint
+  // (see isJoint); absent for manually-added accounts. Value is shown in full regardless.
+  holders?: string[];
   // For aggregate accounts entered as a single value (a flat, a PMS, a pension):
   // tag the whole account to one class and skip per-holding detail.
   defaultAssetClass?: AssetClass;
@@ -87,6 +91,22 @@ export interface Account {
   // When true the account is kept on file but excluded from every computation
   // (net worth, allocations, the brief, AI analysis). Toggled on the dashboard.
   excluded?: boolean;
+}
+
+// A joint account = more than one holder on record. Derived, never stored, so a hand-edited
+// holders list stays the single source of truth.
+export function isJoint(holders: string[] | undefined): boolean {
+  return (holders?.length ?? 0) > 1;
+}
+
+// Compact owner label for account rows/cards: "Arjun Mehta" (sole), "Arjun Mehta & Priya Mehta"
+// (two), "Arjun Mehta +2" (three or more). Returns "" when no holders are known.
+export function holderSummary(holders: string[] | undefined): string {
+  const hs = (holders ?? []).map((h) => h.trim()).filter(Boolean);
+  if (hs.length === 0) return "";
+  if (hs.length === 1) return hs[0];
+  if (hs.length === 2) return `${hs[0]} & ${hs[1]}`;
+  return `${hs[0]} +${hs.length - 1}`;
 }
 
 export type IncomeKind = "salary" | "rent" | "business" | "dividend" | "interest" | "other";

@@ -387,6 +387,17 @@ tr:last-child td { border-bottom: none; }
 .delta-chip.down { background: var(--rose-soft); color: var(--down-ink); border: 1px solid color-mix(in srgb, var(--rose) 15%, transparent); }
 .delta-chip.flat { background: var(--line-2); color: var(--ink-2); }
 
+/* "Joint" pill for accounts with more than one holder (see isJoint). Self-contained so it
+   renders in both themes regardless of the base .badge styles. */
+.badge-joint {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.08rem 0.42rem; border-radius: 999px;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+  background: var(--primary-soft); color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+  white-space: nowrap; vertical-align: middle;
+}
+
 /* ---- staggered reveal for the Overview load (one orchestrated moment) ---- */
 @keyframes settle { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .stagger > * { animation: settle 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both; }

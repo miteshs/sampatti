@@ -10,7 +10,7 @@ import { currentProfile, fmtMoney } from "../regions/profile";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
 } from "../domain/classify";
-import { findMatchingAccount } from "../domain/types";
+import { findMatchingAccount, isJoint } from "../domain/types";
 import { fetchGoldPerGramInr } from "../domain/gold";
 import type {
   Account, AccountType, AiEngine, AssetClass, FlowKind, Holding, ImportDraft, IncomeKind, Region, TaxTreatment,
@@ -700,6 +700,12 @@ function DraftReview({ draft, accounts, existingHoldings, onCurrency, onAccount,
             <span>· {ACCOUNT_TYPE_LABEL[draft.account.accountType]} · {TAX_LABEL[draft.account.taxTreatment]} · {draft.account.region}
             {draft.account.asOf ? ` · as of ${draft.account.asOf}` : ""}</span>
           </div>
+          {draft.account.holders && draft.account.holders.length > 0 && (
+            <div className="muted" style={{ fontSize: "0.78rem", marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+              <span>{isJoint(draft.account.holders) ? "Holders" : "Holder"}: {draft.account.holders.join(", ")}</span>
+              {isJoint(draft.account.holders) && <span className="badge-joint">Joint</span>}
+            </div>
+          )}
           <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", marginTop: "0.45rem" }}>
             <span className="muted" style={{ fontSize: "0.76rem" }}>Currency:</span>
             {["INR", "USD"].map((c) => (

@@ -7,7 +7,7 @@ import { useStore } from "../storage/store";
 import { holdingBase } from "../domain/format";
 import { fmtMoney } from "../regions/profile";
 import { ACCOUNT_TYPE_LABEL } from "../domain/classify";
-import { visiblePortfolio } from "../domain/types";
+import { holderSummary, isJoint, visiblePortfolio } from "../domain/types";
 import { AccountEditor } from "./AccountEditor";
 import { ManualEdits } from "./ManualEdits";
 import { RefreshPrices } from "./RefreshPrices";
@@ -92,10 +92,13 @@ export function Manage() {
                     aria-label={`Include ${a.name} in totals and analysis`} title="Include in totals & analysis"
                     style={{ flexShrink: 0, width: "16px", height: "16px" }} />
                   <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => updateAccount(a.id, { excluded: !excluded })}>
-                    <div style={{ fontWeight: 650, fontSize: "0.9rem", color: "var(--ink)" }}>{a.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 650, fontSize: "0.9rem", color: "var(--ink)" }}>{a.name}</span>
+                      {isJoint(a.holders) && <span className="badge-joint">Joint</span>}
+                    </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginTop: "0.05rem" }}>
                       {editedAccountIds.has(a.id) && <span className="badge badge-amber" style={{ fontSize: "0.6rem", padding: "0.05rem 0.35rem" }}>edited</span>}
-                      <span className="muted eyebrow" style={{ fontSize: "0.62rem" }}>{a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}</span>
+                      <span className="muted eyebrow" style={{ fontSize: "0.62rem" }}>{a.institution || "—"} · {ACCOUNT_TYPE_LABEL[a.accountType]}{holderSummary(a.holders) ? ` · ${holderSummary(a.holders)}` : ""}</span>
                     </div>
                   </div>
                   <span className="hero-num" style={{ fontSize: "0.95rem", flexShrink: 0, color: "var(--ink)" }}>{fmtMoney(acctTotals.get(a.id) ?? 0)}</span>

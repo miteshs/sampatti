@@ -8,6 +8,7 @@ import { useStore } from "../storage/store";
 import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/classify";
 import { currentProfile, fmtMoney } from "../regions/profile";
 import type { AccountType, AssetClass, Region, TaxTreatment } from "../domain/types";
+import { isJoint } from "../domain/types";
 
 const ACCOUNT_TYPES = Object.keys(ACCOUNT_TYPE_LABEL) as AccountType[];
 const ASSET_CLASSES = Object.keys(ASSET_CLASS_LABEL) as AssetClass[];
@@ -122,7 +123,10 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
   return (
     <div className="card" style={{ background: "var(--surface-2)", border: "1px solid var(--line)", marginTop: "0.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.8rem" }}>
-        <h3 style={{ fontSize: "1rem", fontFamily: "var(--font-display)" }}>Account Details</h3>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
+          <h3 style={{ fontSize: "1rem", fontFamily: "var(--font-display)" }}>Account Details</h3>
+          {isJoint(account.holders) && <span className="badge-joint">Joint</span>}
+        </div>
         <button className="btn btn-primary" style={{ padding: "0.2rem 0.7rem", fontSize: "0.75rem" }} onClick={onClose}>Done</button>
       </div>
 
@@ -153,6 +157,7 @@ export function AccountEditor({ accountId, onClose }: { accountId: string; onClo
             </div>
           </div>
           <div className="form-col" style={{ borderRight: "1px solid var(--line-2)", padding: "0.5rem 0.8rem" }}><label style={{ marginBottom: "0.15rem" }}>Statement date</label><input type="date" value={account.asOf ?? ""} onChange={(e) => set({ asOf: e.target.value || undefined })} style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
+          <div className="form-col" style={{ borderRight: "1px solid var(--line-2)", padding: "0.5rem 0.8rem" }}><label style={{ marginBottom: "0.15rem" }}>Holder(s)</label><input value={(account.holders ?? []).join(", ")} onChange={(e) => { const arr = e.target.value.split(",").map((s) => s.trim()).filter(Boolean); set({ holders: arr.length ? arr : undefined }); }} placeholder="comma-separated · 2+ = joint" style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
           <div className="form-col" style={{ padding: "0.5rem 0.8rem" }}><label style={{ marginBottom: "0.15rem" }}>Note</label><input value={account.note ?? ""} onChange={(e) => set({ note: e.target.value || undefined })} placeholder="optional" style={{ border: "none", padding: 0, background: "transparent", boxShadow: "none" }} /></div>
         </div>
       </div>
