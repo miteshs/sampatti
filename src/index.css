@@ -163,7 +163,7 @@ button { font-family: inherit; }
   transition: background 0.15s ease;
 }
 .list-row:not(:last-child) { border-bottom: 1px solid var(--line-2); }
-.list-row:hover { background: var(--surface-2); }
+@media (hover: hover) { .list-row:hover { background: var(--surface-2); } }
 
 /* ---- pill nav ---- */
 .nav {
@@ -173,6 +173,7 @@ button { font-family: inherit; }
   border-radius: 999px; box-shadow: var(--shadow);
 }
 .nav button {
+  appearance: none; -webkit-appearance: none;
   border: none; background: transparent; cursor: pointer;
   padding: 0.4rem 1rem; border-radius: 999px;
   font-size: 0.82rem; font-weight: 650; color: var(--ink-2);
@@ -180,7 +181,7 @@ button { font-family: inherit; }
   transition: all 0.2s ease;
 }
 .nav button.active { background: var(--ink); color: #fff; box-shadow: 0 2px 8px rgba(35, 33, 27, 0.2); }
-.nav button:not(.active):hover { background: var(--line-2); color: var(--ink); }
+@media (hover: hover) { .nav button:not(.active):hover { background: var(--line-2); color: var(--ink); } }
 
 /* ---- view switch ---- */
 .view { animation: rise 0.22s cubic-bezier(0.2, 0.7, 0.3, 1); }
@@ -198,8 +199,10 @@ button { font-family: inherit; }
   border-radius: var(--radius); box-shadow: var(--shadow);
   padding: 1rem 1.1rem;
 }
-.card:hover {
-  box-shadow: 0 4px 12px rgba(26, 31, 23, 0.04), 0 0 0 1px rgba(26, 31, 23, 0.03);
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(26, 31, 23, 0.04), 0 0 0 1px rgba(26, 31, 23, 0.03);
+  }
 }
 .card-pressed {
   background: var(--surface-2);
@@ -220,25 +223,26 @@ button { font-family: inherit; }
 
 /* ---- buttons ---- */
 .btn {
+  appearance: none; -webkit-appearance: none;
   border: 1px solid var(--line); background: #fff; color: var(--ink);
   padding: 0.45rem 0.85rem; border-radius: 9px; font-size: 0.8rem; font-weight: 650;
   cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
   transition: all 0.15s ease;
   box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
-.btn:hover { border-color: #d8d4c8; background: #fdfcf9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+@media (hover: hover) { .btn:hover { border-color: #d8d4c8; background: #fdfcf9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } }
 .btn:active { transform: translateY(0.5px); box-shadow: none; }
 .btn:disabled { opacity: 0.5; cursor: default; transform: none; }
 .btn-primary {
   background: var(--primary); color: #fff; border-color: var(--primary);
   box-shadow: 0 1px 6px rgba(72, 69, 229, 0.2);
 }
-.btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); box-shadow: 0 2px 8px rgba(72, 69, 229, 0.25); }
+@media (hover: hover) { .btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); box-shadow: 0 2px 8px rgba(72, 69, 229, 0.25); } }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--ink-3); box-shadow: none; }
-.btn-ghost:hover { background: var(--line-2); border-color: transparent; color: var(--ink-2); box-shadow: none; }
+@media (hover: hover) { .btn-ghost:hover { background: var(--line-2); border-color: transparent; color: var(--ink-2); box-shadow: none; } }
 .btn-ghost.active { color: var(--ink); font-weight: 750; }
 .btn-danger { color: #b3263f; border-color: var(--rose-soft); background: var(--rose-soft); box-shadow: none; }
-.btn-danger:hover { border-color: var(--rose); background: var(--rose-soft); }
+@media (hover: hover) { .btn-danger:hover { border-color: var(--rose); background: var(--rose-soft); } }
 
 :is(.btn, .chip, .nav button):focus-visible {
   outline: 2px solid var(--primary);
@@ -252,13 +256,14 @@ tr[role="button"][tabindex]:focus-visible { outline-offset: -2px; border-radius:
 
 /* ---- chips / pills ---- */
 .chip {
+  appearance: none; -webkit-appearance: none;
   display: inline-flex; align-items: center; gap: 0.35rem;
   padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.76rem; font-weight: 650;
   border: 1px solid var(--line); background: #fff; color: var(--ink-2); cursor: pointer;
   transition: all 0.2s ease;
 }
 .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
-.chip:not(.active):hover { background: var(--line-2); }
+@media (hover: hover) { .chip:not(.active):hover { background: var(--line-2); } }
 
 /* ---- inputs ---- */
 input, select, textarea {
@@ -271,7 +276,7 @@ input, select, textarea {
   box-shadow: inset 0 1px 2px rgba(26, 31, 23, 0.02);
 }
 input[type="number"] { font-family: var(--font); font-weight: 650; font-variant-numeric: tabular-nums; }
-input:hover, select:hover, textarea:hover { border-color: #d8d4c8; }
+@media (hover: hover) { input:hover, select:hover, textarea:hover { border-color: #d8d4c8; } }
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 8%, transparent), inset 0 1px 2px rgba(26, 31, 23, 0.02);
@@ -300,8 +305,8 @@ label {
    entry, access code): the value can read as static text, so reveal it as interactive on
    hover/focus with a faint fill. The always-visible field label carries the resting signal. */
 .list-grouped .form-col { transition: background 0.15s ease; }
-.list-grouped .form-col:hover,
 .list-grouped .form-col:focus-within { background: var(--surface-2); }
+@media (hover: hover) { .list-grouped .form-col:hover { background: var(--surface-2); } }
 
 /* ---- tables ---- */
 table { width: 100%; border-collapse: collapse; }
@@ -312,7 +317,7 @@ th {
 }
 td { padding: 0.65rem 0.4rem; font-size: 0.82rem; border-bottom: 1px solid var(--line-2); }
 tbody tr { transition: background 0.1s ease; }
-tbody tr:hover { background: color-mix(in srgb, var(--line-2) 65%, transparent); }
+@media (hover: hover) { tbody tr:hover { background: color-mix(in srgb, var(--line-2) 65%, transparent); } }
 tr:last-child td { border-bottom: none; }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -396,13 +401,14 @@ tr:last-child td { border-bottom: none; }
 
 /* ---- example-question chips on the AI screen ---- */
 .qchip {
+  appearance: none; -webkit-appearance: none;
   display: inline-flex; align-items: center; gap: 0.45rem;
   padding: 0.45rem 0.8rem; border-radius: 999px;
   border: 1px solid var(--line); background: #fff; color: var(--ink-2);
   font-size: 0.8rem; font-weight: 600; cursor: pointer;
   transition: all 0.2s ease;
 }
-.qchip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+@media (hover: hover) { .qchip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); } }
 .qchip:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* ---- thin scrollbars for overflow tables/panes ---- */
@@ -545,14 +551,14 @@ tr:last-child td { border-bottom: none; }
 }
 :root[data-theme="dark"] :is(.btn, .chip, .qchip, input, select, textarea) { background: var(--card); }
 :root[data-theme="dark"] .nav { background: color-mix(in srgb, var(--card) 90%, transparent); }
-:root[data-theme="dark"] .btn:hover { background: var(--surface-2); border-color: var(--line); }
+@media (hover: hover) { :root[data-theme="dark"] .btn:hover { background: var(--surface-2); border-color: var(--line); } }
 :root[data-theme="dark"] :is(.nav button.active, .chip.active) {
   background: var(--primary); color: var(--on-primary); border-color: var(--primary);
 }
 :root[data-theme="dark"] .btn-primary { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-:root[data-theme="dark"] .btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); }
+@media (hover: hover) { :root[data-theme="dark"] .btn-primary:hover { background: var(--primary-down); border-color: var(--primary-down); } }
 :root[data-theme="dark"] .btn-ghost { background: transparent; }
-:root[data-theme="dark"] .btn-ghost:hover { background: var(--line-2); }
+@media (hover: hover) { :root[data-theme="dark"] .btn-ghost:hover { background: var(--line-2); } }
 :root[data-theme="dark"] .btn-danger { background: var(--rose-soft); color: var(--down-ink); border-color: var(--rose-soft); }
 :root[data-theme="dark"] .badge-amber { background: var(--amber-soft); color: var(--amber); }
 :root[data-theme="dark"] .badge-rose { background: var(--rose-soft); color: var(--down-ink); }
