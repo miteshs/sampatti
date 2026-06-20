@@ -45,3 +45,8 @@ llama-cpp-2 = "0.1"
 # NSURL resource-value API; scoped to iOS so desktop/Windows builds are untouched.
 [target.'cfg(target_os = "ios")'.dependencies]
 objc2-foundation = { version = "0.3", features = ["NSURL", "NSString", "NSValue", "NSError"] }
+# Pinned to the crypto provider (ring) already in the tree so we can install a process-default
+# CryptoProvider at startup — without it, reqwest's lazy rustls provider panics on the iOS
+# simulator target (Abort trap: 6 on launch). default-features=false keeps aws-lc-rs out (its
+# C build doesn't cross-compile to the iOS simulator).
+rustls = { version = "0.23", default-features = false, features = ["ring"] }

@@ -305,6 +305,14 @@ mod tests {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // iOS: install a process-default rustls CryptoProvider (ring) before any reqwest client is
+    // built. On the iOS-simulator target reqwest's features don't unambiguously select a provider,
+    // so its lazy default_rustls_crypto_provider() panics at startup (SIGABRT / Abort trap: 6).
+    // Installing one up front makes launch deterministic across desktop, device, and simulator.
+    // Idempotent — ignore Err if a provider is already installed.
+    #[cfg(target_os = "ios")]
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     // Before anything else: if we were launched from a dmg/Downloads, offer to install into
     // /Applications and relaunch from there (no-op once installed; macOS-only).
     #[cfg(target_os = "macos")]
