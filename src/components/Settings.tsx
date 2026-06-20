@@ -475,7 +475,7 @@ export function Settings() {
                 )}
               </div>
               <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.4rem", maxWidth: 600 }}>
-                Qwen3-4B (Apache-2.0), fetched once from huggingface.co and integrity-verified
+                Gemma 4 E4B (Apache-2.0), fetched once from huggingface.co and integrity-verified
                 (sha-256). It runs entirely inside Sampatti — no separate app, no server. Screenshots
                 and scans still use Claude even in on-device mode (small models can't read them well).
               </p>

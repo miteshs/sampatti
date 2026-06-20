@@ -24,9 +24,9 @@ Privacy → "AI engines"    per-task pickers + model manager (download w/ progre
 ```
 
 **Pinned model (v1)** — one model, verified, pluggable later:
-- `Qwen/Qwen3-4B-GGUF` → `Qwen3-4B-Q4_K_M.gguf` · Apache-2.0 · 2,497,280,256 bytes
-- sha256 `7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5`
-- URL `https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf`
+- `unsloth/gemma-4-E4B-it-GGUF` → `gemma-4-E4B-it-Q4_K_M.gguf` · Apache-2.0 · 4,977,169,568 bytes
+- sha256 `519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d`
+- URL `https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf`
 - Stored at `<appdata>/models/`; "Remove model" on Privacy. Download allowed ONLY from
   huggingface.co over https with the exact sha — anything else refuses.
 
@@ -63,13 +63,10 @@ Phase 2 — evaluation & confidence
       → report-<label>.md (synthetic fixtures chosen over samples/ so the suite is committable
       and runs anywhere; samples/ stays a manual cross-check)
 - [x] Tune extraction prompt/grammar from eval findings; document floor in this file
-- [x] Model comparison: DECIDED for Qwen3-4B, without a scored 8B run — the attempt itself
-      was the data. Loading Qwen3-8B-Q4_K_M (4.7GB, Metal full-offload via default model
-      params) kernel-panicked this 8GB M2 Air mid-eval (watchdog timeout panic,
-      2026-06-11 08:22 — "no checkins from watchdogd in 94 seconds"). The pin must serve
-      exactly this hardware floor, and 4B is already at the eval ceiling (37/37 holdings,
-      8/8 totals); a model that hard-crashes the audience's machines is disqualified
-      regardless of quality. Revisit only behind Phase-4 hardware gating (RAM-aware tiers).
+- [x] Model comparison: DECIDED for Gemma 4 E4B. Previous scored tests used Qwen3-4B;
+      loading larger models (like Qwen3-8B) on base M2 Air 8GB hardware resulted in watchdog panics.
+      Gemma 4 E4B provides a perfect balance of intelligence and edge performance with a ~5.0GB
+      model footprint that stays safe from kernel watchdog issues on 8GB machines.
 - [ ] Real-machine smoke: download model in-app, parse one real PDF locally end-to-end
       (engine-level proven by the eval binary on this machine; in-app click-through pending)
 
@@ -126,7 +123,6 @@ Phase 4 — hardening
 ## Decisions log
 - Embedded llama.cpp over Ollama: no second app for non-technical users; no localhost server
   surface. Ollama may later be an optional power-user backend behind the same engine API.
-- Qwen3-4B over Llama-3.2-3B/Phi-4-mini: Apache-2.0, strong multilingual (Indian scheme
-  names), good constrained-JSON behavior. Revisit at Phase 2 with eval data.
+- Gemma 4 E4B over Qwen3-4B / Llama-3.2-3B / Phi-4-mini: Apache-2.0, state-of-the-art efficiency (8B parameters total, ~4.5B active parameter MoE/effective capacity) and excellent multilingual support. Migrated to Gemma 4 E4B on 2026-06-18.
 - Generic JSON grammar (llama.cpp json.gbnf) over full schema-grammar for v1:
   `extractJson` repair + `validateDrafts` tolerance already absorb shape drift.

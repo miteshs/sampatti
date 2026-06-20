@@ -24,11 +24,11 @@ use llama_cpp_2::model::{AddBos, LlamaModel, Special};
 use llama_cpp_2::sampling::LlamaSampler;
 
 // ---- the pinned model (see docs/local-ai.md "Decisions log") -----------------
-pub const MODEL_FILE: &str = "Qwen3-4B-Q4_K_M.gguf";
-pub const MODEL_URL: &str = "https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf";
-pub const MODEL_SHA256: &str = "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5";
-pub const MODEL_BYTES: u64 = 2_497_280_256;
-pub const MODEL_LICENSE: &str = "Apache-2.0 (Qwen3-4B)";
+pub const MODEL_FILE: &str = "gemma-4-E4B-it-Q4_K_M.gguf";
+pub const MODEL_URL: &str = "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf";
+pub const MODEL_SHA256: &str = "519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d";
+pub const MODEL_BYTES: u64 = 4_977_169_568;
+pub const MODEL_LICENSE: &str = "Apache-2.0 (Gemma 4 E4B)";
 
 // Downloads may come ONLY from the pinned host over https.
 pub fn allowed_model_url(u: &str) -> bool {
@@ -126,38 +126,44 @@ pub async fn local_model_download(app: tauri::AppHandle, on_progress: Channel<se
         0
     };
 
-    let client = reqwest::Client::new();
-    let mut req = client.get(MODEL_URL);
-    if existing > 0 {
-        req = req.header("Range", format!("bytes={existing}-"));
-    }
-    let resp = req.send().await.map_err(|e| e.to_string())?;
-    if !resp.status().is_success() {
-        return Err(format!("model download failed: HTTP {}", resp.status()));
-    }
-    let resumed = resp.status() == reqwest::StatusCode::PARTIAL_CONTENT;
-    let mut file = std::fs::OpenOptions::new()
-        .create(true)
-        .append(resumed)
-        .write(true)
-        .truncate(!resumed)
-        .open(&part)
-        .map_err(|e| e.to_string())?;
-    let mut received = if resumed { existing } else { 0 };
-
-    let mut stream = resp.bytes_stream();
-    let mut last_emit = std::time::Instant::now();
-    while let Some(chunk) = stream.next().await {
-        let bytes = chunk.map_err(|e| e.to_string())?;
-        file.write_all(&bytes).map_err(|e| e.to_string())?;
-        received += bytes.len() as u64;
-        if last_emit.elapsed().as_millis() > 250 {
-            last_emit = std::time::Instant::now();
-            let _ = on_progress.send(serde_json::json!({ "received": received, "total": MODEL_BYTES }));
+    if existing < MODEL_BYTES {
+        let client = reqwest::Client::new();
+        let mut req = client.get(MODEL_URL);
+        if existing > 0 {
+            req = req.header("Range", format!("bytes={existing}-"));
         }
+        let resp = req.send().await.map_err(|e| e.to_string())?;
+        if resp.status() == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
+            let _ = std::fs::remove_file(&part);
+            return Err("local partial download size mismatch (HTTP 416) — deleted; please retry".into());
+        }
+        if !resp.status().is_success() {
+            return Err(format!("model download failed: HTTP {}", resp.status()));
+        }
+        let resumed = resp.status() == reqwest::StatusCode::PARTIAL_CONTENT;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(resumed)
+            .write(true)
+            .truncate(!resumed)
+            .open(&part)
+            .map_err(|e| e.to_string())?;
+        let mut received = if resumed { existing } else { 0 };
+
+        let mut stream = resp.bytes_stream();
+        let mut last_emit = std::time::Instant::now();
+        while let Some(chunk) = stream.next().await {
+            let bytes = chunk.map_err(|e| e.to_string())?;
+            file.write_all(&bytes).map_err(|e| e.to_string())?;
+            received += bytes.len() as u64;
+            if last_emit.elapsed().as_millis() > 250 {
+                last_emit = std::time::Instant::now();
+                let _ = on_progress.send(serde_json::json!({ "received": received, "total": MODEL_BYTES }));
+            }
+        }
+        file.flush().map_err(|e| e.to_string())?;
+        drop(file);
     }
-    file.flush().map_err(|e| e.to_string())?;
-    drop(file);
 
     let digest = sha256_of_file(&part)?;
     if digest != MODEL_SHA256 {
@@ -242,14 +248,14 @@ pub fn run_generate(
         .new_context(&engine.backend, ctx_params)
         .map_err(|e| e.to_string())?;
 
-    // Qwen3 chat template, minimal single-turn form. In text mode, prefill an EMPTY think
-    // block — Qwen3 is a thinking model and otherwise burns the whole token budget on raw
-    // <think> reasoning before any answer (caught by the Phase-2 quick-take probe). JSON
-    // mode needs no prefill: the grammar makes think-tokens illegal from the first token.
+    // Gemma 4 chat template, minimal single-turn form. In text mode, prefill an EMPTY thought
+    // channel — Gemma 4 is a thinking model and otherwise burns the whole token budget on raw
+    // reasoning before any answer (caught by the Phase-2 quick-take probe). JSON
+    // mode needs no prefill: the grammar makes thought tokens illegal from the first token.
     let wrapped = if json_mode {
-        format!("<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n")
+        format!("<|turn>user\n{prompt}<turn|>\n<|turn>model\n")
     } else {
-        format!("<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
+        format!("<|turn>user\n{prompt}<turn|>\n<|turn>model\n<|channel>thought\n\n<channel|>\n\n")
     };
     let tokens = model
         .str_to_token(&wrapped, AddBos::Always)

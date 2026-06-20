@@ -31,7 +31,7 @@ const argOf = (flag) => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 const MODEL = argOf("--model")
-  ?? join(homedir(), "Library", "Application Support", "app.sampatti.desktop", "models", "Qwen3-4B-Q4_K_M.gguf");
+  ?? join(homedir(), "Library", "Application Support", "app.sampatti.desktop", "models", "gemma-4-E4B-it-Q4_K_M.gguf");
 const LABEL = argOf("--label") ?? basename(MODEL).replace(/\.gguf$/i, "").toLowerCase();
 const ONLY = argOf("--only");
 const DO_ANALYSIS = args.includes("--analysis");
