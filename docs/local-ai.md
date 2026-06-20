@@ -23,12 +23,23 @@ Privacy → "AI engines"    per-task pickers + model manager (download w/ progre
                           same gate. Turning dev mode OFF resets settings.ai to claude/claude.
 ```
 
-**Pinned model (v1)** — one model, verified, pluggable later:
-- `unsloth/gemma-4-E4B-it-GGUF` → `gemma-4-E4B-it-Q4_K_M.gguf` · Apache-2.0 · 4,977,169,568 bytes
-- sha256 `519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d`
-- URL `https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf`
-- Stored at `<appdata>/models/`; "Remove model" on Privacy. Download allowed ONLY from
-  huggingface.co over https with the exact sha — anything else refuses.
+**Model registry (a user CHOICE, not one pin)** — `MODELS` in `src-tauri/src/local_llm.rs`.
+Each model carries its own file/url/sha256/bytes/license **and chat template** (the wrong turn
+delimiters yield garbage, so the template travels with the model — verified against each GGUF's
+embedded `tokenizer.chat_template`). The Settings → AI engines picker downloads/selects per model;
+the selected id persists as `settings.ai.localModel` (unset → `DEFAULT_MODEL_ID`). Adding a model
+later is one more row + its `ChatTemplate`. Adding more local models over time is the plan.
+
+Shipped models (Q4_K_M, Apache-2.0, all under `<appdata>/models/`):
+- **Gemma 4 E4B** (default) — `unsloth/gemma-4-E4B-it-GGUF` → `gemma-4-E4B-it-Q4_K_M.gguf` ·
+  4,977,169,568 bytes · sha256 `519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d`
+  · template `gemma4` (`<|turn>…<turn|>`, thinking opt-in via `<|think|>`).
+- **Qwen3-4B** — `Qwen/Qwen3-4B-GGUF` → `Qwen3-4B-Q4_K_M.gguf` · 2,497,280,256 bytes ·
+  sha256 `7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5` · template `qwen3`
+  (ChatML `<|im_start|>…<|im_end|>`, empty `<think>` prefill). ~2.5 GB — safe on 8GB Macs.
+
+Download allowed ONLY from huggingface.co over https with the exact sha — anything else refuses.
+"Remove" per model on the picker.
 
 **Hard rules**
 - Local generation makes ZERO network calls — enforced by contract tests (TS routing test:

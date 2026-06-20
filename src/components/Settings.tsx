@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStore, exportPortfolio } from "../storage/store";
 import { clearByoKey, hasByoKey, setByoKey, isTauri } from "../platform";
 import { ANALYSIS_MODELS } from "../claude/transport";
-import { localModelDownload, localModelRemove, localModelStatus, type LocalModelStatus } from "../ai/engine";
+import { localModelDownload, localModelRemove, localModelsList, DEFAULT_LOCAL_MODEL, type LocalModelInfo } from "../ai/engine";
 import type { AiEngine } from "../domain/types";
 import { fetchUsdInr } from "../domain/fx";
 import { profileFor } from "../regions/profile";
@@ -90,21 +90,25 @@ export function Settings() {
   };
   const [fxBusy, setFxBusy] = useState(false);
   const [fxNote, setFxNote] = useState<string | null>(null);
-  const [model, setModel] = useState<LocalModelStatus | null>(null);
-  const [dlProgress, setDlProgress] = useState<number | null>(null); // 0..1 while downloading
+  const [models, setModels] = useState<LocalModelInfo[]>([]);
+  const [dlProgress, setDlProgress] = useState<{ id: string; frac: number } | null>(null); // while downloading
   const [modelErr, setModelErr] = useState<string | null>(null);
 
-  const refreshModel = async () => {
+  // The model the local engine uses; the picker writes ai.localModel, falling back to default.
+  const activeModelId = s.ai.localModel ?? DEFAULT_LOCAL_MODEL;
+  const activeModel = models.find((m) => m.id === activeModelId);
+
+  const refreshModels = async () => {
     if (!isTauri()) return;
-    try { setModel(await localModelStatus()); } catch { /* command absent in old builds */ }
+    try { setModels(await localModelsList()); } catch { /* command absent in old builds */ }
   };
 
-  const downloadModel = async () => {
+  const downloadModel = async (modelId: string) => {
     setModelErr(null);
-    setDlProgress(0);
+    setDlProgress({ id: modelId, frac: 0 });
     try {
-      await localModelDownload((received, total) => setDlProgress(total ? received / total : 0));
-      await refreshModel();
+      await localModelDownload(modelId, (received, total) => setDlProgress({ id: modelId, frac: total ? received / total : 0 }));
+      await refreshModels();
     } catch (e) {
       setModelErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -112,17 +116,19 @@ export function Settings() {
     }
   };
 
-  const removeModel = async () => {
+  const removeModel = async (modelId: string) => {
     setModelErr(null);
     try {
-      await localModelRemove();
-      // Local engine without a model is pointless — fall anything local back to Claude.
-      updateSettings({ ai: { extraction: "claude", analysis: "claude" } });
-      await refreshModel();
+      await localModelRemove(modelId);
+      // If the removed model was the one the local engine used, fall local tasks back to Claude.
+      if (modelId === activeModelId) updateSettings({ ai: { ...s.ai, extraction: "claude", analysis: "claude" } });
+      await refreshModels();
     } catch (e) {
       setModelErr(e instanceof Error ? e.message : String(e));
     }
   };
+
+  const selectModel = (modelId: string) => updateSettings({ ai: { ...s.ai, localModel: modelId } });
 
   const setEngine = (task: "extraction" | "analysis", engine: AiEngine) =>
     updateSettings({ ai: { ...s.ai, [task]: engine } });
@@ -142,7 +148,7 @@ export function Settings() {
 
   useEffect(() => {
     void hasByoKey().then(setKeySet);
-    void refreshModel();
+    void refreshModels();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -449,8 +455,8 @@ export function Settings() {
               </button>
               <button
                 className={`chip ${s.ai[task] === "local" ? "active" : ""}`}
-                disabled={model?.state !== "ready"}
-                title={model?.state !== "ready" ? "Download the on-device model below first" : undefined}
+                disabled={activeModel?.state !== "ready"}
+                title={activeModel?.state !== "ready" ? "Download an on-device model below first" : undefined}
                 onClick={() => setEngine(task, "local")}
               >
                 🔒 On this device{task === "analysis" ? " — quick take" : ""}
@@ -459,26 +465,43 @@ export function Settings() {
           ))}
           {isTauri() ? (
             <div style={{ marginTop: "0.7rem", paddingTop: "0.7rem", borderTop: "1px solid var(--line-2)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
-                <span style={{ fontSize: "0.84rem", fontWeight: 600 }}>On-device model</span>
-                {model?.state === "ready" && <span className="badge badge-green">downloaded · {(model.size_bytes / 1e9).toFixed(2)} GB</span>}
-                {model?.state === "partial" && <span className="badge badge-amber">partially downloaded — resume below</span>}
-                {(!model || model.state === "absent") && <span className="badge badge-gray">not downloaded</span>}
-                {dlProgress != null ? (
-                  <span className="muted" style={{ fontSize: "0.8rem" }}>downloading… {(dlProgress * 100).toFixed(0)}%</span>
-                ) : model?.state === "ready" ? (
-                  <button className="btn btn-ghost" onClick={() => void removeModel()}>Remove model</button>
-                ) : (
-                  <button className="btn" onClick={() => void downloadModel()}>
-                    ⬇ Download model (~2.3 GB, one time)
-                  </button>
-                )}
-              </div>
-              <p className="muted" style={{ fontSize: "0.74rem", marginTop: "0.4rem", maxWidth: 600 }}>
-                Gemma 4 E4B (Apache-2.0), fetched once from huggingface.co and integrity-verified
-                (sha-256). It runs entirely inside Sampatti — no separate app, no server. Screenshots
-                and scans still use Claude even in on-device mode (small models can't read them well).
+              <span style={{ fontSize: "0.84rem", fontWeight: 600 }}>On-device model</span>
+              <p className="muted" style={{ fontSize: "0.74rem", margin: "0.2rem 0 0.6rem", maxWidth: 600 }}>
+                Pick which model the local engine runs. Each is fetched once from huggingface.co and
+                integrity-verified (sha-256), runs entirely inside Sampatti — no separate app, no
+                server — and can be removed anytime. Screenshots and scans still use Claude even in
+                on-device mode (small models can't read them well).
               </p>
+              {models.map((m) => {
+                const downloading = dlProgress?.id === m.id;
+                const selected = m.id === activeModelId;
+                const gb = (m.expected_bytes / 1e9).toFixed(1);
+                return (
+                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", padding: "0.4rem 0" }}>
+                    <button
+                      className={`chip ${selected ? "active" : ""}`}
+                      disabled={m.state !== "ready"}
+                      title={m.state !== "ready" ? "Download this model first to select it" : "Use this model for on-device tasks"}
+                      onClick={() => selectModel(m.id)}
+                      style={{ minWidth: 150, textAlign: "left" }}
+                    >
+                      {selected && m.state === "ready" ? "● " : ""}{m.display_name}
+                    </button>
+                    {m.state === "ready" && <span className="badge badge-green">downloaded · {(m.size_bytes / 1e9).toFixed(2)} GB</span>}
+                    {m.state === "partial" && <span className="badge badge-amber">partial — resume to finish</span>}
+                    {m.state === "absent" && <span className="badge badge-gray">~{gb} GB · {m.license}</span>}
+                    {downloading ? (
+                      <span className="muted" style={{ fontSize: "0.8rem" }}>downloading… {(dlProgress!.frac * 100).toFixed(0)}%</span>
+                    ) : m.state === "ready" ? (
+                      <button className="btn btn-ghost" onClick={() => void removeModel(m.id)}>Remove</button>
+                    ) : (
+                      <button className="btn" disabled={dlProgress != null} onClick={() => void downloadModel(m.id)}>
+                        ⬇ Download{m.state === "partial" ? " (resume)" : ` (~${gb} GB)`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
               {modelErr && <div className="badge badge-rose" style={{ marginTop: "0.4rem", padding: "0.3rem 0.6rem" }}>{modelErr}</div>}
             </div>
           ) : (

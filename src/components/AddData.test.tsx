@@ -24,7 +24,7 @@ vi.mock("../ingest", () => ({
 }));
 vi.mock("../ai/engine", () => ({
   engineFor: () => aiMock.engine,
-  localModelStatus: async () => ({ state: aiMock.ready ? "ready" : "absent", size_bytes: 0, expected_bytes: 1, license: "" }),
+  localModelReady: async () => aiMock.ready,
   withExtractionEngine: async (_e: string, fn: () => Promise<unknown>) => fn(),
 }));
 

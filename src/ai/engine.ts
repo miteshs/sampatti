@@ -40,28 +40,50 @@ export function engineFor(task: AiTask): AiEngine {
 
 // ---- local model lifecycle (thin wrappers over the Rust commands) ------------
 
-export interface LocalModelStatus {
+// The on-device model the local engine should use, from settings — falls back to the registry
+// default when unset (older save files / first run). Kept in sync with DEFAULT_MODEL_ID in
+// src-tauri/src/local_llm.rs.
+export const DEFAULT_LOCAL_MODEL = "gemma-4-e4b";
+export function selectedLocalModel(): string {
+  return useStore.getState().portfolio.settings.ai.localModel ?? DEFAULT_LOCAL_MODEL;
+}
+
+export interface LocalModelInfo {
+  id: string;
+  display_name: string;
   state: "absent" | "partial" | "ready";
   size_bytes: number;
   expected_bytes: number;
   license: string;
 }
 
-export async function localModelStatus(): Promise<LocalModelStatus> {
+// The whole registry + each model's on-disk state — drives the Settings picker.
+export async function localModelsList(): Promise<LocalModelInfo[]> {
   const { invoke } = await import("@tauri-apps/api/core");
-  return invoke<LocalModelStatus>("local_model_status");
+  return invoke<LocalModelInfo[]>("local_models_list");
 }
 
-export async function localModelRemove(): Promise<void> {
-  const { invoke } = await import("@tauri-apps/api/core");
-  await invoke("local_model_remove");
+// Whether the currently-selected on-device model is downloaded and usable — the gate the
+// import flow checks before routing extraction locally.
+export async function localModelReady(): Promise<boolean> {
+  const id = selectedLocalModel();
+  const models = await localModelsList();
+  return models.some((m) => m.id === id && m.state === "ready");
 }
 
-export async function localModelDownload(onProgress: (received: number, total: number) => void): Promise<void> {
+export async function localModelRemove(modelId: string): Promise<void> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("local_model_remove", { modelId });
+}
+
+export async function localModelDownload(
+  modelId: string,
+  onProgress: (received: number, total: number) => void,
+): Promise<void> {
   const { invoke, Channel } = await import("@tauri-apps/api/core");
   const channel = new Channel<{ received: number; total: number }>();
   channel.onmessage = (m) => onProgress(m.received, m.total);
-  await invoke("local_model_download", { onProgress: channel });
+  await invoke("local_model_download", { modelId, onProgress: channel });
 }
 
 // ---- generation ---------------------------------------------------------------
@@ -79,6 +101,7 @@ export async function localGenerate(
     onText?.(piece);
   };
   await invoke("local_generate", {
+    modelId: selectedLocalModel(),
     prompt,
     jsonMode: opts.jsonMode,
     maxTokens: opts.maxTokens,
@@ -91,7 +114,8 @@ export async function localGenerate(
 // the caller's extractJson/validateDrafts pipeline shapes and verifies either way. On the
 // Claude path the static prompt is sent as its own cache_control block, so a batch of
 // statements re-reads it at ~10% input cost; `model` lets the caller pick the cheap/strong
-// tier (aiExtract.ts escalates Haiku → Sonnet). Local ignores `model` — there is one model.
+// tier (aiExtract.ts escalates Haiku → Sonnet). Local ignores the Claude `model` tier — it runs
+// the user's selected on-device model (settings.ai.localModel).
 export async function generateForExtraction(
   staticPrompt: string,
   statement: string,

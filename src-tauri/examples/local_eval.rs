@@ -21,7 +21,10 @@ fn main() {
     let t0 = std::time::Instant::now();
     let mut pieces = 0u32;
     let mut stdout = std::io::stdout();
-    let result = sampatti_lib::local_llm::run_generate(&model, &prompt, json_mode, max_tokens, &mut |piece| {
+    // Pick the prompt template by matching the .gguf filename against the registry, so the
+    // eval runs each model through the exact wrapping the app ships.
+    let template = sampatti_lib::local_llm::template_for_path(&model);
+    let result = sampatti_lib::local_llm::run_generate(&model, template, &prompt, json_mode, max_tokens, &mut |piece| {
         pieces += 1;
         stdout.write_all(piece.as_bytes()).is_ok() && stdout.flush().is_ok()
     });

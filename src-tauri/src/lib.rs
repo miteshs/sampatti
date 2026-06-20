@@ -339,7 +339,7 @@ pub fn run() {
         clear_api_key,
         claude_stream,
         market_fetch,
-        local_llm::local_model_status,
+        local_llm::local_models_list,
         local_llm::local_model_download,
         local_llm::local_model_remove,
         local_llm::local_generate

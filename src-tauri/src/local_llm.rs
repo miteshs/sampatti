@@ -23,12 +23,105 @@ use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::{AddBos, LlamaModel, Special};
 use llama_cpp_2::sampling::LlamaSampler;
 
-// ---- the pinned model (see docs/local-ai.md "Decisions log") -----------------
-pub const MODEL_FILE: &str = "gemma-4-E4B-it-Q4_K_M.gguf";
-pub const MODEL_URL: &str = "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf";
-pub const MODEL_SHA256: &str = "519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d";
-pub const MODEL_BYTES: u64 = 4_977_169_568;
-pub const MODEL_LICENSE: &str = "Apache-2.0 (Gemma 4 E4B)";
+// ---- the model registry (see docs/local-ai.md "Decisions log") ----------------
+// On-device AI is a USER CHOICE among pinned models, not a single hard pin: each entry is
+// downloaded on demand into app-data and verified against its exact sha256. Adding a model
+// later is one more row here (+ its chat template) — no structural change. Every model must
+// be Apache/permissively licensed and hosted on huggingface.co (allowed_model_url enforces
+// the host; the sha256 enforces the bytes).
+
+// Each model family wraps a single user turn differently — the wrong delimiters yield garbage,
+// so the template travels WITH the model, never assumed. Verified against each GGUF's embedded
+// tokenizer.chat_template.
+#[derive(Clone, Copy, PartialEq)]
+pub enum ChatTemplate {
+    Gemma4,
+    Qwen3,
+}
+
+// Build the single-turn prompt for `model`. `json_mode` output is further constrained by the
+// JSON grammar downstream, so it needs no think-suppression; text mode prefills an empty
+// reasoning block to stop a thinking model from spending the whole budget on raw reasoning
+// before any answer (caught by the Phase-2 quick-take probe).
+fn wrap_prompt(t: ChatTemplate, prompt: &str, json_mode: bool) -> String {
+    match t {
+        // Gemma 4: <bos> is added by the tokenizer (AddBos::Always). Turn tokens are the
+        // model's real `<|turn>…<turn|>` / `<|turn>model`; thinking is off by default, so text
+        // mode opens+closes an empty `<|channel>thought` to keep it that way.
+        ChatTemplate::Gemma4 => {
+            if json_mode {
+                format!("<|turn>user\n{prompt}<turn|>\n<|turn>model\n")
+            } else {
+                format!("<|turn>user\n{prompt}<turn|>\n<|turn>model\n<|channel>thought\n\n<channel|>\n\n")
+            }
+        }
+        // Qwen3: ChatML turn tokens; text mode prefills an EMPTY <think> block (Qwen3 is a
+        // thinking model and otherwise reasons until the budget is gone).
+        ChatTemplate::Qwen3 => {
+            if json_mode {
+                format!("<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n")
+            } else {
+                format!("<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n")
+            }
+        }
+    }
+}
+
+pub struct Model {
+    pub id: &'static str,           // stable key persisted in settings + passed from the UI
+    pub display_name: &'static str,
+    pub file: &'static str,         // filename in <appdata>/models/
+    pub url: &'static str,          // huggingface.co https URL (host re-checked at download)
+    pub sha256: &'static str,       // exact digest of the full file
+    pub bytes: u64,
+    pub license: &'static str,
+    pub template: ChatTemplate,
+}
+
+pub const MODELS: &[Model] = &[
+    Model {
+        id: "gemma-4-e4b",
+        display_name: "Gemma 4 E4B",
+        file: "gemma-4-E4B-it-Q4_K_M.gguf",
+        url: "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf",
+        sha256: "519b9793ed6ce0ff530f1b7c96e848e08e49e7af4d57bb97f76215963a54146d",
+        bytes: 4_977_169_568,
+        license: "Apache-2.0",
+        template: ChatTemplate::Gemma4,
+    },
+    Model {
+        id: "qwen3-4b",
+        display_name: "Qwen3-4B",
+        file: "Qwen3-4B-Q4_K_M.gguf",
+        url: "https://huggingface.co/Qwen/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-Q4_K_M.gguf",
+        sha256: "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+        bytes: 2_497_280_256,
+        license: "Apache-2.0",
+        template: ChatTemplate::Qwen3,
+    },
+];
+
+// The model selected when settings carry none (first run / older save files).
+pub const DEFAULT_MODEL_ID: &str = "gemma-4-e4b";
+
+fn model_by_id(id: &str) -> Result<&'static Model, String> {
+    MODELS
+        .iter()
+        .find(|m| m.id == id)
+        .ok_or_else(|| format!("unknown on-device model id: {id}"))
+}
+
+// Resolve a template from a .gguf path by matching its filename against the registry — lets
+// the eval driver run any registered model through the exact shipping prompt path. Unknown
+// files fall back to Gemma 4 (the default pin).
+pub fn template_for_path(path: &std::path::Path) -> ChatTemplate {
+    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    MODELS
+        .iter()
+        .find(|m| m.file == name)
+        .map(|m| m.template)
+        .unwrap_or(ChatTemplate::Gemma4)
+}
 
 // Downloads may come ONLY from the pinned host over https.
 pub fn allowed_model_url(u: &str) -> bool {
@@ -48,8 +141,8 @@ fn models_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-fn model_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    Ok(models_dir(app)?.join(MODEL_FILE))
+fn model_path(app: &tauri::AppHandle, model: &Model) -> Result<PathBuf, String> {
+    Ok(models_dir(app)?.join(model.file))
 }
 
 pub fn sha256_of_file(path: &std::path::Path) -> Result<String, String> {
@@ -67,16 +160,17 @@ pub fn sha256_of_file(path: &std::path::Path) -> Result<String, String> {
 }
 
 #[derive(serde::Serialize)]
-pub struct ModelStatus {
+pub struct ModelInfo {
+    id: String,
+    display_name: String,
     state: String, // "absent" | "partial" | "ready"
     size_bytes: u64,
     expected_bytes: u64,
     license: String,
 }
 
-#[tauri::command]
-pub fn local_model_status(app: tauri::AppHandle) -> Result<ModelStatus, String> {
-    let path = model_path(&app)?;
+fn model_info(app: &tauri::AppHandle, model: &Model) -> Result<ModelInfo, String> {
+    let path = model_path(app, model)?;
     let part = path.with_extension("gguf.part");
     let (state, size) = if path.exists() {
         ("ready", std::fs::metadata(&path).map_err(|e| e.to_string())?.len())
@@ -85,17 +179,26 @@ pub fn local_model_status(app: tauri::AppHandle) -> Result<ModelStatus, String> 
     } else {
         ("absent", 0)
     };
-    Ok(ModelStatus {
+    Ok(ModelInfo {
+        id: model.id.into(),
+        display_name: model.display_name.into(),
         state: state.into(),
         size_bytes: size,
-        expected_bytes: MODEL_BYTES,
-        license: MODEL_LICENSE.into(),
+        expected_bytes: model.bytes,
+        license: model.license.into(),
     })
 }
 
+// The whole registry plus each model's on-disk state — one call drives the Settings picker.
 #[tauri::command]
-pub fn local_model_remove(app: tauri::AppHandle) -> Result<(), String> {
-    let path = model_path(&app)?;
+pub fn local_models_list(app: tauri::AppHandle) -> Result<Vec<ModelInfo>, String> {
+    MODELS.iter().map(|m| model_info(&app, m)).collect()
+}
+
+#[tauri::command]
+pub fn local_model_remove(app: tauri::AppHandle, model_id: String) -> Result<(), String> {
+    let model = model_by_id(&model_id)?;
+    let path = model_path(&app, model)?;
     let part = path.with_extension("gguf.part");
     for p in [path, part] {
         if p.exists() {
@@ -111,11 +214,12 @@ pub fn local_model_remove(app: tauri::AppHandle) -> Result<(), String> {
 // already exist), then verify the FULL file's sha256 against the pin before renaming into
 // place. A wrong hash deletes the file — never leaves an unverified model on disk.
 #[tauri::command]
-pub async fn local_model_download(app: tauri::AppHandle, on_progress: Channel<serde_json::Value>) -> Result<(), String> {
-    if !allowed_model_url(MODEL_URL) {
+pub async fn local_model_download(app: tauri::AppHandle, model_id: String, on_progress: Channel<serde_json::Value>) -> Result<(), String> {
+    let model = model_by_id(&model_id)?;
+    if !allowed_model_url(model.url) {
         return Err("model URL pin is invalid".into());
     }
-    let path = model_path(&app)?;
+    let path = model_path(&app, model)?;
     if path.exists() {
         return Ok(()); // already there
     }
@@ -126,9 +230,9 @@ pub async fn local_model_download(app: tauri::AppHandle, on_progress: Channel<se
         0
     };
 
-    if existing < MODEL_BYTES {
+    if existing < model.bytes {
         let client = reqwest::Client::new();
-        let mut req = client.get(MODEL_URL);
+        let mut req = client.get(model.url);
         if existing > 0 {
             req = req.header("Range", format!("bytes={existing}-"));
         }
@@ -158,7 +262,7 @@ pub async fn local_model_download(app: tauri::AppHandle, on_progress: Channel<se
             received += bytes.len() as u64;
             if last_emit.elapsed().as_millis() > 250 {
                 last_emit = std::time::Instant::now();
-                let _ = on_progress.send(serde_json::json!({ "received": received, "total": MODEL_BYTES }));
+                let _ = on_progress.send(serde_json::json!({ "received": received, "total": model.bytes }));
             }
         }
         file.flush().map_err(|e| e.to_string())?;
@@ -166,12 +270,12 @@ pub async fn local_model_download(app: tauri::AppHandle, on_progress: Channel<se
     }
 
     let digest = sha256_of_file(&part)?;
-    if digest != MODEL_SHA256 {
+    if digest != model.sha256 {
         let _ = std::fs::remove_file(&part);
         return Err("downloaded model failed integrity verification — removed; please retry".into());
     }
     std::fs::rename(&part, &path).map_err(|e| e.to_string())?;
-    let _ = on_progress.send(serde_json::json!({ "received": MODEL_BYTES, "total": MODEL_BYTES }));
+    let _ = on_progress.send(serde_json::json!({ "received": model.bytes, "total": model.bytes }));
     Ok(())
 }
 
@@ -231,6 +335,7 @@ pub fn unload_engine() {
 // (e.g. the IPC channel died). NO network I/O anywhere below.
 pub fn run_generate(
     model_file: &std::path::Path,
+    template: ChatTemplate,
     prompt: &str,
     json_mode: bool,
     max_tokens: u32,
@@ -248,15 +353,8 @@ pub fn run_generate(
         .new_context(&engine.backend, ctx_params)
         .map_err(|e| e.to_string())?;
 
-    // Gemma 4 chat template, minimal single-turn form. In text mode, prefill an EMPTY thought
-    // channel — Gemma 4 is a thinking model and otherwise burns the whole token budget on raw
-    // reasoning before any answer (caught by the Phase-2 quick-take probe). JSON
-    // mode needs no prefill: the grammar makes thought tokens illegal from the first token.
-    let wrapped = if json_mode {
-        format!("<|turn>user\n{prompt}<turn|>\n<|turn>model\n")
-    } else {
-        format!("<|turn>user\n{prompt}<turn|>\n<|turn>model\n<|channel>thought\n\n<channel|>\n\n")
-    };
+    // Per-model chat template (the wrong delimiters yield garbage), built in wrap_prompt.
+    let wrapped = wrap_prompt(template, prompt, json_mode);
     let tokens = model
         .str_to_token(&wrapped, AddBos::Always)
         .map_err(|e| e.to_string())?;
@@ -333,15 +431,18 @@ pub fn run_generate(
 #[tauri::command]
 pub async fn local_generate(
     app: tauri::AppHandle,
+    model_id: String,
     prompt: String,
     json_mode: bool,
     max_tokens: u32,
     on_token: Channel<String>,
 ) -> Result<(), String> {
-    let path = model_path(&app)?;
+    let model = model_by_id(&model_id)?;
+    let path = model_path(&app, model)?;
+    let template = model.template;
     // llama.cpp inference is CPU-heavy and synchronous; run it off the async runtime.
     tauri::async_runtime::spawn_blocking(move || {
-        run_generate(&path, &prompt, json_mode, max_tokens, &mut |piece| {
+        run_generate(&path, template, &prompt, json_mode, max_tokens, &mut |piece| {
             on_token.send(piece).is_ok()
         })
     })
@@ -354,8 +455,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn model_url_pin_is_https_huggingface_only() {
-        assert!(allowed_model_url(MODEL_URL));
+    fn every_model_url_pin_is_https_huggingface_only() {
+        for m in MODELS {
+            assert!(allowed_model_url(m.url), "{} url must be allowed", m.id);
+        }
         for bad in [
             "http://huggingface.co/x", // plaintext
             "https://evil.example/model.gguf",
@@ -367,8 +470,19 @@ mod tests {
     }
 
     #[test]
-    fn sha256_verification_works_and_pin_is_wellformed() {
-        assert_eq!(MODEL_SHA256.len(), 64);
+    fn registry_is_wellformed_and_default_exists() {
+        assert!(model_by_id(DEFAULT_MODEL_ID).is_ok(), "default model id must resolve");
+        for m in MODELS {
+            assert_eq!(m.sha256.len(), 64, "{} sha256 must be 64 hex chars", m.id);
+            assert!(m.bytes > 0, "{} bytes must be set", m.id);
+            assert!(m.file.ends_with(".gguf"), "{} file must be a .gguf", m.id);
+            // ids are the persisted key — they must be unique.
+            assert_eq!(MODELS.iter().filter(|x| x.id == m.id).count(), 1, "{} id not unique", m.id);
+        }
+    }
+
+    #[test]
+    fn sha256_verification_works() {
         let tmp = std::env::temp_dir().join("sampatti-sha-test.bin");
         std::fs::write(&tmp, b"hello sampatti").unwrap();
         let d = sha256_of_file(&tmp).unwrap();

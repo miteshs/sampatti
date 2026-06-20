@@ -128,6 +128,7 @@ export type AiEngine = "claude" | "local";
 export interface AiRouting {
   extraction: AiEngine; // statement extraction fallback (PDF text / unrecognized layouts)
   analysis: AiEngine; // the portfolio review & chat
+  localModel?: string; // which on-device model the local engine uses; undefined → registry default
 }
 
 export interface Settings {

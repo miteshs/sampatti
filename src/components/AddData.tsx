@@ -5,7 +5,7 @@ import { demoPortfolio } from "../demo";
 import { classifyFile, ingestFile, ingestPdf, ingestWithClaude, isImportable, NeedsClaudeError, PdfPasswordError } from "../ingest";
 import { filesForClaude, planBatch } from "../ingest/consent";
 import { findCrossAccountDuplicates } from "../ingest/reconcile";
-import { engineFor, localModelStatus, withExtractionEngine } from "../ai/engine";
+import { engineFor, localModelReady, withExtractionEngine } from "../ai/engine";
 import { currentProfile, fmtMoney } from "../regions/profile";
 import {
   ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL,
@@ -72,8 +72,8 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
   useEffect(() => {
     if (extractionEngine !== "local") return;
     let on = true;
-    localModelStatus()
-      .then((s) => { if (on) setLocalReady(s.state === "ready"); })
+    localModelReady()
+      .then((r) => { if (on) setLocalReady(r); })
       .catch(() => { if (on) setLocalReady(false); });
     return () => { on = false; };
   }, [extractionEngine]);
@@ -147,7 +147,7 @@ export function AddData({ onConfigure }: { onConfigure?: () => void }) {
     const engine = engineFor("extraction");
     const classes = files.map(classifyFile);
     const ready = engine === "local" && classes.some((c) => c === "ai-text")
-      ? await localModelStatus().then((s) => s.state === "ready").catch(() => false)
+      ? await localModelReady().catch(() => false)
       : false;
     const plan = planBatch(classes, engine, ready);
     if (plan === "run") void runBatch(files, engine);
