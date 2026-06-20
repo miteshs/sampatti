@@ -62,6 +62,8 @@ export function diskEncryption(): { os: string; tool: string; where: string } {
 
 const WEB_KEY = "sampatti.portfolio";
 const FILE = "portfolio.json";
+const TMP = "portfolio.json.tmp"; // staging file for the durable write
+const BAK = "portfolio.json.bak"; // last-known-good copy, for crash recovery
 
 // iOS: mark the app-data directory as excluded from iCloud / device backups, so the portfolio
 // never leaves the device via a backup (the supported backup path is in-app Export). Runs once
@@ -86,8 +88,14 @@ export async function readPortfolioRaw(): Promise<string | null> {
   if (isTauri()) {
     try {
       const { exists, readTextFile, BaseDirectory } = await import("@tauri-apps/plugin-fs");
-      if (await exists(FILE, { baseDir: BaseDirectory.AppData })) {
-        return await readTextFile(FILE, { baseDir: BaseDirectory.AppData });
+      const appData = BaseDirectory.AppData;
+      if (await exists(FILE, { baseDir: appData })) {
+        return await readTextFile(FILE, { baseDir: appData });
+      }
+      // Main file absent (e.g. a crash between staging and the final rename) — recover the
+      // last-known-good backup before falling through to a clean start.
+      if (await exists(BAK, { baseDir: appData })) {
+        return await readTextFile(BAK, { baseDir: appData });
       }
     } catch (e) {
       console.error("Tauri fs read failed; using local storage fallback:", e);
@@ -98,14 +106,42 @@ export async function readPortfolioRaw(): Promise<string | null> {
   return localStorage.getItem(WEB_KEY);
 }
 
+// The last-known-good portfolio, if any. The loader falls back to this when the MAIN file
+// exists but parses as corrupt — so a bad write never silently wipes the user's data.
+export async function readPortfolioBackupRaw(): Promise<string | null> {
+  if (!isTauri()) return null;
+  try {
+    const { exists, readTextFile, BaseDirectory } = await import("@tauri-apps/plugin-fs");
+    if (await exists(BAK, { baseDir: BaseDirectory.AppData })) {
+      return await readTextFile(BAK, { baseDir: BaseDirectory.AppData });
+    }
+  } catch (e) {
+    console.error("Tauri fs backup read failed:", e);
+  }
+  return null;
+}
+
 export async function writePortfolioRaw(json: string): Promise<void> {
   if (isTauri()) {
     try {
-      const { writeTextFile, mkdir, BaseDirectory } = await import("@tauri-apps/plugin-fs");
+      const { writeTextFile, mkdir, rename, copyFile, exists, BaseDirectory } = await import("@tauri-apps/plugin-fs");
+      const appData = BaseDirectory.AppData;
       try {
-        await mkdir("", { baseDir: BaseDirectory.AppData, recursive: true });
+        await mkdir("", { baseDir: appData, recursive: true });
       } catch { /* dir already exists, or creation not permitted — try the write anyway */ }
-      await writeTextFile(FILE, json, { baseDir: BaseDirectory.AppData });
+      // Durable write (the portfolio file IS the user's whole dataset): stage the new content
+      // into .tmp, snapshot the current good file as .bak, then atomically rename .tmp over the
+      // real file. A crash at any step leaves either the old file or the new one intact — never
+      // a half-written, unparseable portfolio.
+      await writeTextFile(TMP, json, { baseDir: appData });
+      try {
+        if (await exists(FILE, { baseDir: appData })) {
+          await copyFile(FILE, BAK, { fromPathBaseDir: appData, toPathBaseDir: appData });
+        }
+      } catch (e) {
+        console.error("portfolio backup copy failed (continuing with the write):", e);
+      }
+      await rename(TMP, FILE, { oldPathBaseDir: appData, newPathBaseDir: appData });
       void ensureNoBackupIOS(); // iOS: keep the data dir out of iCloud/device backups (once)
       return;
     } catch (e) {
@@ -119,8 +155,13 @@ export async function clearPortfolioRaw(): Promise<void> {
   if (isTauri()) {
     try {
       const { remove, exists, BaseDirectory } = await import("@tauri-apps/plugin-fs");
-      if (await exists(FILE, { baseDir: BaseDirectory.AppData })) {
-        await remove(FILE, { baseDir: BaseDirectory.AppData });
+      const appData = BaseDirectory.AppData;
+      // Remove the main file plus the durable-write staging/backup siblings, so a wipe leaves
+      // nothing behind (an orphaned .bak would otherwise still hold the user's data).
+      for (const f of [FILE, TMP, BAK]) {
+        if (await exists(f, { baseDir: appData })) {
+          await remove(f, { baseDir: appData });
+        }
       }
     } catch (e) {
       console.error("Tauri fs remove failed:", e);

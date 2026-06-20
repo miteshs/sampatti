@@ -11,7 +11,7 @@ import { ACCOUNT_TYPE_LABEL, ASSET_CLASS_LABEL, TAX_LABEL } from "../domain/clas
 import { snapshotOf, todayLocal, upsertSnapshot } from "../domain/snapshots";
 import { decomposeReplace } from "../domain/flows";
 import { holdingBase } from "../domain/format";
-import { clearLocalCaches, clearPortfolioRaw, isIOS, isTauri, readPortfolioRaw, writePortfolioRaw } from "../platform";
+import { clearLocalCaches, clearPortfolioRaw, isIOS, isTauri, readPortfolioBackupRaw, readPortfolioRaw, writePortfolioRaw } from "../platform";
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
@@ -225,11 +225,24 @@ function migrate(p: Portfolio): Portfolio {
   return p;
 }
 
+let pendingSave: Portfolio | null = null;
+
 function persist(p: Portfolio) {
+  pendingSave = p;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    void writePortfolioRaw(JSON.stringify(p));
-  }, 250);
+  saveTimer = setTimeout(() => { void flushPendingSave(); }, 250);
+}
+
+// Force the debounced write to disk NOW (await the actual write). Idempotent — a no-op when
+// nothing is pending. Wire this to app-close (see App.tsx) so a change made in the last 250ms
+// before quitting is never silently lost.
+export async function flushPendingSave(): Promise<void> {
+  if (!pendingSave) return;
+  const p = pendingSave;
+  pendingSave = null;
+  clearTimeout(saveTimer);
+  saveTimer = undefined;
+  await writePortfolioRaw(JSON.stringify(p));
 }
 
 // Apply a change to the portfolio, stamp updatedAt, persist, and return the new object.
@@ -273,22 +286,34 @@ export const useStore = create<State>((set, get) => ({
     })),
 
   load: async () => {
+    // Parse + migrate one raw payload and commit it to state. Throws on a corrupt payload so
+    // the caller can try the backup. Migrating basis-less holdings + recording today's snapshot
+    // (opening the app daily is what builds the recorded history) persists only when something
+    // actually changed.
+    const apply = (raw: string, forcePersist = false) => {
+      const p = migrate(JSON.parse(raw) as Portfolio);
+      const migrated = ensureBasis(p);
+      const snapped = recordSnapshot(p);
+      if (migrated || snapped || forcePersist) persist(p);
+      set(() => ({ portfolio: p, loaded: true }));
+    };
     try {
       const raw = await readPortfolioRaw();
-      if (raw) {
-        const p = migrate(JSON.parse(raw) as Portfolio);
-        // Migrate basis-less holdings + record today's snapshot (opening the app daily is what
-        // builds the recorded history) — persist only when something actually changed.
-        const migrated = ensureBasis(p);
-        const snapped = recordSnapshot(p);
-        if (migrated || snapped) persist(p);
-        set(() => ({ portfolio: p, loaded: true }));
-        return;
-      }
+      if (raw) { apply(raw); return; }
     } catch (e) {
-      // First run, unreadable/corrupt file, or storage error → start clean rather
-      // than spin forever. Always fall through to marking the app loaded.
-      console.error("portfolio load failed:", e);
+      // The main file exists but is corrupt (truncated/garbled) — recover the last-known-good
+      // backup before starting clean, so a bad write can never silently wipe the user's data.
+      console.error("portfolio load failed; trying backup:", e);
+      try {
+        const bak = await readPortfolioBackupRaw();
+        if (bak) {
+          apply(bak, true); // re-establish a good main file from the backup
+          void flushPendingSave();
+          return;
+        }
+      } catch (e2) {
+        console.error("portfolio backup recovery failed:", e2);
+      }
     }
     set(() => ({ loaded: true }));
   },

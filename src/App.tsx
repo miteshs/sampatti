@@ -1,6 +1,7 @@
 import { currentProfile } from "./regions/profile";
 import { useEffect, useRef, useState } from "react";
-import { useStore } from "./storage/store";
+import { flushPendingSave, useStore } from "./storage/store";
+import { isTauri } from "./platform";
 import { fetchUsdInr } from "./domain/fx";
 import { Overview } from "./components/Overview";
 import { Performance } from "./components/Performance";
@@ -101,6 +102,34 @@ export default function App() {
   useEffect(() => {
     if (loaded && !hasData) setView("holdings");
   }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Flush the debounced portfolio save before the app actually closes, so an edit made in the
+  // last ~250ms before quitting is never silently lost. Desktop: intercept the close request,
+  // await the write, then destroy the window. Web: pagehide is best-effort.
+  useEffect(() => {
+    if (!isTauri()) {
+      const onHide = () => { void flushPendingSave(); };
+      window.addEventListener("pagehide", onHide);
+      return () => window.removeEventListener("pagehide", onHide);
+    }
+    let unlisten: (() => void) | undefined;
+    let destroying = false;
+    void (async () => {
+      try {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
+        const win = getCurrentWindow();
+        unlisten = await win.onCloseRequested(async (event) => {
+          if (destroying) return;
+          event.preventDefault(); // hold the close until the pending write lands
+          destroying = true;
+          try { await flushPendingSave(); } finally { await win.destroy(); }
+        });
+      } catch (e) {
+        console.error("close-flush handler not registered:", e);
+      }
+    })();
+    return () => unlisten?.();
+  }, []);
 
   // Quiet auto-update check once per launch (desktop only — checkForUpdate no-ops on the web).
   // Only surfaces a banner when a newer signed release actually exists; offline/none → silent.
