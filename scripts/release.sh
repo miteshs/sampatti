@@ -10,7 +10,10 @@
 #     into Settings (matched against the worker's APP_TOKENS); BYO Anthropic keys live in the OS
 #     keychain. So a downloaded dmg carries nothing a stranger could spend — and personal and
 #     public builds are byte-identical in this respect.
-#   • The dmg is Apple-Silicon only. It is signed (Developer ID) + notarized + stapled when
+#   • The dmg is a UNIVERSAL binary (Intel x86_64 + Apple Silicon arm64) — one download runs
+#     natively on every Mac. macOS picks the right slice at launch; the website needs no arch
+#     detection (browsers can't reliably tell Intel from Apple Silicon anyway). It is signed
+#     (Developer ID) + notarized + stapled when
 #     .env.signing is present (see .env.signing.example); absent → unsigned, as before.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
@@ -35,8 +38,18 @@ while [ $# -gt 0 ]; do
 done
 
 VERSION=$(node -e "console.log(require('./src-tauri/tauri.conf.json').version)")
-DMG="src-tauri/target/release/bundle/dmg/Sampatti_${VERSION}_aarch64.dmg"
-APP="src-tauri/target/release/bundle/macos/Sampatti.app"
+
+# Universal build: both target slices must be installed or `tauri build --target
+# universal-apple-darwin` fails partway through the (slow) build.
+TARGET="universal-apple-darwin"
+for T in x86_64-apple-darwin aarch64-apple-darwin; do
+  rustup target list --installed 2>/dev/null | grep -qx "$T" \
+    || { echo "✗ Missing Rust target $T — run: rustup target add $T"; exit 1; }
+done
+
+BUNDLE="src-tauri/target/${TARGET}/release/bundle"
+DMG="${BUNDLE}/dmg/Sampatti_${VERSION}_universal.dmg"
+APP="${BUNDLE}/macos/Sampatti.app"
 
 # A release must be reproducible from a commit: refuse a dirty tree and stamp the commit
 # into the release notes. (0.3.0 shipped a 14:08 dmg for an end-of-day tree — the Settings
@@ -46,8 +59,9 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 BUILT_FROM=$(git rev-parse --short HEAD)
 
-# Thorough clean: a stale bundle must never be mistaken for (or shipped as) this cut.
-rm -rf src-tauri/target/release/bundle dist
+# Thorough clean: a stale bundle must never be mistaken for (or shipped as) this cut. Clear both
+# the per-arch and the universal bundle dirs so nothing old survives.
+rm -rf src-tauri/target/release/bundle "$BUNDLE" dist
 
 # Signing is done by Tauri during the build (it reads APPLE_SIGNING_IDENTITY). Notarization is
 # done HERE with notarytool after the build, NOT by Tauri's built-in notarizer — that wrapper has
@@ -85,8 +99,13 @@ echo "▶ Building PUBLIC Sampatti ${VERSION} (no baked secrets)…"
 export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME=/build"
 export CFLAGS="${CFLAGS:-} -ffile-prefix-map=$HOME=/build"
 export CXXFLAGS="${CXXFLAGS:-} -ffile-prefix-map=$HOME=/build"
-npm run tauri build >/dev/null
+npm run tauri build -- --target "$TARGET" >/dev/null
 [ -d "$APP" ] || { echo "✗ app not built at $APP"; exit 1; }
+
+# Prove the bundle really is universal — a single-arch slip would silently lock out half of users.
+lipo -archs "$APP/Contents/MacOS/sampatti" 2>/dev/null | grep -q "x86_64" \
+  && lipo -archs "$APP/Contents/MacOS/sampatti" 2>/dev/null | grep -q "arm64" \
+  || { echo "✗ app binary is not universal (need both x86_64 + arm64): $(lipo -archs "$APP/Contents/MacOS/sampatti" 2>/dev/null)"; exit 1; }
 
 # Build the dmg ourselves: app-only (no Applications drag alias) so a double-click on the app
 # triggers the self-install (relocate.rs). Tauri's dmg target is disabled in tauri.conf.json.
@@ -127,19 +146,22 @@ echo "  sha256: $SHA"
 # ---- Auto-update artifacts (macOS) ----
 # The build wrote Sampatti.app.tar.gz + .sig (signed with the updater key). Publish the tarball
 # under a versioned name plus latest.json — the manifest the running app polls at
-# …/releases/latest/download/latest.json (endpoint in tauri.conf.json). darwin-aarch64 only for
-# now; the Windows leg can add windows-x86_64 later.
+# …/releases/latest/download/latest.json (endpoint in tauri.conf.json). The tarball is universal,
+# so both darwin arches point at the same file: a universal app runs as arm64 on Apple Silicon
+# (updater asks for darwin-aarch64) and as x86_64 on Intel (darwin-x86_64). The signature is over
+# the tarball file, so it's identical for both. The Windows leg can add windows-x86_64 later.
 UPD_ASSETS=()
 if [ "$UPDATER" = "1" ]; then
-  UPD_TGZ="src-tauri/target/release/bundle/macos/Sampatti.app.tar.gz"
+  UPD_TGZ="${BUNDLE}/macos/Sampatti.app.tar.gz"
   UPD_SIG="${UPD_TGZ}.sig"
   if [ -f "$UPD_TGZ" ] && [ -f "$UPD_SIG" ]; then
-    UPD_NAME="Sampatti_${VERSION}_aarch64.app.tar.gz"
-    UPD_OUT="src-tauri/target/release/bundle/macos/${UPD_NAME}"
-    MANIFEST="src-tauri/target/release/bundle/macos/latest.json"
+    UPD_NAME="Sampatti_${VERSION}_universal.app.tar.gz"
+    UPD_OUT="${BUNDLE}/macos/${UPD_NAME}"
+    MANIFEST="${BUNDLE}/macos/latest.json"
     cp "$UPD_TGZ" "$UPD_OUT"
     SIGCONTENT=$(cat "$UPD_SIG")
     PUBDATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    UPD_URL="https://github.com/${RELEASES_REPO}/releases/download/v${VERSION}/${UPD_NAME}"
     cat > "$MANIFEST" <<JSON
 {
   "version": "${VERSION}",
@@ -148,7 +170,11 @@ if [ "$UPDATER" = "1" ]; then
   "platforms": {
     "darwin-aarch64": {
       "signature": "${SIGCONTENT}",
-      "url": "https://github.com/${RELEASES_REPO}/releases/download/v${VERSION}/${UPD_NAME}"
+      "url": "${UPD_URL}"
+    },
+    "darwin-x86_64": {
+      "signature": "${SIGCONTENT}",
+      "url": "${UPD_URL}"
     }
   }
 }
@@ -174,7 +200,7 @@ Sampatti brings everything you own — across India and the US — into one priv
 
 ### Download
 
-**Mac** (Apple Silicon — M1 and newer): get **\`Sampatti_${VERSION}_aarch64.dmg\`** below. Open it, double-click Sampatti, and you're ready. New versions install themselves automatically.
+**Mac** (Intel or Apple Silicon): get **\`Sampatti_${VERSION}_universal.dmg\`** below. Open it, double-click Sampatti, and you're ready. New versions install themselves automatically.
 
 **Windows** (64-bit): get **\`Sampatti_${VERSION}_x64-setup.exe\`** below and run it. For brand-new apps Windows may show a "Windows protected your PC" screen — choose **More info → Run anyway** to continue.
 
