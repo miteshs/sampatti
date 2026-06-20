@@ -14,6 +14,8 @@ pub mod local_llm; // pub: examples/local_eval.rs drives the same inference path
 // module body and the call site in run() are both compiled out elsewhere.
 mod relocate;
 
+use std::sync::OnceLock;
+
 use futures_util::StreamExt;
 use serde_json::Value;
 use tauri::ipc::Channel;
@@ -163,16 +165,15 @@ fn allowed_market_url(u: &reqwest::Url) -> bool {
     u.scheme() == "https" && u.host_str().map(|h| MARKET_HOSTS.contains(&h)).unwrap_or(false)
 }
 
-#[tauri::command]
-async fn market_fetch(url: String) -> Result<String, String> {
-    let parsed = reqwest::Url::parse(&url).map_err(|e| e.to_string())?;
-    if !allowed_market_url(&parsed) {
-        return Err(format!(
-            "blocked: only https GETs to allow-listed market-data hosts (got {})",
-            parsed.host_str().unwrap_or("?")
-        ));
+// One shared client for ALL market fetches: a price refresh hits this once per holding (the JS
+// side runs 6 in parallel), so a fresh client + TLS handshake per call wasted connection reuse.
+// Built once, lazily; the allow-list redirect guard is part of the client. Fallible build still
+// surfaces as an Err (no panic) — and effectively never fails for this plain config.
+fn market_client() -> Result<&'static reqwest::Client, String> {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    if let Some(c) = CLIENT.get() {
+        return Ok(c);
     }
-    let host = parsed.host_str().unwrap_or("").to_string();
     let client = reqwest::Client::builder()
         .user_agent(MARKET_UA)
         .redirect(reqwest::redirect::Policy::custom(|attempt| {
@@ -184,7 +185,22 @@ async fn market_fetch(url: String) -> Result<String, String> {
         }))
         .build()
         .map_err(|e| e.to_string())?;
-    let resp = client.get(parsed).send().await.map_err(|e| e.to_string())?;
+    // On a race another thread may have set it first; either way return the stored one.
+    let _ = CLIENT.set(client);
+    Ok(CLIENT.get().expect("client just set"))
+}
+
+#[tauri::command]
+async fn market_fetch(url: String) -> Result<String, String> {
+    let parsed = reqwest::Url::parse(&url).map_err(|e| e.to_string())?;
+    if !allowed_market_url(&parsed) {
+        return Err(format!(
+            "blocked: only https GETs to allow-listed market-data hosts (got {})",
+            parsed.host_str().unwrap_or("?")
+        ));
+    }
+    let host = parsed.host_str().unwrap_or("").to_string();
+    let resp = market_client()?.get(parsed).send().await.map_err(|e| e.to_string())?;
     if !resp.status().is_success() {
         return Err(format!("{host} returned {}", resp.status()));
     }
