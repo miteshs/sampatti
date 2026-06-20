@@ -18,7 +18,10 @@ tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["full"] }
+# No direct tokio:: use in this crate — the runtime comes via tauri::async_runtime + reqwest, which
+# enable the features they need. We only need the multi-thread runtime + the macros for our async
+# commands, so don't pull the whole "full" surface (faster compile, smaller dep graph).
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 reqwest = { version = "0.12", features = ["json", "stream"] }
 futures-util = "0.3"
 # The platform keystores are opt-in features in keyring v3 — without them EVERY platform

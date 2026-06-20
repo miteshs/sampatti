@@ -206,7 +206,7 @@ pub fn local_model_remove(app: tauri::AppHandle, model_id: String) -> Result<(),
         }
     }
     // Drop any loaded context so the memory is released too.
-    *ENGINE.lock().unwrap() = None;
+    *engine_guard() = None;
     Ok(())
 }
 
@@ -303,8 +303,16 @@ struct Engine {
 // path so the eval harness can swap candidate models within one process.
 static ENGINE: Mutex<Option<Engine>> = Mutex::new(None);
 
+// Lock the engine, tolerating poisoning: if a generation thread ever panicked mid-inference it
+// would poison the mutex, and a plain .unwrap() would then brick ALL on-device AI for the rest
+// of the process. The cached model is just a perf optimization, so recovering the guard and
+// carrying on (a later ensure_engine reloads if needed) is strictly better than bricking.
+fn engine_guard() -> std::sync::MutexGuard<'static, Option<Engine>> {
+    ENGINE.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 fn ensure_engine(path: &std::path::Path) -> Result<(), String> {
-    let mut guard = ENGINE.lock().unwrap();
+    let mut guard = engine_guard();
     if guard.as_ref().is_some_and(|e| e.path == path) {
         return Ok(());
     }
@@ -326,7 +334,7 @@ fn ensure_engine(path: &std::path::Path) -> Result<(), String> {
 // teardown aborts if model buffers are still alive at process exit — so short-lived
 // callers (the eval binary) must unload explicitly before returning from main.
 pub fn unload_engine() {
-    *ENGINE.lock().unwrap() = None;
+    *engine_guard() = None;
 }
 
 // The whole on-device generation path — shared verbatim by the `local_generate` command and
@@ -342,7 +350,7 @@ pub fn run_generate(
     on_piece: &mut dyn FnMut(String) -> bool,
 ) -> Result<(), String> {
     ensure_engine(model_file)?;
-    let guard = ENGINE.lock().unwrap();
+    let guard = engine_guard();
     let engine = guard.as_ref().ok_or("engine not loaded")?;
     let model = &engine.model;
 
